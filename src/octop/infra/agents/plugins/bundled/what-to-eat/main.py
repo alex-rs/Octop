@@ -11,14 +11,39 @@ from typing import Any
 from octop_harness.plugins import PluginContext
 
 _MEALS: dict[str, tuple[str, ...]] = {
-    "breakfast": ("豆浆油条", "小笼包", "粥配咸菜", "三明治", "燕麦酸奶"),
-    "lunch": ("黄焖鸡", "兰州拉面", "麻辣香锅", "轻食沙拉", "咖喱饭", "盖浇饭"),
-    "dinner": ("火锅", "烧烤", "寿司", "家常菜三素一荤", "披萨", "越南粉"),
-    "snack": ("奶茶", "鸡排", "水果拼盘", "关东煮", "冰淇淋"),
+    "breakfast": (
+        "Soy milk and fried dough sticks",
+        "Soup dumplings",
+        "Congee with pickles",
+        "Sandwich",
+        "Oatmeal with yogurt",
+    ),
+    "lunch": (
+        "Braised chicken rice",
+        "Lanzhou beef noodles",
+        "Spicy dry pot",
+        "Light salad bowl",
+        "Curry rice",
+        "Rice with toppings",
+    ),
+    "dinner": ("Hot pot", "Barbecue", "Sushi", "Home-style three-veg one-meat", "Pizza", "Pho"),
+    "snack": ("Milk tea", "Fried chicken cutlet", "Fruit platter", "Oden", "Ice cream"),
 }
 
-_SPICY = ("重庆小面", "水煮鱼", "新疆炒米粉", "湘菜小炒", "麻辣烫")
-_MILD = ("粤式烧腊", "日式定食", "苏式汤面", "泰式冬阴功（微辣）", "意大利面")
+_SPICY = (
+    "Chongqing noodles",
+    "Sichuan boiled fish",
+    "Xinjiang fried rice noodles",
+    "Hunan-style stir-fry",
+    "Malatang",
+)
+_MILD = (
+    "Cantonese roast meats",
+    "Japanese set meal",
+    "Suzhou-style noodle soup",
+    "Thai tom yum (mild)",
+    "Spaghetti",
+)
 
 
 def _payload(data: dict[str, Any], text: str) -> str:
@@ -41,12 +66,12 @@ async def what_to_eat(meal: str = "lunch", spicy: bool | None = None) -> str:
     rng = random.Random(int(digest[:16], 16))
     dish = rng.choice(pool)
     data = {"meal": key, "dish": dish, "spicy": spicy}
-    return _payload(data, f"{key} 推荐：{dish}")
+    return _payload(data, f"{key} recommendation: {dish}")
 
 
 def setup(ctx: PluginContext) -> None:
     ctx.tool(
         "what_to_eat",
         what_to_eat,
-        description="随机推荐吃什么。meal 为 breakfast/lunch/dinner/snack；spicy 可选偏辣/偏淡。",
+        description="Randomly recommend something to eat. meal is breakfast/lunch/dinner/snack; spicy optionally favors spicy or mild.",
     )

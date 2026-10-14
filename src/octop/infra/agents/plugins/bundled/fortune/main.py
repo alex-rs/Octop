@@ -15,21 +15,33 @@ _DICE_RE = re.compile(r"^\s*(\d+)\s*[dD]\s*(\d+)\s*$")
 _FACES = {4, 6, 8, 10, 12, 20, 100}
 
 _SUMMARIES = (
-    "今日适合把难事拆小，完成一件就算赢。",
-    "灵感在路上，先写下来再判断。",
-    "少开会，多做；少刷，多睡。",
-    "有人会帮你，但要先把问题说清楚。",
-    "节奏宜慢不宜乱，检查比加速更重要。",
+    "Today favors breaking hard things into small pieces; finishing one counts as a win.",
+    "Inspiration is on its way; write it down before judging it.",
+    "Fewer meetings, more doing; less scrolling, more sleep.",
+    "Someone will help you, but explain the problem clearly first.",
+    "Keep a slow, steady pace; checking matters more than speeding up.",
 )
 
-_DO = ("整理桌面", "给自己倒杯水", "把待办写成三条", "出门走十分钟", "回复积压消息")
-_DONT = ("同时开五个任务", "熬夜翻盘", "把情绪发给所有人", "空着肚子做决定", "比较别人的高光")
-_COLORS = ("朱红", "青绿", "月白", "墨蓝", "杏黄", "藤紫")
+_DO = (
+    "Tidy your desk",
+    "Pour yourself a glass of water",
+    "Turn your to-dos into three bullets",
+    "Step outside for ten minutes",
+    "Reply to the backlog of messages",
+)
+_DONT = (
+    "Juggling five tasks at once",
+    "Staying up late to turn things around",
+    "Venting your mood to everyone",
+    "Making decisions on an empty stomach",
+    "Comparing yourself to other people's highlights",
+)
+_COLORS = ("Vermilion", "Jade green", "Moon white", "Ink blue", "Apricot yellow", "Wisteria purple")
 _LOTS = (
-    ("上上签", "云开见月，所求可成。"),
-    ("上签", "行稳致远，耐心自有回音。"),
-    ("中签", "半晴半雨，进退皆须留余。"),
-    ("下签", "暂避风头，修己以待时。"),
+    ("Excellent lot", "The clouds part and the moon appears; what you seek can be done."),
+    ("Good lot", "Steady steps go far; patience will answer in time."),
+    ("Fair lot", "Half clear, half rain — leave room whether you advance or retreat."),
+    ("Poor lot", "Lie low for now; improve yourself and wait for the season."),
 )
 
 
@@ -52,19 +64,19 @@ async def roll_dice(notation: str = "1d6") -> str:
     if match is None:
         return _payload(
             {"kind": "dice", "error": "invalid notation"},
-            "骰子格式应为 NdM，例如 1d6、2d20。",
+            "Dice notation must be NdM, e.g. 1d6, 2d20.",
         )
     count = int(match.group(1))
     faces = int(match.group(2))
     if count < 1 or count > 20 or faces not in _FACES:
         return _payload(
             {"kind": "dice", "error": "out of range"},
-            "骰子数量 1–20，面数仅支持 4/6/8/10/12/20/100。",
+            "Dice count is 1–20; face counts support only 4/6/8/10/12/20/100.",
         )
     rolls = [random.randint(1, faces) for _ in range(count)]
     total = sum(rolls)
     data = {"kind": "dice", "notation": f"{count}d{faces}", "rolls": rolls, "total": total}
-    return _payload(data, f"{count}d{faces} → {rolls} 合计 {total}")
+    return _payload(data, f"{count}d{faces} → {rolls} total {total}")
 
 
 async def daily_fortune(name: str = "") -> str:
@@ -76,7 +88,7 @@ async def daily_fortune(name: str = "") -> str:
     color = rng.choice(_COLORS)
     do = rng.choice(_DO)
     dont = rng.choice(_DONT)
-    who = label or "你"
+    who = label or "you"
     data = {
         "kind": "fortune",
         "name": who,
@@ -87,7 +99,7 @@ async def daily_fortune(name: str = "") -> str:
         "dont": dont,
         "date": date.today().isoformat(),
     }
-    text = f"{who} 今日运势 {score} 分 · {summary} 宜：{do}；忌：{dont}。"
+    text = f"{who} daily fortune score {score} · {summary} Do: {do}; don't: {dont}."
     return _payload(data, text)
 
 
@@ -95,22 +107,22 @@ async def draw_lot() -> str:
     """Draw a random lot slip."""
     title, verse = random.choice(_LOTS)
     data = {"kind": "lot", "title": title, "verse": verse}
-    return _payload(data, f"{title}：{verse}")
+    return _payload(data, f"{title}: {verse}")
 
 
 def setup(ctx: PluginContext) -> None:
     ctx.tool(
         "roll_dice",
         roll_dice,
-        description="掷骰子。notation 为 NdM，例如 1d6、2d20。面数限 4/6/8/10/12/20/100。",
+        description="Roll dice. notation is NdM, e.g. 1d6, 2d20. Face counts are limited to 4/6/8/10/12/20/100.",
     )
     ctx.tool(
         "daily_fortune",
         daily_fortune,
-        description="生成今日运势卡片。可选 name，同一人同一天结果稳定。",
+        description="Generate today's fortune card. Optional name; the result is stable for the same person on the same day.",
     )
     ctx.tool(
         "draw_lot",
         draw_lot,
-        description="抽一支签，返回上上/上/中/下签与短签文。无需参数。",
+        description="Draw a lot slip and return a grade (excellent/good/fair/poor) with a short verse. No parameters.",
     )

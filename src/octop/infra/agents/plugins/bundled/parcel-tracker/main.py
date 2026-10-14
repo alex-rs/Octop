@@ -69,7 +69,7 @@ async def track_parcel(number: str, company: str = "") -> str:
     """Look up a tracking number. company is a kuaidi100 comCode when known."""
     nu = (number or "").strip()
     if not nu:
-        return _payload({"error": "number required"}, "请提供快递单号。")
+        return _payload({"error": "number required"}, "Please provide a tracking number.")
     url = f"https://www.kuaidi100.com/chaxun?nu={quote(nu)}"
     com = (company or "").strip()
     try:
@@ -84,14 +84,17 @@ async def track_parcel(number: str, company: str = "") -> str:
             "url": url,
             "error": str(exc),
         }
-        return _payload(data, f"查询失败，请打开 {url} 。原因：{exc}")
+        return _payload(data, f"Lookup failed; open {url}. Reason: {exc}")
 
     data = {"number": nu, "company": com, "traces": traces, "url": url}
     if not traces:
         data["error"] = "no traces"
-        return _payload(data, f"暂无轨迹，可打开 {url} 查询。单号 {nu} 公司 {com or '未知'}。")
+        return _payload(
+            data,
+            f"No tracking updates yet; open {url} to check. Number {nu}, carrier {com or 'unknown'}.",
+        )
     latest = traces[0].get("context") or ""
-    return _payload(data, f"{nu}（{com}）最新：{latest}")
+    return _payload(data, f"{nu} ({com}) latest: {latest}")
 
 
 def setup(ctx: PluginContext) -> None:
@@ -99,7 +102,7 @@ def setup(ctx: PluginContext) -> None:
         "track_parcel",
         track_parcel,
         description=(
-            "查询国内快递。number 为单号；company 可选（快递100 comCode，如 yuantong）。"
-            "查不到时返回快递100 网页链接。"
+            "Track domestic parcels. number is the tracking number; company is optional (a Kuaidi100 comCode such as yuantong). "
+            "When nothing is found it returns the Kuaidi100 web link."
         ),
     )

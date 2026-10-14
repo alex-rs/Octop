@@ -1,7 +1,7 @@
 id: hot-topics
 version: 0.2.2
-name: 热榜
-description: 查看微博、知乎与 Hacker News 热榜，在聊天中展示可点击列表
+name: Hot Topics
+description: Browse the Weibo, Zhihu, and Hacker News hot lists as clickable chat items
 icon: icon.svg
 group: news
 kind: tool

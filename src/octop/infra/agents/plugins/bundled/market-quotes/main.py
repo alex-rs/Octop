@@ -46,10 +46,12 @@ async def get_forex(base: str = "USD", quote: str = "CNY") -> str:
         rows = [{"symbol": f"{b}/{q}", "price": rate, "change": None, "pct": None}]
         return _payload(
             {"kind": "forex", "rows": rows, "as_of": payload.get("date")},
-            f"{b}/{q} = {rate}（{payload.get('date')}）",
+            f"{b}/{q} = {rate} ({payload.get('date')})",
         )
     except Exception as exc:
-        return _payload({"kind": "forex", "rows": [], "error": str(exc)}, f"汇率查询失败：{exc}")
+        return _payload(
+            {"kind": "forex", "rows": [], "error": str(exc)}, f"Forex lookup failed: {exc}"
+        )
 
 
 async def get_crypto(ids: str = "bitcoin,ethereum") -> str:
@@ -88,10 +90,10 @@ async def get_crypto(ids: str = "bitcoin,ethereum") -> str:
             )
             extra = f" {pct:+.2f}%" if isinstance(pct, int | float) else ""
             lines.append(f"{cid} ${usd}{extra}")
-        return _payload({"kind": "crypto", "rows": rows}, "加密货币：" + "；".join(lines))
+        return _payload({"kind": "crypto", "rows": rows}, "Crypto: " + "; ".join(lines))
     except Exception as exc:
         return _payload(
-            {"kind": "crypto", "rows": [], "error": str(exc)}, f"加密货币查询失败：{exc}"
+            {"kind": "crypto", "rows": [], "error": str(exc)}, f"Crypto lookup failed: {exc}"
         )
 
 
@@ -128,7 +130,7 @@ async def get_cn_stock(codes: str) -> str:
     if not raw:
         return _payload(
             {"kind": "cn_stock", "rows": [], "error": "codes required"},
-            "请提供 codes，例如 sh000001,sz399001,sh600519。",
+            "Please provide codes, e.g. sh000001,sz399001,sh600519.",
         )
     cleaned = ",".join(part.strip().lower() for part in raw.split(",") if part.strip())
     try:
@@ -140,24 +142,26 @@ async def get_cn_stock(codes: str) -> str:
         if not rows:
             raise RuntimeError("empty quote")
         lines = [f"{r.get('name', r['symbol'])} {r['price']} ({r['pct']:+.2f}%)" for r in rows]
-        return _payload({"kind": "cn_stock", "rows": rows}, "A股：" + "；".join(lines))
+        return _payload({"kind": "cn_stock", "rows": rows}, "A-shares: " + "; ".join(lines))
     except Exception as exc:
-        return _payload({"kind": "cn_stock", "rows": [], "error": str(exc)}, f"A股查询失败：{exc}")
+        return _payload(
+            {"kind": "cn_stock", "rows": [], "error": str(exc)}, f"A-share lookup failed: {exc}"
+        )
 
 
 def setup(ctx: PluginContext) -> None:
     ctx.tool(
         "get_forex",
         get_forex,
-        description="查询汇率。base/quote 为货币代码，默认 USD 兑 CNY。",
+        description="Look up exchange rates. base/quote are currency codes; defaults to USD against CNY.",
     )
     ctx.tool(
         "get_crypto",
         get_crypto,
-        description="查询加密货币兑美元/人民币。ids 为 CoinGecko id，逗号分隔，默认 bitcoin,ethereum。",
+        description="Look up cryptocurrency prices in USD/CNY. ids are CoinGecko ids, comma-separated, default bitcoin,ethereum.",
     )
     ctx.tool(
         "get_cn_stock",
         get_cn_stock,
-        description="查询 A 股/指数。codes 如 sh000001,sz399001,sh600519（新浪代码）。",
+        description="Look up A-share/stock index quotes. codes such as sh000001,sz399001,sh600519 (Sina codes).",
     )

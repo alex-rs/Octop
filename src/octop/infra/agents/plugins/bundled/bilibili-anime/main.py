@@ -68,7 +68,7 @@ def _search_bangumi(keyword: str, *, page: int = 1) -> list[dict[str, Any]]:
                 "styles": str(item.get("styles") or ""),
                 "areas": str(item.get("areas") or ""),
                 "index_show": str(item.get("index_show") or ""),
-                "season_type_name": str(item.get("season_type_name") or "番剧"),
+                "season_type_name": str(item.get("season_type_name") or "Anime"),
                 "desc": _strip_html(str(item.get("desc") or item.get("evaluate") or "")),
                 "url": str(
                     item.get("goto_url") or f"https://www.bilibili.com/bangumi/play/ss{season_id}"
@@ -116,7 +116,7 @@ def _fetch_episodes(season_id: int) -> list[dict[str, Any]]:
         seen.add(key)
         title = str(ep.get("title") or idx)
         long_title = str(ep.get("long_title") or "").strip()
-        label = f"第{title}话" if title.isdigit() else title
+        label = f"Episode {title}" if title.isdigit() else title
         if long_title:
             label = f"{label} {long_title}".strip()
         out.append(
@@ -147,7 +147,7 @@ async def bilibili_search_anime(keyword: str, max_seasons: int = 5) -> str:
             {
                 "octop_ui": {"renderer": "bilibili_player", "version": 1},
                 "data": {"keyword": "", "results": [], "error": "keyword is required"},
-                "text": "请提供要搜索的番剧名称。",
+                "text": "Please provide the anime title to search for.",
             },
             ensure_ascii=False,
         )
@@ -160,7 +160,7 @@ async def bilibili_search_anime(keyword: str, max_seasons: int = 5) -> str:
             {
                 "octop_ui": {"renderer": "bilibili_player", "version": 1},
                 "data": {"keyword": keyword, "results": [], "error": str(exc)},
-                "text": f"搜索失败：{exc}",
+                "text": f"Search failed: {exc}",
             },
             ensure_ascii=False,
         )
@@ -176,12 +176,12 @@ async def bilibili_search_anime(keyword: str, max_seasons: int = 5) -> str:
 
     selected = results[0]["season_id"] if results else None
     text = (
-        f"找到 {len(results)} 部与「{keyword}」相关的番剧。"
+        f'Found {len(results)} anime related to "{keyword}".'
         if results
-        else f"未找到与「{keyword}」相关的番剧。"
+        else f'No anime found related to "{keyword}".'
     )
     if results and results[0].get("episodes"):
-        text += f" 默认选中《{results[0]['title']}》，共 {len(results[0]['episodes'])} 集。"
+        text += f' "{results[0]["title"]}" is selected by default, {len(results[0]["episodes"])} episodes in total.'
 
     payload = {
         "octop_ui": {"renderer": "bilibili_player", "version": 1},
@@ -201,7 +201,7 @@ def setup(ctx: PluginContext) -> None:
         "bilibili_search_anime",
         bilibili_search_anime,
         description=(
-            "在哔哩哔哩搜索番剧/动漫，并在聊天中渲染可播放的分集播放器。"
-            "参数 keyword 为番剧名（如「葬送的芙莉莲」「进击的巨人」）。"
+            "Search Bilibili for anime and render a playable episode player in chat. "
+            'The keyword parameter is the anime title (e.g. "Frieren: Beyond Journey\'s End", "Attack on Titan").'
         ),
     )

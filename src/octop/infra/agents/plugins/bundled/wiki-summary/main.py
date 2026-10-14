@@ -57,7 +57,7 @@ async def wiki_summary(query: str, lang: str = "zh") -> str:
     """Fetch Wikipedia summary; opensearch if direct title misses."""
     q = (query or "").strip()
     if not q:
-        return _payload({"error": "empty"}, "请提供词条名或关键词。")
+        return _payload({"error": "empty"}, "Please provide an article title or keyword.")
     language = (lang or "zh").strip().lower() or "zh"
     headers = {"User-Agent": _UA}
     try:
@@ -68,10 +68,10 @@ async def wiki_summary(query: str, lang: str = "zh") -> str:
                 if alt:
                     row = _summary(client, language, alt)
     except Exception as exc:
-        return _payload({"error": str(exc), "query": q}, f"维基查询失败：{exc}")
+        return _payload({"error": str(exc), "query": q}, f"Wikipedia lookup failed: {exc}")
     if not row.get("extract"):
         return _payload({"query": q, "silent": True}, "")
-    text = f"{row['title']}：{row['extract'][:120]}…"
+    text = f"{row['title']}: {row['extract'][:120]}…"
     return _payload({**row, "query": q, "lang": language}, text)
 
 
@@ -79,5 +79,5 @@ def setup(ctx: PluginContext) -> None:
     ctx.tool(
         "wiki_summary",
         wiki_summary,
-        description="维基百科摘要。query 为词条；lang 默认 zh。",
+        description="Wikipedia summary. query is the article; lang defaults to zh.",
     )

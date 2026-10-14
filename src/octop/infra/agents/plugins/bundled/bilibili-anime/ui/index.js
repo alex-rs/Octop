@@ -101,7 +101,7 @@ function BilibiliPlayer(props) {
             children: season.title || "",
           })
         : _jsx("div", {
-            children: props.textFallback || "未找到番剧",
+            children: props.textFallback || "No anime found",
           }),
       ep
         ? _jsx("iframe", {
@@ -134,7 +134,7 @@ function BilibiliPlayer(props) {
                     type: "button",
                     disabled: current <= 1,
                     onClick: () => patch({ current_episode: current - 1 }),
-                    children: "上一集",
+                    children: "Previous episode",
                   }),
                   _jsx("span", {
                     style: { fontSize: 12, opacity: 0.8 },
@@ -144,7 +144,7 @@ function BilibiliPlayer(props) {
                     type: "button",
                     disabled: current >= episodes.length,
                     onClick: () => patch({ current_episode: current + 1 }),
-                    children: "下一集",
+                    children: "Next episode",
                   }),
                 ],
               }),

@@ -21,14 +21,14 @@ def _aqi_label(aqi: float | None) -> str:
         return "—"
     v = float(aqi)
     if v <= 50:
-        return "优"
+        return "Good"
     if v <= 100:
-        return "良"
+        return "Moderate"
     if v <= 150:
-        return "轻度"
+        return "Light Pollution"
     if v <= 200:
-        return "中度"
-    return "重度"
+        return "Moderate Pollution"
+    return "Heavy Pollution"
 
 
 def _resolve_coords(
@@ -47,7 +47,7 @@ def _resolve_coords(
     resp.raise_for_status()
     results = resp.json().get("results") or []
     if not results:
-        raise ValueError(f"未找到城市：{name}")
+        raise ValueError(f"City not found: {name}")
     row = results[0]
     label = str(row.get("name") or name)
     country = str(row.get("country") or "")
@@ -76,7 +76,7 @@ async def get_air_quality(
             resp.raise_for_status()
             current = resp.json().get("current") or {}
     except Exception as exc:
-        return _payload({"error": str(exc)}, f"空气质量查询失败：{exc}")
+        return _payload({"error": str(exc)}, f"Air quality lookup failed: {exc}")
     pm25 = current.get("pm2_5")
     pm10 = current.get("pm10")
     us_aqi = current.get("us_aqi")
@@ -93,7 +93,7 @@ async def get_air_quality(
         "european_aqi": eu_aqi,
         "aqi_label": label,
     }
-    text = f"{place} 空气质量 {label} · PM2.5 {pm25} · AQI {aqi}"
+    text = f"{place} air quality {label} · PM2.5 {pm25} · AQI {aqi}"
     return _payload(data, text)
 
 
@@ -101,5 +101,5 @@ def setup(ctx: PluginContext) -> None:
     ctx.tool(
         "get_air_quality",
         get_air_quality,
-        description="查询空气质量。city 默认 Beijing；也可传 lat/lon 坐标。",
+        description="Check air quality. city defaults to Beijing; lat/lon coordinates also accepted.",
     )

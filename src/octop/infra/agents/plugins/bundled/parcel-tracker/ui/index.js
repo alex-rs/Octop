@@ -25,9 +25,9 @@ function ParcelCard(props) {
           color: "#fff",
         },
         children: [
-          _jsx("div", { style: { fontSize: 13, opacity: 0.85 }, children: "📦 快递追踪" }),
+          _jsx("div", { style: { fontSize: 13, opacity: 0.85 }, children: "📦 Parcel tracking" }),
           _jsx("div", { style: { fontWeight: 800, fontSize: 18, marginTop: 4 }, children: d.number || "—" }),
-          d.company ? _jsx("div", { style: { fontSize: 12, opacity: 0.85 }, children: `承运商 ${d.company}` }) : null,
+          d.company ? _jsx("div", { style: { fontSize: 12, opacity: 0.85 }, children: `Carrier ${d.company}` }) : null,
         ],
       }),
       _jsx("div", {
@@ -70,7 +70,7 @@ function ParcelCard(props) {
                 ),
               ),
             })
-          : _jsx("div", { style: { fontSize: 13, opacity: 0.7 }, children: "暂无轨迹，可到快递100查看" }),
+          : _jsx("div", { style: { fontSize: 13, opacity: 0.7 }, children: "No tracking events yet — check Kuaidi100" }),
       }),
       d.url
         ? _jsx("a", {
@@ -85,7 +85,7 @@ function ParcelCard(props) {
               color: "#2563eb",
               textDecoration: "none",
             },
-            children: "在快递100打开 →",
+            children: "Open in Kuaidi100 →",
           })
         : null,
     ],

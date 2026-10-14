@@ -537,10 +537,13 @@ def test_clinical_fast_path_and_route_catalogs_are_registered() -> None:
     international_routes = (
         _ROOT / "references" / "international-guideline-source-routes.yaml"
     ).read_text(encoding="utf-8")
-    assert "呼吸病学分会" in professional_routes
-    assert "中国药学会" in professional_routes
+    assert "Respiratory Medicine Branch" in professional_routes
+    assert "Chinese Pharmaceutical Association" in professional_routes
     assert "official_discovery_pending_fulltext_acceptance" in professional_routes
-    assert "request_budget: 正常只访问 1 个国际网站；必要时最多 2 个" in international_routes
+    assert (
+        "request_budget: Normally visit only 1 international site; at most 2 when necessary"
+        in international_routes
+    )
     assert "id: gina" in international_routes
 
 

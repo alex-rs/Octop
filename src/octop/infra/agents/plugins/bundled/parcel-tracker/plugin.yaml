@@ -1,7 +1,7 @@
 id: parcel-tracker
 version: 0.2.2
-name: 快递查询
-description: 查询国内快递轨迹，失败时提供快递 100 链接
+name: Parcel Tracker
+description: Track domestic parcel progress, with a Kuaidi100 web link as fallback
 icon: icon.svg
 group: lifestyle
 kind: tool

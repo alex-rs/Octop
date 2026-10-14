@@ -45,7 +45,7 @@ function FortuneCard(props) {
             ),
           ),
         }),
-        _jsx("div", { style: { marginTop: 12, fontWeight: 800, fontSize: 16 }, children: `合计 ${d.total ?? ""}` }),
+        _jsx("div", { style: { marginTop: 12, fontWeight: 800, fontSize: 16 }, children: `Total ${d.total ?? ""}` }),
       ],
     });
   }
@@ -84,14 +84,14 @@ function FortuneCard(props) {
     },
     "data-octop-plugin-ui": "fortune",
     children: [
-      _jsx("div", { style: { fontSize: 13, opacity: 0.75 }, children: `✨ ${d.name || "你"} · ${d.date || ""}` }),
-      _jsxs("div", { style: { fontSize: 52, fontWeight: 800, margin: "6px 0 2px" }, children: [score, _jsx("span", { style: { fontSize: 16 }, children: "分" })] }),
+      _jsx("div", { style: { fontSize: 13, opacity: 0.75 }, children: `✨ ${d.name || "You"} · ${d.date || ""}` }),
+      _jsxs("div", { style: { fontSize: 52, fontWeight: 800, margin: "6px 0 2px" }, children: [score, _jsx("span", { style: { fontSize: 16 }, children: "pts" })] }),
       _jsx("div", { style: { height: 8, borderRadius: 99, background: "rgba(255,255,255,.35)", overflow: "hidden", margin: "0 24px 12px" }, children: _jsx("div", { style: { width: `${score}%`, height: "100%", background: "#6366f1" } }) }),
       _jsx("div", { style: { fontWeight: 600, lineHeight: 1.5 }, children: d.summary || "" }),
       _jsxs("div", { style: { display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap", marginTop: 12, fontSize: 12 }, children: [
         _jsx("span", { style: { padding: "6px 10px", borderRadius: 999, background: "rgba(255,255,255,.4)", fontWeight: 700 }, children: `🎨 ${d.lucky_color || "—"}` }),
-        _jsx("span", { style: { padding: "6px 10px", borderRadius: 999, background: "rgba(255,255,255,.4)", fontWeight: 700 }, children: `宜 ${d.do || ""}` }),
-        _jsx("span", { style: { padding: "6px 10px", borderRadius: 999, background: "rgba(255,255,255,.4)", fontWeight: 700 }, children: `忌 ${d.dont || ""}` }),
+        _jsx("span", { style: { padding: "6px 10px", borderRadius: 999, background: "rgba(255,255,255,.4)", fontWeight: 700 }, children: `Do: ${d.do || ""}` }),
+        _jsx("span", { style: { padding: "6px 10px", borderRadius: 999, background: "rgba(255,255,255,.4)", fontWeight: 700 }, children: `Don't: ${d.dont || ""}` }),
       ] }),
     ],
   });

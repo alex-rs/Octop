@@ -1,7 +1,7 @@
 id: weather
 version: 0.2.2
-name: 天气
-description: 查询全球城市天气与未来预报，在聊天中展示天气卡片
+name: Weather
+description: Look up current weather and forecasts for any city as a chat card
 icon: icon.svg
 group: lifestyle
 kind: tool

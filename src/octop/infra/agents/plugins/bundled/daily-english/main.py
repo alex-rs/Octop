@@ -84,7 +84,9 @@ async def daily_english(word: str = "") -> str:
     if custom:
         entry = _find_word(custom)
         if entry is None:
-            return _payload({"error": "not found", "word": custom}, f"词库中未找到「{custom}」。")
+            return _payload(
+                {"error": "not found", "word": custom}, f'"{custom}" is not in the word list.'
+            )
         w, phonetic, zh, example = entry
         data = {
             "word": w,
@@ -93,7 +95,7 @@ async def daily_english(word: str = "") -> str:
             "example": example,
             "daily": False,
         }
-        return _payload(data, f"{w} {phonetic} — {zh}\n例句：{example}")
+        return _payload(data, f"{w} {phonetic} — {zh}\nExample: {example}")
     idx = _pick_index(date.today().isoformat())
     w, phonetic, zh, example = _VOCAB[idx]
     data = {
@@ -104,12 +106,12 @@ async def daily_english(word: str = "") -> str:
         "daily": True,
         "date": date.today().isoformat(),
     }
-    return _payload(data, f"今日单词 {w} {phonetic} — {zh}")
+    return _payload(data, f"Word of the day {w} {phonetic} — {zh}")
 
 
 def setup(ctx: PluginContext) -> None:
     ctx.tool(
         "daily_english",
         daily_english,
-        description="每日英语一词；word 为空则按日期稳定选词，可传单词查内置词库。",
+        description="One English word a day; an empty word picks a stable word by date, or pass a word to look it up in the built-in list.",
     )

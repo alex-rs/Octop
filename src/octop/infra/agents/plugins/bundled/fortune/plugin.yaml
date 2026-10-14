@@ -1,7 +1,7 @@
 id: fortune
 version: 0.2.2
-name: 抽签运势
-description: 掷骰子、今日运势与抽签，在聊天中展示结果卡片
+name: Fortune & Lots
+description: Dice rolls, daily fortune, and lot slips shown as result cards in chat
 icon: icon.svg
 group: fun
 kind: tool

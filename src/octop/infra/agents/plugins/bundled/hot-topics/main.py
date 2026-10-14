@@ -128,7 +128,7 @@ async def get_hot_topics(source: str = "weibo", limit: int = 20) -> str:
     if src not in fetchers:
         return _payload(
             {"source": src, "items": [], "error": "unknown source"},
-            "source 仅支持 weibo、zhihu、hn。",
+            "source only supports weibo, zhihu, hn.",
         )
     try:
         items = fetchers[src](n)
@@ -140,7 +140,7 @@ async def get_hot_topics(source: str = "weibo", limit: int = 20) -> str:
     if not items:
         return _payload({"source": src, "items": [], "silent": True}, "")
     lines = [f"{row['rank']}. {row['title']}" for row in items[:10]]
-    text = f"{src} 热榜 {len(items)} 条\n" + "\n".join(lines)
+    text = f"{src} hot list {len(items)} items\n" + "\n".join(lines)
     return _payload({"source": src, "items": items}, text)
 
 
@@ -149,7 +149,7 @@ def setup(ctx: PluginContext) -> None:
         "get_hot_topics",
         get_hot_topics,
         description=(
-            "获取热榜。source 为 weibo（微博）、zhihu（知乎）或 hn（Hacker News），"
-            "limit 为条数（默认 20，最大 30）。"
+            "Fetch a hot list. source is weibo (Weibo), zhihu (Zhihu), or hn (Hacker News); "
+            "limit is the item count (default 20, max 30)."
         ),
     )

@@ -2,8 +2,8 @@ const React = window.__OCTOP_REACT__;
 const { jsx: _jsx, jsxs: _jsxs } = window.__OCTOP_JSX__;
 
 const THEMES = {
-  weibo: { emoji: "🔥", title: "微博热搜", accent: "#f97316", bg: "linear-gradient(135deg,#fff7ed,#ffedd5)" },
-  zhihu: { emoji: "💡", title: "知乎热榜", accent: "#0066ff", bg: "linear-gradient(135deg,#eff6ff,#dbeafe)" },
+  weibo: { emoji: "🔥", title: "Weibo Hot Search", accent: "#f97316", bg: "linear-gradient(135deg,#fff7ed,#ffedd5)" },
+  zhihu: { emoji: "💡", title: "Zhihu Hot List", accent: "#0066ff", bg: "linear-gradient(135deg,#eff6ff,#dbeafe)" },
   hn: { emoji: "🟧", title: "Hacker News", accent: "#f97316", bg: "linear-gradient(135deg,#fff7ed,#fed7aa)" },
 };
 
