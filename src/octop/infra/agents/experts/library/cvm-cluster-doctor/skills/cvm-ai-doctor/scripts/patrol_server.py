@@ -2,14 +2,14 @@
 """
 CVM Doctor Patrol Server
 ========================
-轻量 HTTP 服务：
-  - 静态文件服务（docs/, scripts/ 等）
-  - /api/patrol-data  → 直接返回 JSONL 文件内容（JSON array）
-  - /api/patrol-summary → 返回统计摘要
+Lightweight HTTP service:
+  - Static file serving (docs/, scripts/, etc.)
+  - /api/patrol-data  → returns the JSONL file contents directly (JSON array)
+  - /api/patrol-summary → returns an aggregated summary
 
-用法：
-  python3 scripts/patrol_server.py              # 默认 8765 端口
-  python3 scripts/patrol_server.py --port 9090  # 自定义端口
+Usage:
+  python3 scripts/patrol_server.py              # default port 8765
+  python3 scripts/patrol_server.py --port 9090  # custom port
 """
 
 import argparse
@@ -23,7 +23,7 @@ PATROL_FILE = Path.home() / ".lightclaw" / "stats" / "cvm-doctor.jsonl"
 
 
 class PatrolHandler(SimpleHTTPRequestHandler):
-    """扩展静态文件服务，增加 API 接口"""
+    """Extend static file serving with API endpoints"""
 
     def do_GET(self):
         if self.path == "/api/patrol-data":
@@ -49,12 +49,12 @@ class PatrolHandler(SimpleHTTPRequestHandler):
         return records
 
     def _serve_patrol_data(self):
-        """返回全部巡检记录（JSON array）"""
+        """Return all patrol records (JSON array)"""
         records = self._read_jsonl()
         self._json_response(records)
 
     def _serve_patrol_summary(self):
-        """返回统计摘要"""
+        """Return the aggregated summary"""
         records = self._read_jsonl()
         total = len(records)
         if total == 0:
@@ -102,17 +102,17 @@ class PatrolHandler(SimpleHTTPRequestHandler):
         self.wfile.write(body)
 
     def log_message(self, format, *args):
-        # API 请求静默，只打印非 API 的
+        # Silence API requests; only print non-API ones
         if "/api/" not in (args[0] if args else ""):
             super().log_message(format, *args)
 
 
 def main():
     parser = argparse.ArgumentParser(description="CVM Doctor Patrol Server")
-    parser.add_argument("--port", type=int, default=8765, help="监听端口 (默认 8765)")
+    parser.add_argument("--port", type=int, default=8765, help="Listening port (default 8765)")
     args = parser.parse_args()
 
-    # 切换到项目根目录
+    # Switch to the project root directory
     project_root = Path(__file__).resolve().parent.parent
     os.chdir(project_root)
 
@@ -122,16 +122,16 @@ def main():
     print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
     print(f"  Dashboard:  \033[32mhttp://localhost:{args.port}/docs/patrol-dashboard.html\033[0m")
     print(f"  API:        http://localhost:{args.port}/api/patrol-data")
-    print(f"  数据文件:   {PATROL_FILE}")
-    print(f"  项目目录:   {project_root}")
+    print(f"  Data file:  {PATROL_FILE}")
+    print(f"  Directory:  {project_root}")
     print("")
-    print("  \033[1mCtrl+C 停止\033[0m")
+    print("  \033[1mCtrl+C to stop\033[0m")
     print()
 
     try:
         server.serve_forever()
     except KeyboardInterrupt:
-        print("\n已停止")
+        print("\nStopped")
         server.server_close()
 
 

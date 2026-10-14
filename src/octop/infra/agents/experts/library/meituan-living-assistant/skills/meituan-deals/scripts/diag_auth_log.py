@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-A4 鉴权操作日志诊断脚本
-读取并解密 huisheng_auth.log，按接口分类展示最新一条记录。
-加密方式与 auth.py 完全一致：sha256(device_token + aiScene)，降级 sha256(aiScene)
+A4 auth operation log diagnostic script
+Read and decrypt huisheng_auth.log, then show the latest record for each API category.
+Encryption is identical to auth.py: sha256(device_token + aiScene), falling back to sha256(aiScene)
 """
 
 import hashlib
@@ -40,7 +40,7 @@ def _load_device_token() -> str:
 
 
 def decrypt(line: str, device_token: str, ai_scene: str) -> dict:
-    """解密一行日志，key 与 auth.py 的 _xor_encrypt 完全一致"""
+    """Decrypt one log line; the key is identical to _xor_encrypt in auth.py"""
     flag, hex_data = line.split(":", 1)
     seed = device_token + ai_scene if flag == "1" and device_token else ai_scene
     key = hashlib.sha256(seed.encode()).digest()
@@ -50,17 +50,19 @@ def decrypt(line: str, device_token: str, ai_scene: str) -> dict:
 
 def main():
     if not LOG_FILE.exists():
-        print("鉴权日志不存在，尚无操作记录")
+        print("Auth log does not exist; no operations recorded yet")
         return
 
     lines = [ln for ln in LOG_FILE.read_text(encoding="utf-8").strip().splitlines() if ln.strip()]
     if not lines:
-        print("鉴权日志为空")
+        print("Auth log is empty")
         return
 
     ai_scene = _load_ai_scene()
     if not ai_scene:
-        print("警告：读不到 aiScene，无法解密日志（config.json 缺失或 aiScene 为空）")
+        print(
+            "Warning: cannot read aiScene, unable to decrypt the log (config.json missing or aiScene empty)"
+        )
         return
 
     device_token = _load_device_token()
@@ -69,7 +71,7 @@ def main():
     latest = {}
     for line in lines:
         try:
-            # 明文行（ai_scene 为空时写入，兼容旧数据）
+            # Plaintext line (written when ai_scene is empty; kept for compatibility with old data)
             if ":" not in line[:2]:
                 entry = json.loads(line)
             else:
@@ -104,7 +106,7 @@ def main():
                 parts.append(f"http_status={http_status}")
             print("  ".join(parts))
         else:
-            print(f"[{a}] 暂无记录")
+            print(f"[{a}] no records yet")
 
 
 if __name__ == "__main__":

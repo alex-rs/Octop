@@ -1,16 +1,16 @@
 #!/bin/bash
-# Wenyan Server 一键部署脚本
-# 在你的云服务器上运行此脚本即可完成 wenyan server 部署
+# Wenyan Server one-click deployment script
+# Run this script on your cloud server to deploy the wenyan server
 #
 # Usage:
 #   curl -fsSL <script_url> | bash
-#   # 或
+#   # or
 #   bash setup_server.sh
 
 set -e
 
 echo "╔══════════════════════════════════════════════════════╗"
-echo "║   Wenyan Server 一键部署                              ║"
+echo "║   Wenyan Server One-Click Deploy                     ║"
 echo "╚══════════════════════════════════════════════════════╝"
 echo ""
 
@@ -24,12 +24,12 @@ PORT=${WENYAN_PORT:-7788}
 LOG_FILE="/var/log/wenyan-server.log"
 
 # Step 1: Check Node.js
-echo -e "${YELLOW}[1/4] 检查 Node.js...${NC}"
+echo -e "${YELLOW}[1/4] Checking Node.js...${NC}"
 if command -v node &>/dev/null; then
     NODE_VER=$(node --version)
-    echo -e "  ${GREEN}✅ Node.js $NODE_VER 已安装${NC}"
+    echo -e "  ${GREEN}✅ Node.js $NODE_VER is installed${NC}"
 else
-    echo "  ⏳ 安装 Node.js..."
+    echo "  ⏳ Installing Node.js..."
     if command -v apt-get &>/dev/null; then
         curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
         apt-get install -y nodejs
@@ -37,45 +37,45 @@ else
         curl -fsSL https://rpm.nodesource.com/setup_20.x | bash -
         yum install -y nodejs
     else
-        echo -e "  ${RED}❌ 无法自动安装 Node.js，请手动安装${NC}"
+        echo -e "  ${RED}❌ Cannot install Node.js automatically, please install it manually${NC}"
         exit 1
     fi
-    echo -e "  ${GREEN}✅ Node.js $(node --version) 安装完成${NC}"
+    echo -e "  ${GREEN}✅ Node.js $(node --version) installed successfully${NC}"
 fi
 
 # Step 2: Install wenyan-cli
-echo -e "${YELLOW}[2/4] 安装 wenyan-cli...${NC}"
+echo -e "${YELLOW}[2/4] Installing wenyan-cli...${NC}"
 if command -v wenyan &>/dev/null; then
     WENYAN_VER=$(wenyan --version 2>/dev/null || echo "unknown")
-    echo -e "  ${GREEN}✅ wenyan-cli $WENYAN_VER 已安装${NC}"
+    echo -e "  ${GREEN}✅ wenyan-cli $WENYAN_VER is installed${NC}"
 else
     npm install -g @wenyan-md/cli
-    echo -e "  ${GREEN}✅ wenyan-cli 安装完成${NC}"
+    echo -e "  ${GREEN}✅ wenyan-cli installed successfully${NC}"
 fi
 
 # Step 3: Check env vars
-echo -e "${YELLOW}[3/4] 检查环境变量...${NC}"
+echo -e "${YELLOW}[3/4] Checking environment variables...${NC}"
 if [ -z "$WECHAT_APP_ID" ]; then
-    echo -e "  ${RED}❌ WECHAT_APP_ID 未设置${NC}"
-    echo "     请设置: export WECHAT_APP_ID='your_app_id'"
+    echo -e "  ${RED}❌ WECHAT_APP_ID is not set${NC}"
+    echo "     Please set: export WECHAT_APP_ID='your_app_id'"
     MISSING_ENV=true
 fi
 if [ -z "$WECHAT_APP_SECRET" ]; then
-    echo -e "  ${RED}❌ WECHAT_APP_SECRET 未设置${NC}"
-    echo "     请设置: export WECHAT_APP_SECRET='your_app_secret'"
+    echo -e "  ${RED}❌ WECHAT_APP_SECRET is not set${NC}"
+    echo "     Please set: export WECHAT_APP_SECRET='your_app_secret'"
     MISSING_ENV=true
 fi
 if [ "$MISSING_ENV" = true ]; then
     echo ""
-    echo "  设置好环境变量后重新运行此脚本。"
-    echo "  建议写入 /etc/environment 或 ~/.bashrc 中持久化。"
+    echo "  Re-run this script after setting the environment variables."
+    echo "  Persisting them in /etc/environment or ~/.bashrc is recommended."
     exit 1
 fi
 echo -e "  ${GREEN}✅ WECHAT_APP_ID: ${WECHAT_APP_ID:0:4}...${NC}"
 echo -e "  ${GREEN}✅ WECHAT_APP_SECRET: ***set***${NC}"
 
 # Step 4: Start server
-echo -e "${YELLOW}[4/4] 启动 wenyan server (port $PORT)...${NC}"
+echo -e "${YELLOW}[4/4] Starting wenyan server (port $PORT)...${NC}"
 
 # Kill existing
 pkill -f "wenyan serve" 2>/dev/null || true
@@ -89,24 +89,24 @@ sleep 2
 # Verify
 if pgrep -f "wenyan serve" > /dev/null; then
     PUBLIC_IP=$(curl -s ifconfig.me 2>/dev/null || echo "unknown")
-    echo -e "  ${GREEN}✅ Server 启动成功${NC}"
+    echo -e "  ${GREEN}✅ Server started successfully${NC}"
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
     echo "  📡 Server URL: http://${PUBLIC_IP}:${PORT}"
-    echo "  📋 日志文件:   ${LOG_FILE}"
+    echo "  📋 Log file:   ${LOG_FILE}"
     echo ""
-    echo "  接下来请完成以下操作:"
+    echo "  Next, complete the following steps:"
     echo ""
-    echo "  1. 将此 IP 加入微信 API 白名单: ${PUBLIC_IP}"
+    echo "  1. Add this IP to the WeChat API whitelist: ${PUBLIC_IP}"
     echo "     https://developers.weixin.qq.com/console/product/mp"
     echo ""
-    echo "  2. 在本地设置环境变量:"
+    echo "  2. Set the environment variable locally:"
     echo "     export WENYAN_SERVER=\"http://${PUBLIC_IP}:${PORT}\""
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 else
-    echo -e "  ${RED}❌ Server 启动失败，请检查日志: ${LOG_FILE}${NC}"
+    echo -e "  ${RED}❌ Failed to start the server, check the log: ${LOG_FILE}${NC}"
     tail -20 "$LOG_FILE" 2>/dev/null
     exit 1
 fi

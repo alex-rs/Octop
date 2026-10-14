@@ -1,20 +1,20 @@
 #!/usr/bin/env bash
-# sync_skill.sh — 将 cvm-ai-doctor 核心文件同步到目标目录
-# 排除: docs/, _* 前缀目录, 隐藏文件/目录(.git, .venv, .workbuddy 等), generated-images/
-# 用法:
-#   ./scripts/sync_skill.sh                        # 同步到默认目标
-#   ./scripts/sync_skill.sh /path/to/target        # 同步到指定目标
-#   ./scripts/sync_skill.sh --dry-run               # 预览，不实际复制
+# sync_skill.sh — sync the cvm-ai-doctor core files to a target directory
+# Excluded: docs/, _*-prefixed directories, hidden files/directories (.git, .venv, .workbuddy, etc.), generated-images/
+# Usage:
+#   ./scripts/sync_skill.sh                        # Sync to the default target
+#   ./scripts/sync_skill.sh /path/to/target        # Sync to the given target
+#   ./scripts/sync_skill.sh --dry-run               # Preview without actually copying
 #   ./scripts/sync_skill.sh --dry-run /path/to/target
 
 set -euo pipefail
 
-# ── 配置 ──────────────────────────────────────────────
+# ── Configuration ──────────────────────────────────────────────
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SRC_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 DEFAULT_TARGET="$HOME/vstation/finnie/src/lightclaw/agent/skills/cvm-ai-doctor"
 
-# ── 参数解析 ──────────────────────────────────────────
+# ── Argument parsing ──────────────────────────────────────────
 DRY_RUN=false
 TARGET=""
 
@@ -27,7 +27,7 @@ done
 
 TARGET="${TARGET:-$DEFAULT_TARGET}"
 
-# ── 颜色 ─────────────────────────────────────────────
+# ── Colors ─────────────────────────────────────────────
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
@@ -39,13 +39,13 @@ ok()    { printf "${GREEN}[OK]${NC}    %s\n" "$*"; }
 warn()  { printf "${YELLOW}[WARN]${NC}  %s\n" "$*"; }
 err()   { printf "${RED}[ERR]${NC}   %s\n" "$*" >&2; }
 
-# ── 检查源目录 ────────────────────────────────────────
+# ── Check the source directory ────────────────────────────────────────
 if [ ! -d "$SRC_DIR/.git" ]; then
-    err "源目录不是 git 仓库: $SRC_DIR"
+    err "Source directory is not a git repository: $SRC_DIR"
     exit 1
 fi
 
-# ── 收集 git 版本信息 ────────────────────────────────
+# ── Collect git version information ────────────────────────────────
 cd "$SRC_DIR"
 GIT_COMMIT=$(git rev-parse HEAD)
 GIT_SHORT=$(git rev-parse --short HEAD)
@@ -57,27 +57,27 @@ GIT_DIRTY=$(git diff --quiet && git diff --cached --quiet && echo "clean" || ech
 GIT_COMMIT_COUNT=$(git rev-list --count HEAD)
 SYNC_TIME=$(date '+%Y-%m-%d %H:%M:%S %z')
 
-# ── 打印同步摘要 ──────────────────────────────────────
+# ── Print the sync summary ──────────────────────────────────────
 echo ""
-info "cvm-ai-doctor skill 同步工具"
-echo "  源目录:  $SRC_DIR"
-echo "  目标:    $TARGET"
-echo "  分支:    $GIT_BRANCH"
-echo "  提交:    $GIT_SHORT ($GIT_SUBJECT)"
-echo "  状态:    $GIT_DIRTY"
+info "cvm-ai-doctor skill sync tool"
+echo "  Source:  $SRC_DIR"
+echo "  Target:  $TARGET"
+echo "  Branch:  $GIT_BRANCH"
+echo "  Commit:  $GIT_SHORT ($GIT_SUBJECT)"
+echo "  Status:  $GIT_DIRTY"
 if $DRY_RUN; then
-    warn "DRY-RUN 模式 — 仅预览，不执行复制"
+    warn "DRY-RUN mode — preview only, nothing is copied"
 fi
 echo ""
 
-# ── rsync 排除规则 ────────────────────────────────────
-# docs/          — 开发文档，不属于 skill 发布物
-# _*/            — 归档/备份目录
-# .*/            — 隐藏文件/目录 (.git, .venv, .workbuddy, .DS_Store)
-# generated-images/ — AI 生成的图片，不属于 skill
-# version.ini    — 目标侧生成，不从源复制
-# AUDIT-*.txt    — 开发审计文件，不属于 skill 发布物
-# AUDIT-*.md     — 开发审计报告，不属于 skill 发布物
+# ── rsync exclusion rules ────────────────────────────────────
+# docs/          — development docs, not part of the skill release
+# _*/            — archive/backup directories
+# .*/            — hidden files/directories (.git, .venv, .workbuddy, .DS_Store)
+# generated-images/ — AI-generated images, not part of the skill
+# version.ini    — generated on the target side, not copied from the source
+# AUDIT-*.txt    — development audit files, not part of the skill release
+# AUDIT-*.md     — development audit reports, not part of the skill release
 RSYNC_EXCLUDES=(
     --exclude='docs/'
     --exclude='_*/'
@@ -88,23 +88,23 @@ RSYNC_EXCLUDES=(
     --exclude='AUDIT-*.md'
 )
 
-# ── 执行同步 ──────────────────────────────────────────
+# ── Run the sync ──────────────────────────────────────────
 if $DRY_RUN; then
-    info "将同步以下文件:"
+    info "The following files will be synced:"
     rsync -avn --delete "${RSYNC_EXCLUDES[@]}" "$SRC_DIR/" "$TARGET/" 2>/dev/null \
         | grep -v '^\.' | grep -v '^$' | grep -v 'sent\|total\|sending' | head -50
     echo ""
-    info "以上为预览，实际执行请去掉 --dry-run"
+    info "The above is a preview; drop --dry-run to actually run it"
     exit 0
 fi
 
-# 创建目标目录
+# Create the target directory
 mkdir -p "$TARGET"
 
-# rsync 同步: 镜像模式(--delete 清理目标中多余文件)
+# rsync sync: mirror mode (--delete removes extra files on the target)
 rsync -av --delete "${RSYNC_EXCLUDES[@]}" "$SRC_DIR/" "$TARGET/"
 
-# ── 生成 version.ini ─────────────────────────────────
+# ── Generate version.ini ─────────────────────────────────
 cat > "$TARGET/version.ini" << EOF
 [version]
 commit       = $GIT_COMMIT
@@ -120,17 +120,17 @@ tree_status  = $GIT_DIRTY
 synced_at    = $SYNC_TIME
 EOF
 
-# ── 完成 ──────────────────────────────────────────────
+# ── Done ──────────────────────────────────────────────
 echo ""
-ok "同步完成!"
+ok "Sync complete!"
 echo ""
-info "version.ini 内容:"
+info "version.ini contents:"
 cat "$TARGET/version.ini"
 echo ""
 
-# 如果工作区有未提交改动，给个提醒
+# Remind the user if the worktree has uncommitted changes
 if [ "$GIT_DIRTY" = "dirty" ]; then
     echo ""
-    warn "工作区有未提交的改动，同步的是磁盘上的实际文件（包含未提交修改）"
-    warn "version.ini 中 tree_status=dirty 标记了这一点"
+    warn "The worktree has uncommitted changes; the synced files are the actual files on disk (including uncommitted modifications)"
+    warn "tree_status=dirty in version.ini records this"
 fi

@@ -92,7 +92,7 @@ float_gt  "$IOWAIT"  "20"   && B1_conds+=("iowait=${IOWAIT}%>20%")      || { B1_
 if $B1_ok; then
   BRANCH=1
   ROOT_CAUSE="memory_cascade_to_disk_thrash"
-  LABEL="内存不足导致磁盘换页雪崩 (Memory shortage cascading to disk thrashing)"
+  LABEL="Memory shortage cascading to disk thrashing"
   CONFIDENCE="HIGH"
   MATCHED=("${B1_conds[@]}")
   RECOMMENDED=("references/resource-saturation-deep-memory.md" "references/resource-saturation-deep-disk.md")
@@ -112,7 +112,7 @@ if [[ $BRANCH -eq 0 ]]; then
   if $B2_ok; then
     BRANCH=2
     ROOT_CAUSE="cpu_bottleneck"
-    LABEL="CPU 瓶颈（计算资源不足） (CPU bottleneck — insufficient compute capacity)"
+    LABEL="CPU bottleneck — insufficient compute capacity"
     CONFIDENCE="HIGH"
     MATCHED=("${B2_conds[@]}")
     RECOMMENDED=("references/resource-saturation-deep-cpu.md")
@@ -134,7 +134,7 @@ if [[ $BRANCH -eq 0 ]]; then
   if $B3_ok; then
     BRANCH=3
     ROOT_CAUSE="disk_io_bottleneck"
-    LABEL="磁盘 I/O 瓶颈（存储过载） (Disk bottleneck — slow storage or excessive I/O)"
+    LABEL="Disk bottleneck — slow storage or excessive I/O"
     CONFIDENCE="HIGH"
     MATCHED=("${B3_conds[@]}")
     RECOMMENDED=("references/resource-saturation-deep-disk.md")
@@ -155,7 +155,7 @@ if [[ $BRANCH -eq 0 ]]; then
   if $B4_ok; then
     BRANCH=4
     ROOT_CAUSE="network_interrupt_storm"
-    LABEL="网络中断风暴使内核过载 (Network interrupt storm overloading kernel)"
+    LABEL="Network interrupt storm overloading kernel"
     CONFIDENCE="MEDIUM"
     MATCHED=("${B4_conds[@]}")
     RECOMMENDED=("references/resource-saturation-deep-network.md" "references/resource-saturation-deep-cpu.md")
@@ -176,7 +176,7 @@ if [[ $BRANCH -eq 0 ]]; then
   if $B5_ok; then
     BRANCH=5
     ROOT_CAUSE="thermal_throttling"
-    LABEL="热节流降频导致性能下降 (Thermal throttling reducing CPU performance)"
+    LABEL="Thermal throttling reducing CPU performance"
     CONFIDENCE="HIGH"
     MATCHED=("${B5_conds[@]}")
     RECOMMENDED=("references/resource-saturation-deep-cpu.md")
@@ -187,7 +187,7 @@ fi
 # ── No branch matched ─────────────────────────────────────────────────────
 if [[ $BRANCH -eq 0 ]]; then
   ROOT_CAUSE="no_clear_pattern"
-  LABEL="无明确组合根因（需手动深度分析） (No clear multi-component pattern matched)"
+  LABEL="No clear multi-component pattern matched"
   CONFIDENCE="LOW"
   MATCHED=()
   RECOMMENDED=(

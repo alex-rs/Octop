@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
 """
-tccli OAuth 登录辅助工具
+tccli OAuth login helper
 
-解决 tccli auth login --browser no 在非交互式环境下无法输入验证码的问题。
+Solves the problem that tccli auth login --browser no cannot accept a verification code in non-interactive environments.
 
-用法:
-  # 第一步: 生成授权链接
+Usage:
+  # Step 1: generate the authorization link
   python3 tccli-oauth-helper.py --get-url
 
-  # 第二步: 用户访问链接登录后，获取 base64 验证码，然后:
-  python3 tccli-oauth-helper.py --code "验证码字符串"
+  # Step 2: after the user opens the link and logs in, get the base64 verification code, then:
+  python3 tccli-oauth-helper.py --code "<verification code>"
 
-  # 或者一步完成（如果已有验证码）:
+  # Or do it in one step (if you already have the verification code):
   python3 tccli-oauth-helper.py --code "eyJhY2Nlc3NUb2tlbi..."
 
-  # 检查凭证状态:
+  # Check credential status:
   python3 tccli-oauth-helper.py --status
 """
 
@@ -29,11 +29,11 @@ import sys
 import time
 from urllib.parse import urlencode
 
-# 尝试从 tccli 动态导入常量
+# Try to dynamically import the constants from tccli
 try:
     from tccli.oauth import _API_ENDPOINT, _APP_ID, _AUTH_URL, _DEFAULT_LANG, _REDIRECT_URL, _SITE
 except (ImportError, AttributeError):
-    # tccli 未安装或版本不兼容时，使用回退默认值
+    # Use fallback defaults when tccli is not installed or the version is incompatible
     _APP_ID = 100038427476
     _AUTH_URL = "https://cloud.tencent.com/open/authorize"
     _REDIRECT_URL = "https://cli.cloud.tencent.com/oauth"
@@ -41,12 +41,12 @@ except (ImportError, AttributeError):
     _DEFAULT_LANG = "zh-CN"
     _API_ENDPOINT = "https://cli.cloud.tencent.com"
 
-# 状态文件路径
+# State file path
 _STATE_FILE = os.path.expanduser("~/.tccli/.oauth_state")
 
 
 def get_temp_cred(access_token, site):
-    """获取临时凭证（从 tccli/oauth.py 复制）"""
+    """Get temporary credentials (copied from tccli/oauth.py)"""
     import uuid
 
     import requests
@@ -72,15 +72,15 @@ def get_temp_cred(access_token, site):
 
 
 def cred_path_of_profile(profile):
-    """凭证文件路径"""
+    """Credential file path"""
     return os.path.join(os.path.expanduser("~"), ".tccli", profile + ".credential")
 
 
 def save_credential(token, new_cred, profile):
-    """保存凭证（从 tccli/oauth.py 复制）"""
+    """Save credentials (copied from tccli/oauth.py)"""
     cred_path = cred_path_of_profile(profile)
 
-    # 确保目录存在
+    # Make sure the directory exists
     os.makedirs(os.path.dirname(cred_path), exist_ok=True)
 
     cred = {
@@ -102,24 +102,24 @@ def save_credential(token, new_cred, profile):
 
 
 def generate_state():
-    """生成随机 state"""
+    """Generate a random state"""
     characters = string.ascii_letters + string.digits
     return "".join(random.choice(characters) for _ in range(10))
 
 
 def save_state(state):
-    """保存 state 到文件"""
+    """Save the state to a file"""
     os.makedirs(os.path.dirname(_STATE_FILE), exist_ok=True)
     with open(_STATE_FILE, "w") as f:
         json.dump({"state": state, "timestamp": time.time()}, f)
 
 
 def load_state():
-    """从文件加载 state"""
+    """Load the state from a file"""
     try:
         with open(_STATE_FILE) as f:
             data = json.load(f)
-            # 检查是否过期（10分钟）
+            # Check whether it has expired (10 minutes)
             if time.time() - data.get("timestamp", 0) > 600:
                 return None
             return data.get("state")
@@ -128,13 +128,13 @@ def load_state():
 
 
 def clear_state():
-    """清除 state 文件"""
+    """Remove the state file"""
     with contextlib.suppress(FileNotFoundError):
         os.remove(_STATE_FILE)
 
 
 def get_auth_url(state, language=_DEFAULT_LANG):
-    """生成授权 URL"""
+    """Build the authorization URL"""
     redirect_params = {
         "browser": "no",
         "lang": language,
@@ -152,76 +152,78 @@ def get_auth_url(state, language=_DEFAULT_LANG):
     url_query = urlencode(url_params)
     auth_url = _AUTH_URL + "?" + url_query
 
-    # 将 URL 中的 "_" 替换为 "%5F"，避免被 Markdown 解析器误解析为
-    # 斜体标记（某些客户端的 markdownToPlainText 会吃掉下划线）。
-    # "%5F" 是 "_" 的合法 URL 编码，HTTP 服务器会自动解码，功能完全等价。
+    # Replace "_" in the URL with "%5F" so that Markdown parsers do not
+    # misread it as an italic marker (some clients' markdownToPlainText
+    # swallow underscores).
+    # "%5F" is a valid URL encoding of "_", HTTP servers decode it
+    # automatically, and the behavior is exactly equivalent.
     auth_url = auth_url.replace("_", "%5F")
 
     return auth_url
 
 
 def do_get_url(args):
-    """生成授权链接"""
+    """Generate the authorization link"""
     state = generate_state()
     save_state(state)
 
     auth_url = get_auth_url(state)
 
     print("━" * 60)
-    print("🔐 腾讯云 OAuth 授权登录")
+    print("🔐 Tencent Cloud OAuth authorization login")
     print("━" * 60)
     print()
-    print("请在浏览器中打开以下链接完成登录：")
+    print("Please open the following link in your browser to complete the login:")
     print()
     print(auth_url)
     print()
     print("━" * 60)
-    print("登录后，页面会显示一串 base64 编码的验证码。")
-    print("请复制该验证码，然后运行以下命令完成登录：")
+    print("After logging in, the page shows a base64-encoded verification code.")
+    print("Copy that verification code, then run the following command to complete the login:")
     print()
-    print('  python3 tccli-oauth-helper.py --code "验证码"')
+    print('  python3 tccli-oauth-helper.py --code "<verification code>"')
     print()
-    print("或发送给 AI 助手，让它帮你完成登录。")
+    print("Or send it to the AI assistant and let it complete the login for you.")
     print("━" * 60)
     print()
-    print(f"📌 State: {state} (10分钟内有效)")
+    print(f"📌 State: {state} (valid for 10 minutes)")
 
     return 0
 
 
 def do_login_with_code(args):
-    """使用验证码完成登录"""
+    """Complete the login with the verification code"""
     code = args.code.strip()
     profile = args.profile or "default"
 
-    # 尝试加载保存的 state
+    # Try to load the saved state
     saved_state = load_state()
 
     try:
-        # 解码验证码
+        # Decode the verification code
         token_json = base64.b64decode(code)
         token = json.loads(token_json)
     except Exception as e:
-        print(f"❌ 验证码解析失败: {e}")
+        print(f"❌ Failed to parse the verification code: {e}")
         print()
-        print("请确保复制了完整的 base64 验证码字符串。")
+        print("Make sure you copied the complete base64 verification code string.")
         return 1
 
-    # 验证 state（如果有保存的话）
+    # Verify the state (if one was saved)
     token_state = token.get("state")
     if saved_state and token_state != saved_state:
-        print("⚠️  警告: state 不匹配")
-        print(f"   期望: {saved_state}")
-        print(f"   实际: {token_state}")
+        print("⚠️  Warning: state mismatch")
+        print(f"   expected: {saved_state}")
+        print(f"   actual: {token_state}")
         print()
-        print("可能是使用了旧的授权链接。继续尝试...")
+        print("An old authorization link may have been used. Continuing to try...")
 
     try:
-        # 获取临时凭证
-        print("🔄 正在获取临时凭证...")
+        # Get temporary credentials
+        print("🔄 Obtaining temporary credentials...")
         cred = get_temp_cred(token["accessToken"], token.get("site", _SITE))
 
-        # 保存凭证
+        # Save the credentials
         save_credential(token, cred, profile)
         clear_state()
 
@@ -229,42 +231,42 @@ def do_login_with_code(args):
 
         print()
         print("━" * 60)
-        print("✅ OAuth 登录成功!")
+        print("✅ OAuth login successful!")
         print("━" * 60)
-        print(f"📌 配置文件: {profile}")
-        print(f"📌 凭证路径: {cred_path}")
+        print(f"📌 Profile: {profile}")
+        print(f"📌 Credential path: {cred_path}")
         print(
-            f"📌 过期时间: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(cred['expiresAt']))}"
+            f"📌 Expiration time: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(cred['expiresAt']))}"
         )
         print("━" * 60)
         print()
-        print("现在可以使用 tccli 了，例如：")
+        print("You can now use tccli, for example:")
         print("  tccli cvm DescribeInstances --region ap-guangzhou")
         print()
 
         return 0
 
     except Exception as e:
-        print(f"❌ 登录失败: {e}")
+        print(f"❌ Login failed: {e}")
         return 1
 
 
 def do_status(args):
-    """检查凭证状态"""
+    """Check credential status"""
     profile = args.profile or "default"
     cred_path = cred_path_of_profile(profile)
 
     print("━" * 60)
-    print("🔍 tccli 凭证状态检查")
+    print("🔍 tccli credential status check")
     print("━" * 60)
-    print(f"📌 配置文件: {profile}")
-    print(f"📌 凭证路径: {cred_path}")
+    print(f"📌 Profile: {profile}")
+    print(f"📌 Credential path: {cred_path}")
     print()
 
     if not os.path.exists(cred_path):
-        print("❌ 凭证文件不存在")
+        print("❌ Credential file does not exist")
         print()
-        print("请先运行 OAuth 登录:")
+        print("Please run the OAuth login first:")
         print("  python3 tccli-oauth-helper.py --get-url")
         return 1
 
@@ -273,7 +275,7 @@ def do_status(args):
             cred = json.load(f)
 
         cred_type = cred.get("type", "unknown")
-        print(f"📌 凭证类型: {cred_type}")
+        print(f"📌 Credential type: {cred_type}")
 
         if cred_type == "oauth":
             expires_at = cred.get("expiresAt", 0)
@@ -284,33 +286,33 @@ def do_status(args):
                 hours = int(remaining // 3600)
                 minutes = int((remaining % 3600) // 60)
                 print(
-                    f"📌 过期时间: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(expires_at))}"
+                    f"📌 Expiration time: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(expires_at))}"
                 )
-                print(f"📌 剩余有效期: {hours}小时{minutes}分钟")
+                print(f"📌 Time remaining: {hours} hours {minutes} minutes")
                 print()
-                print("✅ 凭证有效")
+                print("✅ credential valid")
             else:
                 print(
-                    f"📌 过期时间: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(expires_at))}"
+                    f"📌 Expiration time: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(expires_at))}"
                 )
                 print()
-                print("❌ 凭证已过期，需要重新登录")
+                print("❌ Credential has expired; log in again")
                 print()
-                print("请运行: python3 tccli-oauth-helper.py --get-url")
+                print("Please run: python3 tccli-oauth-helper.py --get-url")
                 return 1
         else:
-            # API 密钥方式
+            # API key mode
             secret_id = cred.get("secretId", "")
             if secret_id:
                 print(f"📌 SecretId: {secret_id[:8]}...{secret_id[-4:]}")
                 print()
-                print("✅ 使用 API 密钥凭证")
+                print("✅ Using API key credentials")
             else:
-                print("❌ 凭证文件格式异常")
+                print("❌ Malformed credential file")
                 return 1
 
     except Exception as e:
-        print(f"❌ 读取凭证失败: {e}")
+        print(f"❌ Failed to read the credentials: {e}")
         return 1
 
     print("━" * 60)
@@ -319,29 +321,33 @@ def do_status(args):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="tccli OAuth 登录辅助工具",
+        description="tccli OAuth login helper",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-示例:
-  # 生成授权链接
+Examples:
+  # Generate the authorization link
   python3 tccli-oauth-helper.py --get-url
 
-  # 使用验证码完成登录
+  # Complete the login with the verification code
   python3 tccli-oauth-helper.py --code "eyJhY2Nlc3NUb2tlbi..."
 
-  # 检查凭证状态
+  # Check credential status
   python3 tccli-oauth-helper.py --status
 
-  # 指定配置文件
-  python3 tccli-oauth-helper.py --code "验证码" --profile myprofile
+  # Use a specific profile
+  python3 tccli-oauth-helper.py --code "<verification code>" --profile myprofile
 """,
     )
 
-    parser.add_argument("--get-url", action="store_true", help="生成 OAuth 授权链接")
-    parser.add_argument("--code", type=str, help="base64 编码的验证码，用于完成登录")
-    parser.add_argument("--status", action="store_true", help="检查当前凭证状态")
     parser.add_argument(
-        "--profile", type=str, default="default", help="配置文件名称 (默认: default)"
+        "--get-url", action="store_true", help="Generate the OAuth authorization link"
+    )
+    parser.add_argument(
+        "--code", type=str, help="base64-encoded verification code used to complete the login"
+    )
+    parser.add_argument("--status", action="store_true", help="Check the current credential status")
+    parser.add_argument(
+        "--profile", type=str, default="default", help="Profile name (default: default)"
     )
 
     args = parser.parse_args()

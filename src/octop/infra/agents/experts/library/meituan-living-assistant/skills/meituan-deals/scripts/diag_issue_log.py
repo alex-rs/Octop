@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-A5 发券接口日志诊断脚本
-读取并解密 huisheng_issue.log，展示最新一条记录。
-加密方式与 issue.py 完全一致：sha256(device_token + aiScene)，降级 sha256(aiScene)
+A5 coupon issuance API log diagnostic script
+Read and decrypt huisheng_issue.log, then show the latest record.
+Encryption is identical to issue.py: sha256(device_token + aiScene), falling back to sha256(aiScene)
 """
 
 import hashlib
@@ -40,7 +40,7 @@ def _load_device_token() -> str:
 
 
 def decrypt(line: str, device_token: str, ai_scene: str) -> dict:
-    """解密一行日志，key 与 issue.py 的 _xor_encrypt 完全一致"""
+    """Decrypt one log line; the key is identical to _xor_encrypt in issue.py"""
     flag, hex_data = line.split(":", 1)
     seed = device_token + ai_scene if flag == "1" and device_token else ai_scene
     key = hashlib.sha256(seed.encode()).digest()
@@ -50,17 +50,19 @@ def decrypt(line: str, device_token: str, ai_scene: str) -> dict:
 
 def main():
     if not LOG_FILE.exists():
-        print("日志文件不存在，尚无发券记录")
+        print("Log file does not exist; no coupon issuance records yet")
         return
 
     lines = [ln for ln in LOG_FILE.read_text(encoding="utf-8").strip().splitlines() if ln.strip()]
     if not lines:
-        print("日志文件为空")
+        print("Log file is empty")
         return
 
     ai_scene = _load_ai_scene()
     if not ai_scene:
-        print("警告：读不到 aiScene，无法解密日志（config.json 缺失或 aiScene 为空）")
+        print(
+            "Warning: cannot read aiScene, unable to decrypt the log (config.json missing or aiScene empty)"
+        )
         return
 
     device_token = _load_device_token()
@@ -70,8 +72,8 @@ def main():
         entry = json.loads(last) if ":" not in last[:2] else decrypt(last, device_token, ai_scene)
         print(json.dumps(entry, ensure_ascii=False, indent=2))
     except Exception as e:
-        print(f"解密失败: {e}")
-        print(f"原始内容（前200字）: {last[:200]}")
+        print(f"Decryption failed: {e}")
+        print(f"Raw content (first 200 chars): {last[:200]}")
 
 
 if __name__ == "__main__":

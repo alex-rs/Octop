@@ -7,7 +7,7 @@
 # ]
 # ///
 """
-XHS (社交内容平台/RedNote) Publisher — Publish content to Xiaohongshu
+XHS (social content platform/RedNote) Publisher — Publish content to Xiaohongshu
 
 Based on ClawHub hi-yu/xhs skill v1.2.5 concept, implemented as a
 standalone browser-automation publisher for the personal multi-platform
@@ -142,7 +142,7 @@ def md_to_xhs_text(md_body: str, title: str = "") -> str:
     text = re.sub(r"`(.+?)`", r"「\1」", text)
 
     # Convert code blocks to simplified text
-    text = re.sub(r"```[\w]*\n(.*?)```", r"💻 代码片段:\n\1", text, flags=re.DOTALL)
+    text = re.sub(r"```[\w]*\n(.*?)```", r"💻 Code snippet:\n\1", text, flags=re.DOTALL)
 
     # Convert unordered lists
     text = re.sub(r"^[\-\*]\s+", "• ", text, flags=re.MULTILINE)
@@ -171,7 +171,7 @@ def md_to_xhs_text(md_body: str, title: str = "") -> str:
 
     # Truncate to XHS limit (~1000 chars recommended, max ~2000)
     if len(text) > 1800:
-        text = text[:1800] + "\n\n... 👆 完整内容请查看公众号文章"
+        text = text[:1800] + "\n\n... 👆 See the Official Account article for the full content"
 
     return text
 
@@ -238,8 +238,8 @@ def cmd_login(args):
     ensure_playwright()
     from playwright.sync_api import sync_playwright
 
-    print("🔐 正在启动浏览器登录社交内容平台...")
-    print("   请用社交内容平台 APP 扫描二维码完成登录\n")
+    print("🔐 Launching the browser to log in to the social content platform...")
+    print("   Scan the QR code with the social content platform app to log in\n")
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=False)
@@ -253,9 +253,9 @@ def cmd_login(args):
         page.wait_for_timeout(2000)
 
         # Wait for user to complete login
-        print("⏳ 等待登录完成...")
-        print("   登录成功后，页面会自动跳转。")
-        print("   完成后请按任意键继续（或等待 120 秒自动超时）...\n")
+        print("⏳ Waiting for login to complete...")
+        print("   The page redirects automatically once login succeeds.")
+        print("   Press any key when done (or wait 120 seconds for the automatic timeout)...\n")
 
         try:
             # Wait for the page to show logged-in state
@@ -264,9 +264,9 @@ def cmd_login(args):
                 'a[href*="/user/profile"], .user-avatar, .side-bar-user',
                 timeout=120000,
             )
-            print("✅ 检测到登录成功!")
+            print("✅ Login detected!")
         except Exception:
-            print("⚠️  未检测到自动登录状态，尝试保存当前 cookies...")
+            print("⚠️  Login state not detected, saving the current cookies...")
 
         # Save cookies
         cookies = context.cookies()
@@ -274,8 +274,8 @@ def cmd_login(args):
 
         browser.close()
 
-    print("\n✅ 登录完成！Cookies 已保存。")
-    print(f"   Cookie 文件: {COOKIE_FILE}")
+    print("\n✅ Login complete! Cookies saved.")
+    print(f"   Cookie file: {COOKIE_FILE}")
 
 
 def cmd_publish(args):
@@ -298,22 +298,22 @@ def cmd_publish(args):
     # Load cookies
     cookies = load_cookies()
     if not cookies:
-        print("❌ 未找到登录信息。请先运行 login 命令:", file=sys.stderr)
+        print("❌ No login information found. Run the login command first:", file=sys.stderr)
         print(f"   python3 {__file__} login", file=sys.stderr)
         sys.exit(1)
 
-    print("\n📱 准备发布社交内容平台笔记:")
-    print(f"  标题: {title}")
-    print(f"  图片: {len(images)} 张")
-    print(f"  标签: {', '.join('#' + t for t in hashtags) if hashtags else '(无)'}")
-    print(f"  正文预览: {xhs_text[:100]}...")
+    print("\n📱 Preparing to publish a social content platform note:")
+    print(f"  Title: {title}")
+    print(f"  Images: {len(images)}")
+    print(f"  Tags: {', '.join('#' + t for t in hashtags) if hashtags else '(none)'}")
+    print(f"  Body preview: {xhs_text[:100]}...")
     print()
 
     if not images:
-        print("⚠️  社交内容平台笔记建议至少包含一张图片。")
-        print("   可以在 frontmatter 中添加 cover 字段，或在正文中添加图片。")
+        print("⚠️  A social content platform note should contain at least one image.")
+        print("   Add a cover field to the frontmatter, or add images to the body.")
         if not args.force:
-            print("   使用 --force 跳过此检查。")
+            print("   Use --force to skip this check.")
             sys.exit(1)
 
     with sync_playwright() as p:
@@ -329,25 +329,25 @@ def cmd_publish(args):
 
         try:
             # Navigate to publish page
-            print("  🌐 正在打开发布页面...")
+            print("  🌐 Opening the publish page...")
             page.goto(XHS_PUBLISH_URL, wait_until="networkidle", timeout=30000)
             page.wait_for_timeout(3000)
 
             # Check if we're logged in
             if "login" in page.url.lower() or "sign" in page.url.lower():
-                print("  ❌ Cookie 已过期，请重新登录:", file=sys.stderr)
+                print("  ❌ Cookie has expired, please log in again:", file=sys.stderr)
                 print(f"     python3 {__file__} login", file=sys.stderr)
                 browser.close()
                 sys.exit(1)
 
             # Upload images
             if images:
-                print(f"  🖼️  正在上传 {len(images)} 张图片...")
+                print(f"  🖼️  Uploading {len(images)} images...")
                 file_input = page.locator('input[type="file"]').first
                 for idx, img_path in enumerate(images):
                     if img_path.startswith(("http://", "https://")):
                         # Download remote image first
-                        print(f"    ⬇️  下载远程图片 {idx + 1}...")
+                        print(f"    ⬇️  Downloading remote image {idx + 1}...")
                         resp = httpx.get(img_path, timeout=30, follow_redirects=True)
                         if resp.status_code == 200:
                             import tempfile
@@ -359,17 +359,17 @@ def cmd_publish(args):
                                 tmp.write(resp.content)
                             img_path = tmp.name
                         else:
-                            print(f"    ⚠️  下载失败，跳过: {img_path}")
+                            print(f"    ⚠️  Download failed, skipping: {img_path}")
                             continue
 
                     file_input.set_input_files(img_path)
                     page.wait_for_timeout(2000)
-                    print(f"    ✅ 图片 {idx + 1}/{len(images)} 已上传")
+                    print(f"    ✅ Image {idx + 1}/{len(images)} uploaded")
 
                 page.wait_for_timeout(3000)
 
             # Fill in title
-            print("  📝 正在填写标题...")
+            print("  📝 Filling in the title...")
             title_input = page.locator(
                 '[placeholder*="标题"], .c-input_inner, input[name="title"]'
             ).first
@@ -377,7 +377,7 @@ def cmd_publish(args):
                 title_input.fill(title[:20])  # XHS title max 20 chars
 
             # Fill in content
-            print("  📝 正在填写正文...")
+            print("  📝 Filling in the body...")
 
             # Append hashtags
             text_with_tags = xhs_text
@@ -396,26 +396,26 @@ def cmd_publish(args):
 
             # Click publish button
             if not args.draft:
-                print("  📤 正在发布...")
+                print("  📤 Publishing...")
                 publish_btn = page.locator(
                     'button:has-text("发布"), .publishBtn, button.css-k2sopx'
                 ).first
                 if publish_btn.is_visible():
                     publish_btn.click()
                     page.wait_for_timeout(5000)
-                    print("  ✅ 笔记已发布！")
+                    print("  ✅ Note published!")
                 else:
-                    print("  ⚠️  未找到发布按钮，请手动点击发布。")
+                    print("  ⚠️  Publish button not found, please click publish manually.")
                     page.wait_for_timeout(30000)
             else:
-                print("  📋 草稿模式：内容已填写，请手动检查并发布。")
-                print("     30 秒后浏览器将自动关闭...")
+                print("  📋 Draft mode: content is filled in, please review and publish manually.")
+                print("     The browser closes automatically in 30 seconds...")
                 page.wait_for_timeout(30000)
 
         except Exception as e:
-            print(f"  ❌ 发布过程中出错: {e}", file=sys.stderr)
+            print(f"  ❌ Error during publishing: {e}", file=sys.stderr)
             if not args.headless:
-                print("  浏览器保持打开，请手动完成操作...")
+                print("  The browser stays open, please complete the operation manually...")
                 page.wait_for_timeout(60000)
         finally:
             # Update cookies
@@ -438,76 +438,84 @@ def cmd_adapt(args):
     hashtags = extract_hashtags(body, fm)
 
     print("=" * 60)
-    print("📱 社交内容平台笔记预览")
+    print("📱 Social content platform note preview")
     print("=" * 60)
-    print(f"\n📌 标题: {title[:20]}")
-    print(f"🖼️  图片: {len(images)} 张")
+    print(f"\n📌 Title: {title[:20]}")
+    print(f"🖼️  Images: {len(images)}")
     if images:
         for i, img in enumerate(images[:5]):
             print(f"   {i + 1}. {img}")
         if len(images) > 5:
-            print(f"   ... 还有 {len(images) - 5} 张")
+            print(f"   ... and {len(images) - 5} more")
 
-    print(f"\n📝 正文 ({len(xhs_text)} 字):\n")
+    print(f"\n📝 Body ({len(xhs_text)} characters):\n")
     print(xhs_text)
 
     if hashtags:
-        print(f"\n🏷️  标签: {' '.join('#' + t for t in hashtags)}")
+        print(f"\n🏷️  Tags: {' '.join('#' + t for t in hashtags)}")
 
     print("\n" + "=" * 60)
-    print(f"字数: {len(xhs_text)}/1800  |  图片: {len(images)} 张")
+    print(f"Characters: {len(xhs_text)}/1800  |  Images: {len(images)}")
 
     if len(xhs_text) > 1800:
-        print("⚠️  正文过长，发布时会被截断。建议精简内容或拆分为多篇笔记。")
+        print(
+            "⚠️  The body is too long and will be truncated when published. Trim the content or split it into multiple notes."
+        )
     if not images:
-        print("⚠️  没有图片。社交内容平台笔记建议至少包含一张图片。")
+        print("⚠️  No images. A social content platform note should contain at least one image.")
 
 
 def cmd_check(args):
     """Check XHS publishing environment."""
-    print("🔍 社交内容平台发布环境检查\n")
+    print("🔍 Social content platform publishing environment check\n")
 
     # 1. Playwright
     pw_ok = check_playwright_installed()
     status = "✅" if pw_ok else "❌"
-    print(f"  {status} playwright: {'已安装' if pw_ok else '未安装'}")
+    print(f"  {status} playwright: {'installed' if pw_ok else 'NOT installed'}")
     if not pw_ok:
-        print("      安装: pip install playwright && playwright install chromium")
+        print("      Install: pip install playwright && playwright install chromium")
 
     # 2. Cookie file
     cookies = load_cookies()
     status = "✅" if cookies else "❌"
-    print(f"  {status} 登录状态: {'已登录 (有 Cookie)' if cookies else '未登录'}")
+    print(
+        f"  {status} Login status: {'logged in (cookies present)' if cookies else 'not logged in'}"
+    )
     if cookies:
-        print(f"      Cookie 文件: {COOKIE_FILE}")
+        print(f"      Cookie file: {COOKIE_FILE}")
         # Check cookie freshness
         mtime = os.path.getmtime(COOKIE_FILE)
         age_hours = (time.time() - mtime) / 3600
         if age_hours > 24:
-            print(f"      ⚠️  Cookie 已超过 {int(age_hours)} 小时，可能需要重新登录")
+            print(
+                f"      ⚠️  Cookie is older than {int(age_hours)} hours, you may need to log in again"
+            )
         else:
-            print(f"      最近更新: {int(age_hours)} 小时前")
+            print(f"      Last updated: {int(age_hours)} hours ago")
 
-    # 3. AI 封面生成 API keys (optional)
+    # 3. AI cover generation API keys (optional)
     gemini = os.environ.get("GEMINI_API_KEY")
     img_api = os.environ.get("IMG_API_KEY")
     hunyuan = os.environ.get("HUNYUAN_API_KEY")
 
     if gemini or img_api or hunyuan:
-        print("  ✅ AI 封面生成: 已配置")
+        print("  ✅ AI cover generation: configured")
         if gemini:
-            print("      GEMINI_API_KEY: ***已设置***")
+            print("      GEMINI_API_KEY: ***set***")
         if img_api:
-            print("      IMG_API_KEY: ***已设置***")
+            print("      IMG_API_KEY: ***set***")
         if hunyuan:
-            print("      HUNYUAN_API_KEY: ***已设置***")
+            print("      HUNYUAN_API_KEY: ***set***")
     else:
-        print("  ℹ️  AI 封面生成: 未配置（可选）")
-        print("      配置任一 API Key 即可启用: GEMINI_API_KEY / IMG_API_KEY / HUNYUAN_API_KEY")
+        print("  ℹ️  AI cover generation: not configured (optional)")
+        print(
+            "      Configure any API key to enable it: GEMINI_API_KEY / IMG_API_KEY / HUNYUAN_API_KEY"
+        )
 
     print()
     if not cookies:
-        print("💡 下一步: 运行 login 命令完成登录")
+        print("💡 Next step: run the login command to log in")
         print(f"   python3 {__file__} login")
 
 
@@ -521,7 +529,7 @@ def cmd_publish_text(args):
 
     cookies = load_cookies()
     if not cookies:
-        print("❌ 未找到登录信息。请先运行 login 命令:", file=sys.stderr)
+        print("❌ No login information found. Run the login command first:", file=sys.stderr)
         sys.exit(1)
 
     full_text = text
@@ -529,13 +537,15 @@ def cmd_publish_text(args):
         tag_str = " ".join(f"#{t}" for t in tags)
         full_text = f"{text}\n\n{tag_str}"
 
-    print("\n📱 准备发布社交内容平台纯文字笔记:")
-    print(f"  标题: {title}")
-    print(f"  正文: {full_text[:100]}...")
+    print("\n📱 Preparing to publish a social content platform text-only note:")
+    print(f"  Title: {title}")
+    print(f"  Body: {full_text[:100]}...")
     print()
 
     # Use same browser automation logic as cmd_publish
-    print("ℹ️  纯文字笔记需要至少一张图片。请在浏览器中手动添加图片后发布。")
+    print(
+        "ℹ️  A text-only note needs at least one image. Add images manually in the browser, then publish."
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -546,7 +556,7 @@ def cmd_publish_text(args):
 def build_parser():
     parser = argparse.ArgumentParser(
         prog="xhs_publish",
-        description="XHS Publisher — Publish content to Xiaohongshu (社交内容平台)",
+        description="XHS Publisher — Publish content to Xiaohongshu (social content platform)",
     )
 
     sub = parser.add_subparsers(dest="command", required=True)

@@ -15,7 +15,7 @@ OS=$(uname -s 2>/dev/null || echo "Unknown")
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || date -u)
 SECONDS=0
 
-# 统计采集: 记录各组件状态
+# Statistics collection: record each component status
 _STAT_CPU="skipped"
 _STAT_MEM="skipped"
 _STAT_DISK="skipped"
@@ -37,14 +37,14 @@ case "$OS" in
     echo "CPU Cores: $CPU_CORES"
     echo "Run Queue: $RUN_QUEUE"
 
-    # PSI (内核 4.20+): 最科学的 CPU 压力指标
+    # PSI (kernel 4.20+): the most scientifically sound CPU pressure metric
     PSI_CPU=""
     if [ -f /proc/pressure/cpu ]; then
       PSI_CPU=$(awk '/^some/ {for(i=1;i<=NF;i++) if($i~/avg10/) {split($i,a,"="); print a[2]}}' /proc/pressure/cpu 2>/dev/null)
       echo "PSI cpu.some avg10: ${PSI_CPU:-N/A}%"
     fi
 
-    # 判定: 传统指标 + PSI 交叉，取更严重的
+    # Decision: combine traditional metrics + PSI, take the more severe one
     _rq_level="ok"
     [ "$RUN_QUEUE" -gt "$((CPU_CORES * 2))" ] && _rq_level="critical"
     [ "$RUN_QUEUE" -gt "$CPU_CORES" ] && [ "$_rq_level" = "ok" ] && _rq_level="warning"
@@ -74,7 +74,7 @@ case "$OS" in
     ;;
   Darwin)
     CPU_CORES=$(sysctl -n hw.ncpu 2>/dev/null || echo "1")
-    # macOS load average 包含等 I/O 的线程，用浮点比较更精确
+    # The macOS load average includes threads waiting on I/O, so float comparison is more precise
     LOAD_1M=$(sysctl -n vm.loadavg 2>/dev/null | awk '{print $2}' || echo "0")
     echo "CPU Cores: $CPU_CORES"
     echo "Load Avg (1m): $LOAD_1M"
@@ -106,7 +106,7 @@ echo ""
 echo "--- MEMORY CHECK ---"
 case "$OS" in
   Linux)
-    # 三信号: swap + available% + PSI memory，取最严重的
+    # Three signals: swap + available% + PSI memory, take the most severe one
     SWAP_USED=$(free -m 2>/dev/null | awk '/Swap:/ {print $3}' || echo "0")
     SWAP_TOTAL=$(free -m 2>/dev/null | awk '/Swap:/ {print $2}' || echo "0")
     MEM_TOTAL=$(free -m 2>/dev/null | awk '/Mem:/ {print $2}' || echo "1")
@@ -121,14 +121,14 @@ case "$OS" in
       echo "Swap: not configured"
     fi
 
-    # PSI memory (内核 4.20+)
+    # PSI memory (kernel 4.20+)
     PSI_MEM=""
     if [ -f /proc/pressure/memory ]; then
       PSI_MEM=$(awk '/^some/ {for(i=1;i<=NF;i++) if($i~/avg10/) {split($i,a,"="); print a[2]}}' /proc/pressure/memory 2>/dev/null)
       echo "PSI memory.some avg10: ${PSI_MEM:-N/A}%"
     fi
 
-    # cgroup 内存限制检测 (容器环境)
+    # cgroup memory limit detection (container environments)
     _cgroup_pct=""
     if [ -f /sys/fs/cgroup/memory.max ] && [ -f /sys/fs/cgroup/memory.current ]; then
       _cg_max=$(cat /sys/fs/cgroup/memory.max 2>/dev/null)
@@ -139,7 +139,7 @@ case "$OS" in
       fi
     fi
 
-    # 判定: swap + avail + PSI + cgroup，取最严重的
+    # Decision: swap + avail + PSI + cgroup, take the most severe one
     _swap_level="ok"
     if [ "$SWAP_TOTAL" -gt 0 ]; then
       [ "$SWAP_USED" -ge 1000 ] && _swap_level="critical"
@@ -180,11 +180,11 @@ case "$OS" in
     esac
     ;;
   Darwin)
-    # macOS 使用内存压力等级 (kern.memorystatus_level) 作为主判据
-    # 范围 0~100，值越高越健康。macOS swap 大不代表内存紧张（压缩内存机制）
+    # macOS uses the memory pressure level (kern.memorystatus_level) as the primary criterion
+    # Range 0~100, the higher the healthier. A large macOS swap does not mean memory pressure (compressed memory)
     MEM_LEVEL=$(sysctl -n kern.memorystatus_level 2>/dev/null || echo "50")
 
-    # swap 仅作参考
+    # swap is for reference only
     SWAP_USED_RAW=$(sysctl vm.swapusage 2>/dev/null | grep -oE 'used = [0-9.]+[MG]?' | grep -oE '[0-9.]+[MG]?' || echo "0M")
     if [[ "$SWAP_USED_RAW" =~ ([0-9.]+)G ]]; then
       SWAP_USED=$(echo "${BASH_REMATCH[1]} * 1024" | bc 2>/dev/null | awk '{print int($1)}' || echo "0")
@@ -229,14 +229,14 @@ case "$OS" in
       echo "I/O Wait: ${IO_WAIT}% (vmstat wa)"
     fi
 
-    # PSI io (内核 4.20+)
+    # PSI io (kernel 4.20+)
     PSI_IO=""
     if [ -f /proc/pressure/io ]; then
       PSI_IO=$(awk '/^some/ {for(i=1;i<=NF;i++) if($i~/avg10/) {split($i,a,"="); print a[2]}}' /proc/pressure/io 2>/dev/null)
       echo "PSI io.some avg10: ${PSI_IO:-N/A}%"
     fi
 
-    # 判定: iowait + PSI，取更严重的
+    # Decision: iowait + PSI, take the more severe one
     _io_level=$(awk -v iowait="$IO_WAIT" 'BEGIN {
       if (iowait >= 30) print "critical";
       else if (iowait >= 10) print "warning";
@@ -267,15 +267,15 @@ case "$OS" in
     esac
     ;;
   Darwin)
-    # macOS iostat 列: KB/t tps MB/s us sy id (没有 iowait 列)
-    # 用 idle% 反推: 如果 idle 低但 user 也不高，说明 I/O 密集
-    # 取第二次采样 (排除首次累计值)
+    # macOS iostat columns: KB/t tps MB/s us sy id (no iowait column)
+    # Infer from idle%: if idle is low but user is not high either, it is I/O intensive
+    # Take the second sample (excludes the first cumulative value)
     IOSTAT_LINE=$(iostat -c 2 -w 1 disk0 2>/dev/null | tail -1)
     CPU_USER=$(echo "$IOSTAT_LINE" | awk '{print $4+0}')
     CPU_SYS=$(echo "$IOSTAT_LINE" | awk '{print $5+0}')
     CPU_IDLE=$(echo "$IOSTAT_LINE" | awk '{print $6+0}')
-    # I/O bound 估算: 100 - user - sys - idle ≈ iowait (macOS 没有独立 wa 列)
-    # 更实用的方式: 看 idle 是否异常低
+    # I/O bound estimate: 100 - user - sys - idle ≈ iowait (macOS has no separate wa column)
+    # More practical approach: check whether idle is abnormally low
     IO_BUSY=$(awk -v idle="$CPU_IDLE" 'BEGIN { printf "%.1f", 100 - idle }')
     echo "CPU User: ${CPU_USER}%  Sys: ${CPU_SYS}%  Idle: ${CPU_IDLE}%"
     echo "Disk I/O Busy (100-idle): ${IO_BUSY}%"
@@ -377,12 +377,12 @@ esac
 echo ""
 echo "=== QUICK CHECK COMPLETE ==="
 
-# 自动记录诊断统计 (patrol 模式下由 patrol.sh 写入带 detail 的记录，此处跳过)
+# Automatically log diagnostic statistics (in patrol mode patrol.sh writes the record with detail, so skip here)
 if [ -f "$SCRIPT_DIR/log_stats.sh" ] && [ "${CVM_DOCTOR_TRIGGER:-user}" != "patrol" ]; then
   bash "$SCRIPT_DIR/log_stats.sh" quick health_check "$(echo "$OS" | tr '[:upper:]' '[:lower:]')" "$SECONDS" "$_STAT_CPU" "$_STAT_MEM" "$_STAT_DISK" "$_STAT_NET" "${CVM_DOCTOR_TRIGGER:-user}" 2>/dev/null
 fi
 
-# 自动拉起 patrol 守护 (如果未运行，且不是 patrol 自身调用)
+# Automatically start the patrol daemon (if not running and this is not patrol calling itself)
 _PATROL_PID="${HOME}/.lightclaw/patrol/patrol.pid"
 _PATROL_DIR="${HOME}/.lightclaw/patrol"
 _SERVER_PORT=8765
@@ -392,7 +392,7 @@ if [ -f "$SCRIPT_DIR/patrol.sh" ] && [ "${CVM_DOCTOR_TRIGGER:-user}" != "patrol"
 
   if ! $_running; then
     mkdir -p "$_PATROL_DIR"
-    # 直接启动守护循环 (不调 --up 避免递归)
+    # Start the daemon loop directly (do not call --up, to avoid recursion)
     (
       trap 'rm -f "$_PATROL_PID"; exit 0' SIGTERM SIGINT
       while true; do
@@ -403,13 +403,13 @@ if [ -f "$SCRIPT_DIR/patrol.sh" ] && [ "${CVM_DOCTOR_TRIGGER:-user}" != "patrol"
     _daemon_pid=$!
     echo "$_daemon_pid" > "$_PATROL_PID"
 
-    # 启动 Dashboard Server (如果端口空闲)
+    # Start the Dashboard server (if the port is free)
     if [ -f "$SCRIPT_DIR/patrol_server.py" ] && ! lsof -ti ":$_SERVER_PORT" >/dev/null 2>&1; then
       nohup python3 "$SCRIPT_DIR/patrol_server.py" --port "$_SERVER_PORT" > "$_PATROL_DIR/server.log" 2>&1 &
       echo $! > "$_PATROL_DIR/server.pid"
     fi
 
     echo ""
-    echo "📡 巡检守护已自动启动 — 看板: http://localhost:$_SERVER_PORT/docs/patrol-dashboard.html"
+    echo "📡 Patrol daemon started automatically — dashboard: http://localhost:$_SERVER_PORT/docs/patrol-dashboard.html"
   fi
 fi

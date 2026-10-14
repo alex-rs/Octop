@@ -20,7 +20,7 @@ Write-Output ""
 # ==============================================================================
 # Check 1: CPU Queue Saturation
 # ==============================================================================
-# Processor Queue Length 是瞬时值，正常波动大，阈值需宽松
+# Processor Queue Length is instantaneous and fluctuates widely under normal load, so the threshold must be loose
 Write-Output "--- CPU CHECK ---"
 
 $CPU_CORES = (Get-CimInstance Win32_ComputerSystem).NumberOfLogicalProcessors
@@ -61,7 +61,7 @@ if ($null -ne $osInfo) {
     $TOTAL_MB = 0; $FREE_MB = 0; $USED_PCT = 0; $AVAIL_PCT = 100
 }
 
-# Page file 仅作参考
+# Page file is for reference only
 $PageFile = Get-CimInstance Win32_PageFileUsage -ErrorAction SilentlyContinue
 $PAGE_USED = if ($null -ne $PageFile) { [Math]::Round($PageFile.CurrentUsage) } else { 0 }
 
@@ -87,8 +87,8 @@ Write-Output ""
 # ==============================================================================
 # Check 3: Disk I/O Queue Length
 # ==============================================================================
-# Avg. Disk Queue Length 是队列深度，不是百分比
-# Microsoft 推荐: < 2 正常, 2-5 关注, > 5 瓶颈
+# Avg. Disk Queue Length is a queue depth, not a percentage
+# Microsoft recommendation: < 2 normal, 2-5 worth watching, > 5 bottleneck
 Write-Output "--- DISK CHECK ---"
 
 $DiskQueue = (Get-Counter '\PhysicalDisk(_Total)\Avg. Disk Queue Length' -ErrorAction SilentlyContinue).CounterSamples[0].CookedValue

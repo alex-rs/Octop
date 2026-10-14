@@ -1,27 +1,27 @@
 #!/usr/bin/env node
 /**
- * huisheng-coupon-tool 统一入口脚本
+ * huisheng-coupon-tool unified entry script
  *
- * 跨平台（macOS / Windows）统一调度，AI 只需执行:
+ * Unified dispatch across platforms (macOS / Windows); the AI only needs to run:
  *   node run.js <command> [options]
  *
- * 子命令:
- *   init                          环境初始化（Python检查 + npm检查 + pt-passport安装）
- *   get-device-token              获取设备标识
- *   get-token [--env test|prod]   获取缓存的用户Token
- *   auth-get-code [--env test|prod]  获取授权链接
- *   auth-poll-token               获取用户授权结果
- *   qrcode <url>                  获取二维码（服务端优先，本地PNG/ASCII兜底）
- *   issue                         领券
- *   hotword --city-id <id>        热搜词查询
+ * Subcommands:
+ *   init                          Environment setup (Python check + npm check + pt-passport install)
+ *   get-device-token              Get the device identifier
+ *   get-token [--env test|prod]   Get the cached user token
+ *   auth-get-code [--env test|prod]  Get the authorization link
+ *   auth-poll-token               Get the user authorization result
+ *   qrcode <url>                  Get the QR code (server-side first, local PNG/ASCII fallback)
+ *   issue                         Claim coupons
+ *   hotword --city-id <id>        Hot search word query
  *   search --keyword <kw> --lat <lat> --lng <lng> --city-id <id> [--page N] [--page-size N] [--query-id Q] [--request-id R] [--max-distance-km D]
- *   location                      获取用户近期位置
- *   location-by-address --address <addr>  根据地址获取经纬度
+ *   location                      Get the user's recent location
+ *   location-by-address --address <addr>  Get latitude/longitude from an address
  *   order --product-id <pid> --poi-id <pid> --city-id <id> --uuid <u> [--lat <lat>] [--lng <lng>] [--quantity N]
- *   logout                        退出登录
- *   clear-device-token            清除设备标识
+ *   logout                        Log out
+ *   clear-device-token            Clear the device identifier
  *
- * 所有命令输出 JSON 到 stdout，错误信息输出到 stderr。
+ * All commands output JSON to stdout and error messages to stderr.
  */
 
 
@@ -31,18 +31,18 @@ const fs = require('fs');
 const crypto = require('crypto');
 const https = require('https');
 
-// ── 全局常量 ─────────────────────────────────────────────────
+// ── Global constants ─────────────────────────────────────────────────
 const SCRIPTS_DIR = __dirname;
 const SKILL_DIR = path.dirname(SCRIPTS_DIR);
 const CLIENT_ID = 'c6f50b5a1e2f4e2bb00a3e2f58df3ced';
 const PT_PASSPORT_BIN = path.join(SCRIPTS_DIR, 'node_modules', '.bin', 'pt-passport');
-// 认证目录：Octop 多用户/多 Agent 隔离时通过 OCTOP_AUTH_DIR 环境变量注入
-// （如 ~/.octop/agents/<id>/credentials/meituan/）；未注入时回退到本机默认目录。
+// Auth directory: injected via the OCTOP_AUTH_DIR environment variable when Octop isolates multiple users/Agents
+// (e.g. ~/.octop/agents/<id>/credentials/meituan/); falls back to the local default directory when not injected.
 const AUTH_DIR = process.env.OCTOP_AUTH_DIR
     || path.join(require('os').homedir(), '.workbuddy', 'credentials', 'meituan-living-deals-assistant');
 
-// 自愈：专家模板经字节流拷贝播种到 Agent 工作区后，npm bin 的执行位会丢失。
-// 这里在常量初始化阶段尽力恢复（含内层 cliguard），失败不阻塞启动。
+// Self-heal: after the expert template is seeded into the Agent workspace via a byte-stream copy, the npm bin executable bit is lost.
+// Best-effort restore here during constant initialization (including the nested cliguard); failure does not block startup.
 (function ensureBinExecBit() {
   const binPaths = [
     PT_PASSPORT_BIN,
@@ -54,17 +54,17 @@ const AUTH_DIR = process.env.OCTOP_AUTH_DIR
 })();
 const PYTHON = findPython();
 
-// 动态获取 certifi 证书路径，用于修复 macOS Python SSL 证书问题
-// 若 certifi 未安装则为空字符串，Python 脚本使用系统默认证书
+// Dynamically resolve the certifi certificate path to fix macOS Python SSL certificate issues
+// Empty string when certifi is not installed; Python scripts then use the system default certificate
 const CERT_FILE = (() => {
   try {
     return execSync(`${PYTHON} -m certifi`, { encoding: 'utf-8', timeout: 5000, stdio: 'pipe' }).trim();
   } catch (_) { return ''; }
 })();
 
-// ── 工具函数 ─────────────────────────────────────────────────
+// ── Utility functions ─────────────────────────────────────────────────
 
-/** 检查给定 Python 可执行文件存在且为 Python 3 */
+/** Check that the given Python executable exists and is Python 3 */
 function isPython3(pythonPath) {
   try {
     const ver = execSync(`"${pythonPath}" --version`, { encoding: 'utf-8', timeout: 10000, stdio: 'pipe' }).trim();
@@ -73,11 +73,11 @@ function isPython3(pythonPath) {
 }
 
 /**
- * Python 解释器解析优先级：
- * 1. OCTOP_PYTHON 环境变量（显式指定）
- * 2. Octop 自托管 venv（裸机安装：$OCTOP_HOME/venv/bin/python，默认 ~/.octop/venv）
- * 3. Octop Docker 镜像 venv（/app/.venv/bin/python）
- * 4. 回退：PATH 上的 python3 / python（非 Octop 宿主环境的兼容路径）
+ * Python interpreter resolution priority:
+ * 1. OCTOP_PYTHON environment variable (explicitly specified)
+ * 2. Octop self-hosted venv (bare-metal install: $OCTOP_HOME/venv/bin/python, default ~/.octop/venv)
+ * 3. Octop Docker image venv (/app/.venv/bin/python)
+ * 4. Fallback: python3 / python on PATH (compatibility path for non-Octop host environments)
  */
 function findPython() {
   if (process.env.OCTOP_PYTHON && isPython3(process.env.OCTOP_PYTHON)) {
@@ -87,7 +87,7 @@ function findPython() {
   const venvCandidates = [
     path.join(octopHome, 'venv', 'bin', 'python'),            // macOS / Linux
     path.join(octopHome, 'venv', 'Scripts', 'python.exe'),    // Windows
-    '/app/.venv/bin/python',                                   // Octop Docker 镜像
+    '/app/.venv/bin/python',                                   // Octop Docker image
   ];
   for (const p of venvCandidates) {
     try {
@@ -112,7 +112,7 @@ function fail(error, extra) {
   process.exit(1);
 }
 
-/** 执行 Python 脚本，返回解析后的 JSON */
+/** Run a Python script and return the parsed JSON */
 function runPython(scriptName, args) {
   const scriptPath = path.join(SCRIPTS_DIR, scriptName);
   const cmdArgs = [scriptPath, ...args];
@@ -144,7 +144,7 @@ function runPython(scriptName, args) {
   }
 }
 
-/** 执行 pt-passport CLI 命令，返回原始 stdout */
+/** Run a pt-passport CLI command and return raw stdout */
 function runPassport(args) {
   try {
     const result = spawnSync(PT_PASSPORT_BIN, args, {
@@ -169,8 +169,8 @@ function runPassport(args) {
 }
 
 /**
- * 从 pt-passport 缓存中读取当前用户 Token
- * 内部使用，不暴露到命令行参数中，防止 token 泄漏
+ * Read the current user token from the pt-passport cache
+ * Internal use only; not exposed as a command-line argument, to prevent token leaks
  */
 function getCachedToken() {
   const res = runPassport(['get-token', '--client_id', CLIENT_ID]);
@@ -180,7 +180,7 @@ function getCachedToken() {
   return null;
 }
 
-/** 解析 --key value 形式的命令行参数 */
+/** Parse command-line arguments in the --key value form */
 function parseArgs(argv) {
   const args = {};
   const positional = [];
@@ -201,20 +201,20 @@ function parseArgs(argv) {
 
 
 
-// ── 子命令实现 ───────────────────────────────────────────────
+// ── Subcommand implementations ───────────────────────────────────────────────
 
 const commands = {};
 
 /**
- * init — 环境初始化
+ * init — environment setup
  */
 commands.init = function () {
-  // 1. 路径验证
+  // 1. Path validation
   if (!fs.existsSync(SCRIPTS_DIR) || !fs.statSync(SCRIPTS_DIR).isDirectory()) {
     fail('PATH_NOT_FOUND');
   }
 
-  // 2. Python 检查（优先使用 Octop 自托管 venv，见 findPython 解析顺序）
+  // 2. Python check (prefer the Octop self-hosted venv; see the findPython resolution order)
   let pyVer = '';
   try {
     pyVer = execSync(`"${PYTHON}" --version`, { encoding: 'utf-8', timeout: 10000, stdio: 'pipe' }).trim();
@@ -223,20 +223,20 @@ commands.init = function () {
   if (!pyVer) fail('PYTHON_NOT_FOUND');
   if (pyVer.startsWith('Python 2.')) fail('PYTHON_VERSION_2');
 
-  // 3. Node.js 版本检查
+  // 3. Node.js version check
   const nodeMajor = parseInt(process.versions.node.split('.')[0], 10);
   if (nodeMajor < 18) {
     fail('NODE_VERSION_LOW', { current: String(nodeMajor), required: '>=18' });
   }
 
-  // 4. npm 检查
+  // 4. npm check
   try {
     execSync('npm --version', { encoding: 'utf-8', timeout: 10000, stdio: 'pipe', env: Object.assign({}, process.env, { NODE_OPTIONS: '' }) });
   } catch (_) {
     fail('NPM_NOT_FOUND');
   }
 
-  // 5. pt-passport CLI 本地安装/更新
+  // 5. Local install/update of the pt-passport CLI
   const tgzFiles = fs.readdirSync(SCRIPTS_DIR)
       .filter(f => f.startsWith('mtuser-pt-passport-') && f.endsWith('.tgz'))
       .sort()
@@ -261,10 +261,10 @@ commands.init = function () {
     }
   }
 
-  // 6. 确保 .auth 目录存在
+  // 6. Ensure the .auth directory exists
   try { fs.mkdirSync(AUTH_DIR, { recursive: true }); } catch (_) {}
 
-  // 7. 检测客户端类型
+  // 7. Detect the client type
   var clientType = (function () {
     var envType = (process.env.WORKBUDDY_CLIENT_TYPE || '').toLowerCase();
     if (envType === 'mac' || envType === 'windows' || envType === 'miniprogram') return envType;
@@ -279,8 +279,8 @@ commands.init = function () {
 };
 
 /**
- * get-client-type — 检测当前运行环境
- * 返回: mac / windows / miniprogram
+ * get-client-type — detect the current runtime environment
+ * Returns: mac / windows / miniprogram
  */
 commands['get-client-type'] = function () {
   var envType = (process.env.WORKBUDDY_CLIENT_TYPE || '').toLowerCase();
@@ -292,7 +292,7 @@ commands['get-client-type'] = function () {
     out({ ok: true, clientType: process.platform === 'darwin' ? 'mac' : 'windows' });
     return;
   }
-  // 操作系统推断
+  // OS inference
   if (process.platform === 'darwin') {
     out({ ok: true, clientType: 'mac' });
   } else if (process.platform === 'win32') {
@@ -305,7 +305,7 @@ commands['get-client-type'] = function () {
 };
 
 /**
- * get-device-token — 获取设备标识
+ * get-device-token — get the device identifier
  */
 commands['get-device-token'] = function () {
   const result = runPython('auth.py', ['get-device-token']);
@@ -319,7 +319,7 @@ commands['get-device-token'] = function () {
 };
 
 /**
- * get-token — 获取缓存的用户 Token
+ * get-token — get the cached user token
  */
 commands['get-token'] = function (argv) {
   const { args } = parseArgs(argv || []);
@@ -336,7 +336,7 @@ commands['get-token'] = function (argv) {
 };
 
 /**
- * auth-get-code — 获取授权链接
+ * auth-get-code — get the authorization link
  */
 commands['auth-get-code'] = function (argv) {
   const { args } = parseArgs(argv || []);
@@ -347,7 +347,7 @@ commands['auth-get-code'] = function (argv) {
   const res = runPassport(passportArgs);
   const stdout = res.stdout;
 
-  // Token: <token> — 缓存命中
+  // Token: <token> — cache hit
   const tokenMatch = stdout.match(/Token:\s*(.+)/);
   if (tokenMatch) {
     out({ ok: true, type: 'token', token: tokenMatch[1].trim() });
@@ -361,7 +361,7 @@ commands['auth-get-code'] = function (argv) {
     return;
   }
 
-  // ❌ 错误
+  // ❌ error
   const errorMatch = stdout.match(/❌\s*code=(\d+)\s*message=(.*)/);
   if (errorMatch) {
     out({ ok: false, error: 'AUTH_ERROR', code: errorMatch[1], message: errorMatch[2].trim() });
@@ -372,39 +372,39 @@ commands['auth-get-code'] = function (argv) {
 };
 
 /**
- * auth-poll-token — 获取用户授权结果
- * 注意：poll-token 从 get-code 生成的 session 文件读取环境信息，无需传 --env
+ * auth-poll-token — get the user authorization result
+ * Note: poll-token reads the environment info from the session file generated by get-code, so --env is not needed.
  *
- * 兜底逻辑：若 poll-token 失败，自动调用 auth get-code 二次确认，
- * 因为存在后端竞态条件（用户已扫码成功但 poll 会话已被关闭）。
+ * Fallback logic: if poll-token fails, automatically call auth get-code to double-check,
+ * because a backend race condition exists (the user already scanned successfully but the poll session was already closed).
  */
 commands['auth-poll-token'] = function () {
   const res = runPassport(['auth', 'poll-token', '--client_id', CLIENT_ID]);
   const stdout = res.stdout;
 
-  // 正常成功
+  // Normal success
   const tokenMatch = stdout.match(/Token:\s*(.+)/);
   if (res.exitCode === 0 && tokenMatch) {
     out({ ok: true, token: tokenMatch[1].trim() });
     return;
   }
 
-  // poll 失败，执行兜底：调用 auth get-code 检查是否已有 token
+  // poll failed; run the fallback: call auth get-code to check whether a token already exists
   const fallbackRes = runPassport(['auth', 'get-code', '--client_id', CLIENT_ID]);
   const fallbackStdout = fallbackRes.stdout;
 
-  // 兜底命中缓存：用户已扫码成功
+  // Fallback cache hit: the user already scanned successfully
   const fallbackTokenMatch = fallbackStdout.match(/Token:\s*(.+)/);
   if (fallbackTokenMatch) {
     out({ ok: true, token: fallbackTokenMatch[1].trim() });
     return;
   }
 
-  // 兜底未命中缓存：确认登录确实失败
-  out({ ok: false, error: 'POLL_FAILED', message: '登录失败，请重新登录' });
+  // Fallback cache miss: confirm that login really failed
+  out({ ok: false, error: 'POLL_FAILED', message: 'Login failed; please log in again' });
 };
 
-// ── CLIGuard 签名集成 ─────────────────────────────────────────
+// ── CLIGuard signature integration ─────────────────────────────────────────
 
 function loadCliguard() {
   const vendorPath = path.join(SCRIPTS_DIR, 'vendor', 'cliguard', 'js', 'cliguard.js');
@@ -505,20 +505,20 @@ function httpsGet(urlStr, extraHeaders) {
 }
 
 /**
- * qrcode — 获取登录二维码，三级策略：
- *   1. 美团服务端接口生成图片 URL（首选，点击统计有效）
- *   2. 本地 qrcode 库生成 PNG data URI（服务端失败兜底）
- *   3. 本地生成 ASCII 字符画（qrcode 库缺失时最终兜底）
- * 用法: node run.js qrcode <url>
+ * qrcode — get the login QR code, three-tier strategy:
+ *   1. The Meituan server-side API generates an image URL (preferred; click statistics count)
+ *   2. The local qrcode library generates a PNG data URI (fallback when the server fails)
+ *   3. Locally generated ASCII art (final fallback when the qrcode library is missing)
+ * Usage: node run.js qrcode <url>
  */
 function qrcodeLocalFallback(url) {
-  // 先尝试 PNG data URI，库缺失时退化为 ASCII 字符画
+  // Try the PNG data URI first; degrade to ASCII art when the library is missing
   const pngRes = runPython('qr_local.py', [url]);
   if (pngRes.ok) return pngRes;
   if (pngRes.error === 'QRCODE_LIB_MISSING') {
     const asciiRes = runPython('qr_local.py', [url, '--ascii']);
     if (asciiRes.ok) return asciiRes;
-    // qrcode 库缺失连 ASCII 也失败 → 现场安装后重试一次
+    // The qrcode library is missing so even ASCII failed → install it on the spot and retry once
     try {
       execSync(`"${PYTHON}" -m pip install --quiet qrcode pillow`, { encoding: 'utf-8', timeout: 60000, stdio: 'pipe' });
       return runPython('qr_local.py', [url]);
@@ -537,7 +537,7 @@ commands.qrcode = function (argv) {
     return;
   }
 
-  // 支付链接不允许生成二维码，直接跳过
+  // Payment links are not allowed to generate a QR code; skip directly
   if (url.indexOf('npay.meituan.com') !== -1) {
     out({ ok: false, type: 'skip', message: 'Payment URL is not allowed to generate QR code' });
     return;
@@ -552,7 +552,7 @@ commands.qrcode = function (argv) {
         if (data && data.data) {
           out({ ok: true, type: 'image', imageUrl: data.data });
         } else {
-          // 服务端未返回图片 → 本地兜底
+          // Server returned no image → local fallback
           const local = qrcodeLocalFallback(url);
           if (local.ok) {
             out(Object.assign({ source: 'local' }, local));
@@ -562,7 +562,7 @@ commands.qrcode = function (argv) {
         }
       })
       .catch(function (e) {
-        // 服务端请求失败（网络/超时）→ 本地兜底
+        // Server request failed (network/timeout) → local fallback
         const local = qrcodeLocalFallback(url);
         if (local.ok) {
           out(Object.assign({ source: 'local' }, local));
@@ -573,20 +573,20 @@ commands.qrcode = function (argv) {
 };
 
 /**
- * issue — 领取优惠券（纯 Node.js 实现）
- * 用法: node run.js issue
+ * issue — claim coupons (pure Node.js implementation)
+ * Usage: node run.js issue
  *
- * Token 从 pt-passport 缓存自动读取，不通过命令行传递。
+ * The token is read automatically from the pt-passport cache; it is never passed on the command line.
  *
- * 返回格式（成功）:
+ * Return format (success):
  *   { ok: true, success: true, coupon_count: N, coupons: [...], count_str: "...", display_coupons: [...] }
- * 返回格式（失败）:
+ * Return format (failure):
  *   { ok: false, success: false, error: "<ERROR_TYPE>", message: "..." }
  */
 commands.issue = function (argv) {
   const { args } = parseArgs(argv || []);
   const token = getCachedToken();
-  if (!token) fail('NO_TOKEN', { message: '未登录或 Token 已过期，请先登录' });
+  if (!token) fail('NO_TOKEN', { message: 'Not logged in or token expired; please log in first' });
 
   const COUPON_BASE_URL = 'https://media.meituan.com';
   const COUPON_ISSUE_PATH = '/fulishemini/couponActivity/sendCouponWork';
@@ -595,12 +595,12 @@ commands.issue = function (argv) {
   const LOG_DIR = path.join(os.tmpdir(), 'huisheng');
   const LOG_FILE = path.join(LOG_DIR, 'huisheng_issue.log');
 
-  // 检查当天领券缓存，命中则返回 1014 + cached=true + 券数据，避免重复调发券接口
+  // Check today's coupon cache; on a hit return 1014 + cached=true + coupon data to avoid calling the issuance API again
   var todayCache = loadTodayCouponCache();
   if (todayCache) {
     out({
       ok: false, success: false, code: 1014, cached: true,
-      message: '您今天已经领取过美团的优惠券',
+      message: 'You have already claimed Meituan coupons today',
       coupon_count: todayCache.coupon_count || 0,
       coupons: todayCache.coupons || [],
       count_str: todayCache.count_str || '',
@@ -611,12 +611,12 @@ commands.issue = function (argv) {
     return;
   }
 
-  // ── 工具函数 ──────────────────────────────────────────────
+  // ── Utility functions ──────────────────────────────────────────────
   function loadConfig() {
     try { return JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf-8')); } catch (_) { return {}; }
   }
 
-  // ── 当天领券缓存（只保留当天结果，跨天自动失效） ─────────
+  // ── Today's coupon cache (only today's result is kept; invalidated automatically across days) ─────────
   function getLocalDateStr() {
     const d = new Date();
     const y = d.getFullYear();
@@ -699,13 +699,13 @@ commands.issue = function (argv) {
     var couponValue = c.couponValue || 0;
     var discountInfo = '';
     if (priceLimit && priceLimit > 0) {
-      discountInfo = '满' + fenToYuan(priceLimit) + '元减' + fenToYuan(couponValue) + '元';
+      discountInfo = 'Spend ¥' + fenToYuan(priceLimit) + ', get ¥' + fenToYuan(couponValue) + ' off';
     }
     var start = c.couponStartTime;
     var end = c.couponEndTime;
     var validPeriod = '';
     if (start && end) {
-      validPeriod = formatTimestampMs(start) + ' 至 ' + formatTimestampMs(end);
+      validPeriod = formatTimestampMs(start) + ' to ' + formatTimestampMs(end);
     }
     return {
       name: c.couponName || '',
@@ -717,9 +717,9 @@ commands.issue = function (argv) {
     };
   }
 
-  // ── 展示结果构建 ──────────────────────────────────────────
+  // ── Display result construction ──────────────────────────────────────────
   var _TAB_ORDER = ['外卖', '美食团购', '美团闪购', '休闲娱乐', '生活服务', '丽人医疗', '更多福利'];
-  var _TAB_DISPLAY = { '更多福利': '其他' };
+  var _TAB_DISPLAY = { '更多福利': 'Other' };
   var _SLOT_PLAN_BASE = [['外卖', 2], ['美食团购', 1], ['美团闪购', 1],
                          ['休闲娱乐', 1], ['生活服务', 1], ['丽人医疗', 1]];
 
@@ -736,9 +736,9 @@ commands.issue = function (argv) {
       var t = finalOrder[j];
       if (!tabCount[t]) continue;
       var displayName = _TAB_DISPLAY[t] || t;
-      parts.push(displayName + '优惠券' + tabCount[t] + '张');
+      parts.push(displayName + ' coupons: ' + tabCount[t]);
     }
-    return parts.join('、');
+    return parts.join(', ');
   }
 
   function buildDisplayCoupons(coupons) {
@@ -800,7 +800,7 @@ commands.issue = function (argv) {
     return { count_str: buildCountStr(coupons), display_coupons: buildDisplayCoupons(coupons) };
   }
 
-  // ── 发起请求 ──────────────────────────────────────────────
+  // ── Send the request ──────────────────────────────────────────────
   var config = loadConfig();
   var aiScene = config.aiScene || '';
 
@@ -858,45 +858,45 @@ commands.issue = function (argv) {
         out({
           ok: false, success: false, code: 1014,
           error: 'ALREADY_RECEIVED',
-          message: '您今天已经领取过了，每天只能领取一次，明天再来哦～',
+          message: 'You have already claimed today; you can only claim once per day, so come back tomorrow~',
           activity_name: data.activityName || '',
           activity_link: data.activityLink || ''
         });
       } else if (code === 401) {
-        // 主动清除 pt-passport 本地缓存，防止 auth-get-code 命中旧 token 导致死循环
+        // Proactively clear the local pt-passport cache so auth-get-code cannot hit a stale token and loop forever
         try { runPassport(['logout', '--client_id', CLIENT_ID]); } catch (_) {}
 
         logEntry.result = { success: false, code: 401, error: 'RE_LOGIN' };
         writeLog(logEntry, aiScene);
-        out({ ok: false, success: false, code: 401, error: 'RE_LOGIN', message: '登录已过期，请重新登录' });
+        out({ ok: false, success: false, code: 401, error: 'RE_LOGIN', message: 'Login expired; please log in again' });
       } else if (code === 509 || code === 50200) {
         logEntry.result = { success: false, code: code, error: 'RATE_LIMIT' };
         writeLog(logEntry, aiScene);
-        out({ ok: false, success: false, code: code, error: 'RATE_LIMIT', message: '请求过于频繁，请稍后重试' });
+        out({ ok: false, success: false, code: code, error: 'RATE_LIMIT', message: 'Too many requests; please try again later' });
       } else if (code === 9999) {
         logEntry.result = { success: false, code: 9999, error: 'SYSTEM_ERROR' };
         writeLog(logEntry, aiScene);
-        out({ ok: false, success: false, code: 9999, error: 'SYSTEM_ERROR', message: '系统异常，请稍后重试' });
+        out({ ok: false, success: false, code: 9999, error: 'SYSTEM_ERROR', message: 'System error; please try again later' });
       } else {
         logEntry.result = { success: false, code: code, error: 'UNKNOWN_ERROR' };
         writeLog(logEntry, aiScene);
-        out({ ok: false, success: false, code: code, error: 'UNKNOWN_ERROR', message: '未知错误（code=' + code + '，msg=' + msg + '）' });
+        out({ ok: false, success: false, code: code, error: 'UNKNOWN_ERROR', message: 'Unknown error (code=' + code + ', msg=' + msg + ')' });
       }
     })
     .catch(function (e) {
       logEntry.response = { error: e.message === 'TIMEOUT' ? 'TIMEOUT' : 'NETWORK_ERROR', detail: e.message };
       writeLog(logEntry, aiScene);
       if (e.message === 'TIMEOUT') {
-        out({ ok: false, success: false, error: 'TIMEOUT', message: '请求超时，请稍后重试' });
+        out({ ok: false, success: false, error: 'TIMEOUT', message: 'Request timed out; please try again later' });
       } else {
-        out({ ok: false, success: false, error: 'NETWORK_ERROR', message: '网络异常：' + e.message });
+        out({ ok: false, success: false, error: 'NETWORK_ERROR', message: 'Network error: ' + e.message });
       }
     });
 };
 
 /**
- * hotword — 热搜词查询
- * 用法: node run.js hotword --city-id <id>
+ * hotword — hot search word query
+ * Usage: node run.js hotword --city-id <id>
  */
 commands.hotword = function (argv) {
   const { args } = parseArgs(argv || []);
@@ -910,7 +910,7 @@ commands.hotword = function (argv) {
         const hotWords = (data.data && data.data.hotWord || []).map(function (item) { return item.word; });
         out({ ok: true, success: true, hotWords: hotWords });
       } else {
-        out({ ok: false, success: false, error: 'API_ERROR', code: data && data.code, message: (data && data.message) || '热搜词获取失败' });
+        out({ ok: false, success: false, error: 'API_ERROR', code: data && data.code, message: (data && data.message) || 'Failed to fetch hot search words' });
       }
     })
     .catch(function (e) {
@@ -919,12 +919,12 @@ commands.hotword = function (argv) {
 };
 
 /**
- * search — 商品搜索
- * 用法: node run.js search --keyword <kw> --lat <lat> --lng <lng> --city-id <id>
+ * search — product search
+ * Usage: node run.js search --keyword <kw> --lat <lat> --lng <lng> --city-id <id>
  *        [--page N] [--page-size N] [--query-id Q] [--request-id R] [--max-distance-km D]
  *
- * Token 从 pt-passport 缓存自动读取，不通过命令行传递。
- * 直接用 Node.js https 发请求，避免 Windows Python SSL 兼容问题。
+ * The token is read automatically from the pt-passport cache; it is never passed on the command line.
+ * Requests are sent directly with Node.js https to avoid Windows Python SSL compatibility issues.
  */
 commands.search = function (argv) {
   const { args } = parseArgs(argv || []);
@@ -933,7 +933,7 @@ commands.search = function (argv) {
     if (!args[r]) fail('MISSING_PARAM', { param: r });
   }
   const token = getCachedToken();
-  if (!token) fail('NO_TOKEN', { message: '未登录或 Token 已过期，请先登录' });
+  if (!token) fail('NO_TOKEN', { message: 'Not logged in or token expired; please log in first' });
 
   const page = parseInt(args['page'] || '1', 10);
   const pageSize = parseInt(args['page-size'] || '10', 10);
@@ -968,7 +968,7 @@ commands.search = function (argv) {
           if (item.poiId) item.poiId = String(item.poiId);
           return item;
         });
-        // 按距离过滤
+        // Filter by distance
         productList = productList.filter(function (item) {
           var dt = (item.distanceText || '').trim().toLowerCase();
           var km = 999;
@@ -976,7 +976,7 @@ commands.search = function (argv) {
           else if (dt.endsWith('m')) km = parseFloat(dt.slice(0, -1)) / 1000;
           return km <= maxDistanceKm;
         });
-        // 重新编号
+        // Renumber
         productList.forEach(function (item, idx) { item.index = idx + 1; });
         out({
           ok: true, success: true,
@@ -988,7 +988,7 @@ commands.search = function (argv) {
           pageSize: pageSize
         });
       } else {
-        out({ ok: false, success: false, error: 'API_ERROR', code: data && data.code, message: (data && data.message) || '搜索失败' });
+        out({ ok: false, success: false, error: 'API_ERROR', code: data && data.code, message: (data && data.message) || 'Search failed' });
       }
     })
     .catch(function (e) {
@@ -997,15 +997,15 @@ commands.search = function (argv) {
 };
 
 /**
- * location — 获取用户近期位置
- * 用法: node run.js location
+ * location — get the user's recent location
+ * Usage: node run.js location
  *
- * Token 从 pt-passport 缓存自动读取，不通过命令行传递。
- * 直接用 Node.js https 发请求，避免 Windows Python SSL 兼容问题。
+ * The token is read automatically from the pt-passport cache; it is never passed on the command line.
+ * Requests are sent directly with Node.js https to avoid Windows Python SSL compatibility issues.
  */
 commands.location = function (argv) {
   const token = getCachedToken();
-  if (!token) fail('NO_TOKEN', { message: '未登录或 Token 已过期，请先登录' });
+  if (!token) fail('NO_TOKEN', { message: 'Not logged in or token expired; please log in first' });
 
   const apiUrl = 'https://click.meituan.com/cps/ai/product/getUserRecentLocation';
   httpsPost(apiUrl, { token: token }, { token: token })
@@ -1026,7 +1026,7 @@ commands.location = function (argv) {
         out({
           ok: false,
           success: false,
-          error: (data && data.message) || '未知错误',
+          error: (data && data.message) || 'Unknown error',
           code: data && data.code
         });
       }
@@ -1037,9 +1037,9 @@ commands.location = function (argv) {
 };
 
 /**
- * location-by-address — 根据地址获取经纬度
- * 用法: node run.js location-by-address --address <addr>
- * 直接用 Node.js https 发请求，避免 Windows Python SSL 兼容问题。
+ * location-by-address — get latitude/longitude from an address
+ * Usage: node run.js location-by-address --address <addr>
+ * Requests are sent directly with Node.js https to avoid Windows Python SSL compatibility issues.
  */
 commands['location-by-address'] = function (argv) {
   const { args } = parseArgs(argv || []);
@@ -1053,7 +1053,7 @@ commands['location-by-address'] = function (argv) {
         const loc = data.data || {};
         out({ ok: true, success: true, cityId: loc.cityId, lng: loc.lng, lat: loc.lat });
       } else {
-        out({ ok: false, success: false, error: (data && data.message) || '未知错误', code: data && data.code });
+        out({ ok: false, success: false, error: (data && data.message) || 'Unknown error', code: data && data.code });
       }
     })
     .catch(function (e) {
@@ -1062,13 +1062,13 @@ commands['location-by-address'] = function (argv) {
 };
 
 /**
- * order — 下单
- * 用法: node run.js order --product-id <pid> --poi-id <pid> --city-id <id> --uuid <u>
+ * order — place an order
+ * Usage: node run.js order --product-id <pid> --poi-id <pid> --city-id <id> --uuid <u>
  *        [--lat <lat>] [--lng <lng>] [--quantity N]
  *
- * Token 从 pt-passport 缓存自动读取，不通过命令行传递。
- * clientType 内部自动判断。
- * 直接用 Node.js https 发请求，避免 Windows Python SSL 兼容问题。
+ * The token is read automatically from the pt-passport cache; it is never passed on the command line.
+ * clientType is determined internally.
+ * Requests are sent directly with Node.js https to avoid Windows Python SSL compatibility issues.
  */
 commands.order = function (argv) {
   const { args } = parseArgs(argv || []);
@@ -1077,9 +1077,9 @@ commands.order = function (argv) {
     if (!args[r]) fail('MISSING_PARAM', { param: r });
   }
   const token = getCachedToken();
-  if (!token) fail('NO_TOKEN', { message: '未登录或 Token 已过期，请先登录' });
+  if (!token) fail('NO_TOKEN', { message: 'Not logged in or token expired; please log in first' });
 
-  // 内部自行判断客户端类型
+  // Determine the client type internally
   var clientType = (function () {
     var envType = (process.env.WORKBUDDY_CLIENT_TYPE || '').toLowerCase();
     if (envType === 'mac' || envType === 'windows' || envType === 'miniprogram') return envType;
@@ -1090,7 +1090,7 @@ commands.order = function (argv) {
     return 'pc';
   })();
 
-  // 检测 weixinpay 插件是否支持 x402 协议
+  // Detect whether the weixinpay plugin supports the x402 protocol
   var useWxAIPay = false;
   try {
     var detectResult = spawnSync(PYTHON, [
@@ -1105,7 +1105,7 @@ commands.order = function (argv) {
     if (detectResult.status === 0) {
       useWxAIPay = (detectResult.stdout || '').trim() === 'true';
     }
-  } catch (_) { /* 检测失败则保持 false，走原生支付 */ }
+  } catch (_) { /* on detection failure keep false and use native payment */ }
 
   const body = {
     productId: String(args['product-id']),
@@ -1141,7 +1141,7 @@ commands.order = function (argv) {
           useWxAIPay: useWxAIPay
         });
       } else {
-        out({ ok: false, success: false, error: 'API_ERROR', code: data && data.code, message: (data && data.message) || '下单失败' });
+        out({ ok: false, success: false, error: 'API_ERROR', code: data && data.code, message: (data && data.message) || 'Order failed' });
       }
     })
     .catch(function (e) {
@@ -1150,9 +1150,9 @@ commands.order = function (argv) {
 };
 
 /**
- * check-wx-ai-pay — 检测 weixinpay 插件是否支持 x402 协议
- * 用法: node run.js check-wx-ai-pay
- * 返回: { ok: true, useWxAIPay: true/false, version: "x.y.z" }
+ * check-wx-ai-pay — detect whether the weixinpay plugin supports the x402 protocol
+ * Usage: node run.js check-wx-ai-pay
+ * Returns: { ok: true, useWxAIPay: true/false, version: "x.y.z" }
  */
 commands['check-wx-ai-pay'] = function () {
   try {
@@ -1183,15 +1183,15 @@ commands['check-wx-ai-pay'] = function () {
 };
 
 /**
- * check-login — 检查美团微信小程序登录状态
- * 用法: node run.js check-login
+ * check-login — check the Meituan WeChat mini-program login status
+ * Usage: node run.js check-login
  *
- * Token 从 pt-passport 缓存自动读取，不通过命令行传递。
- * 直接用 Node.js https 发请求，避免 Windows Python SSL 兼容问题。
+ * The token is read automatically from the pt-passport cache; it is never passed on the command line.
+ * Requests are sent directly with Node.js https to avoid Windows Python SSL compatibility issues.
  */
 commands['check-login'] = function () {
   const token = getCachedToken();
-  if (!token) fail('NO_TOKEN', { message: '未登录或 Token 已过期，请先登录' });
+  if (!token) fail('NO_TOKEN', { message: 'Not logged in or token expired; please log in first' });
 
   const apiUrl = 'https://click.meituan.com/cps/ai/product/checkLoginMtMiniProgram';
   const body = {
@@ -1204,7 +1204,7 @@ commands['check-login'] = function () {
       if (data && data.code === 200 && data.success) {
         out({ ok: true, success: true, logged: !!data.data });
       } else {
-        out({ ok: false, success: false, error: 'API_ERROR', code: data && data.code, message: (data && data.message) || '校验失败' });
+        out({ ok: false, success: false, error: 'API_ERROR', code: data && data.code, message: (data && data.message) || 'Verification failed' });
       }
     })
     .catch(function (e) {
@@ -1213,8 +1213,8 @@ commands['check-login'] = function () {
 };
 
 /**
-* logout — 退出登录
-* 直接通过 runPassport 清除 pt-passport CLI 缓存（避免 Python 找不到 pt-passport 的 PATH 问题）
+* logout — log out
+* Clear the pt-passport CLI cache directly through runPassport (avoids PATH issues where Python cannot find pt-passport)
 */
 commands.logout = function () {
 var cli_cleared = false;
@@ -1224,22 +1224,22 @@ try {
 } catch (e) {
   cli_cleared = false;
 }
-out({ ok: true, success: true, message: '已退出登录，下次需重新授权', device_token_preserved: true, cli_cache_cleared: cli_cleared });
+out({ ok: true, success: true, message: 'Logged out; you will need to authorize again next time', device_token_preserved: true, cli_cache_cleared: cli_cleared });
 };
 
 /**
-* clear-device-token — 清除设备标识
-* 清除 device_token 并清除 pt-passport CLI 缓存
+* clear-device-token — clear the device identifier
+* Clear device_token and the pt-passport CLI cache
 */
 commands['clear-device-token'] = function () {
-// 先清除 pt-passport CLI 缓存
+// First clear the pt-passport CLI cache
 try { runPassport(['logout', '--client_id', CLIENT_ID]); } catch (e) {}
-// 再清除本地 device_token（通过 auth.py）
+// Then clear the local device_token (via auth.py)
 var result = runPython('auth.py', ['clear-device-token']);
 out(Object.assign({ ok: !!result.success }, result));
 };
 
-// ── 入口 ─────────────────────────────────────────────────────
+// ── Entry point ─────────────────────────────────────────────────────
 
 const allArgs = process.argv.slice(2);
 const command = allArgs[0];

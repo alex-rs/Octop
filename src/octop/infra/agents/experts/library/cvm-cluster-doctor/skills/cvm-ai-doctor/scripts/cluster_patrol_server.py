@@ -209,16 +209,16 @@ def main() -> None:
     print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
     print(f"  Dashboard:  \033[32mhttp://localhost:{args.port}/docs/cluster-dashboard.html\033[0m")
     print(f"  API:        http://localhost:{args.port}/api/cluster-data")
-    print(f"  数据文件:   {PATROL_FILE}")
-    print(f"  项目目录:   {project_root}")
+    print(f"  Data file:  {PATROL_FILE}")
+    print(f"  Directory:  {project_root}")
     print()
-    print("  \033[1mCtrl+C 停止\033[0m")
+    print("  \033[1mCtrl+C to stop\033[0m")
     print()
 
     try:
         server.serve_forever()
     except KeyboardInterrupt:
-        print("\n已停止")
+        print("\nStopped")
         server.server_close()
 
 

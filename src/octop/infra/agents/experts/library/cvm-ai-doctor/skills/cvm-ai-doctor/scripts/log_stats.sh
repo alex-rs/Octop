@@ -2,7 +2,7 @@
 # ==============================================================================
 # CVM Doctor Stats Logger
 # ==============================================================================
-# 统一的诊断记录写入器，所有路径 (patrol/手动/cron) 都写同一个文件
+# Unified diagnostic record writer; all paths (patrol/manual/cron) write to the same file
 # Usage: bash scripts/log_stats.sh <mode> <scenario> <os> <duration_s> <cpu> <mem> <disk> <net> <trigger>
 # Example: bash scripts/log_stats.sh quick health_check linux 8 ok ok warning ok user
 # ==============================================================================

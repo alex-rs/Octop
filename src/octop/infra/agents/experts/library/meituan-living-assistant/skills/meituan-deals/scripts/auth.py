@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-huisheng-coupon-tool 认证模块
-管理 device_token（下单时的 uuid 参数）。Token 有效期由 pt-passport CLI 管理。
+huisheng-coupon-tool auth module
+Manages device_token (the uuid parameter used when ordering). Token validity is managed by the pt-passport CLI.
 
-用法示例：
+Usage examples:
   python auth.py get-device-token
   python auth.py logout
   python auth.py clear-device-token
@@ -17,18 +17,18 @@ import random
 import time
 from pathlib import Path
 
-# ── 常量 ──────────────────────────────────────────────────────────────
+# ── Constants ──────────────────────────────────────────────────────────────
 AUTH_KEY = "meituan-c-user-auth"
 
-# pt-passport 客户端 ID
+# pt-passport client ID
 CLIENT_ID = "c6f50b5a1e2f4e2bb00a3e2f58df3ced"
 
 
 def _resolve_auth_file() -> Path:
     """
-    跨平台确定存储路径，优先级：
-    1. 环境变量 WORKBUDDY_AUTH_FILE（由 run.js 注入，最高优先级）
-    2. 环境变量 OCTOP_AUTH_DIR（Octop 多 Agent 隔离目录）
+    Resolve the storage path across platforms, in priority order:
+    1. The WORKBUDDY_AUTH_FILE environment variable (injected by run.js, highest priority)
+    2. The OCTOP_AUTH_DIR environment variable (Octop multi-Agent isolation directory)
     3. ~/.workbuddy/credentials/meituan-living-deals-assistant/token.json
     """
     import os
@@ -49,14 +49,14 @@ def _resolve_auth_file() -> Path:
 AUTH_FILE = _resolve_auth_file()
 
 
-# ── 设备ID生成 ────────────────────────────────────────────────────────
+# ── Device ID generation ────────────────────────────────────────────────────────
 
 
 def generate_device_token(seed: str) -> str:
     """
-    生成设备唯一标识（device_token）。
-    算法：MD5（seed + 毫秒时间戳 + 0~1000随机整数）
-    device_token 与设备绑定，一旦生成后永不覆盖。
+    Generate a unique device identifier (device_token).
+    Algorithm: MD5(seed + millisecond timestamp + random integer 0~1000)
+    device_token is bound to the device and is never overwritten once generated.
     """
     ts_ms = int(time.time() * 1000)
     rand_int = random.randint(0, 1000)
@@ -64,7 +64,7 @@ def generate_device_token(seed: str) -> str:
     return hashlib.md5(raw.encode("utf-8")).hexdigest()
 
 
-# ── 存储操作 ──────────────────────────────────────────────────────────
+# ── Storage operations ──────────────────────────────────────────────────────────
 
 
 def load_auth() -> dict:
@@ -96,7 +96,7 @@ def save_token_data(token_data: dict):
 
 
 def _ensure_device_token(token_data: dict) -> str:
-    """确保 device_token 存在，不存在则生成并持久化，返回 device_token"""
+    """Ensure device_token exists; generate and persist it when missing, and return device_token"""
     dt = token_data.get("device_token", "")
     if not dt:
         dt = generate_device_token("huisheng")
@@ -105,29 +105,29 @@ def _ensure_device_token(token_data: dict) -> str:
     return dt
 
 
-# ── 命令：get-device-token ───────────────────────────────────────────
+# ── Command: get-device-token ───────────────────────────────────────────
 
 
 def cmd_get_device_token():
-    """获取 device_token，不存在则自动生成"""
+    """Get device_token, generating it automatically when missing"""
     token_data = get_token_data()
     device_token = _ensure_device_token(token_data)
     print(json.dumps({"success": True, "device_token": device_token}, ensure_ascii=False))
 
 
-# ── 命令：logout ─────────────────────────────────────────────────────
+# ── Command: logout ─────────────────────────────────────────────────────
 
 
 def cmd_logout():
-    """退出登录：清除 pt-passport CLI 缓存，保留 device_token"""
+    """Log out: clear the pt-passport CLI cache, keep device_token"""
     import subprocess
 
-    # 清除 pt-passport CLI 本地缓存的 Token
+    # Clear the token cached locally by the pt-passport CLI
     cli_cleared = False
     import os
 
     env = os.environ.copy()
-    # 清空 NODE_OPTIONS：pt-passport 是 node CLI，避免宿主注入的选项污染输出或引发异常
+    # Clear NODE_OPTIONS: pt-passport is a node CLI, so avoid host-injected options polluting output or raising errors
     env["NODE_OPTIONS"] = ""
     env["PT_PASSPORT_AUTH_FILE"] = str(AUTH_FILE.parent / "pt_passport_auth.json")
     try:
@@ -140,7 +140,7 @@ def cmd_logout():
         )
         cli_cleared = result.returncode == 0
     except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
-        pass  # CLI 不存在或超时，忽略
+        pass  # CLI missing or timed out; ignore
 
     token_data = get_token_data()
     device_token = token_data.get("device_token", "")
@@ -149,7 +149,7 @@ def cmd_logout():
         json.dumps(
             {
                 "success": True,
-                "message": "已退出登录，下次需重新授权",
+                "message": "Logged out; you will need to authorize again next time",
                 "device_token_preserved": bool(device_token),
                 "cli_cache_cleared": cli_cleared,
             },
@@ -158,25 +158,25 @@ def cmd_logout():
     )
 
 
-# ── 命令：clear-device-token ─────────────────────────────────────────
+# ── Command: clear-device-token ─────────────────────────────────────────
 
 
 def cmd_clear_device_token():
-    """清除设备标识，仅在用户明确要求时调用"""
+    """Clear the device identifier; call only when the user explicitly asks"""
     import subprocess
 
     token_data = get_token_data()
     had_device_token = bool(token_data.get("device_token"))
 
-    # 清除 device_token
+    # Clear device_token
     token_data["device_token"] = ""
     save_token_data(token_data)
 
-    # 同时清除 pt-passport CLI 缓存
+    # Also clear the pt-passport CLI cache
     import os
 
     env = os.environ.copy()
-    # 清空 NODE_OPTIONS：pt-passport 是 node CLI，避免宿主注入的选项污染输出或引发异常
+    # Clear NODE_OPTIONS: pt-passport is a node CLI, so avoid host-injected options polluting output or raising errors
     env["NODE_OPTIONS"] = ""
     with contextlib.suppress(FileNotFoundError, subprocess.TimeoutExpired, OSError):
         subprocess.run(
@@ -191,7 +191,7 @@ def cmd_clear_device_token():
         json.dumps(
             {
                 "success": True,
-                "message": "设备标识已清除，下次登录将生成新的 device_token",
+                "message": "Device identifier cleared; a new device_token will be generated on the next login",
                 "device_token_cleared": had_device_token,
             },
             ensure_ascii=False,
@@ -199,16 +199,23 @@ def cmd_clear_device_token():
     )
 
 
-# ── 入口 ─────────────────────────────────────────────────────────────
+# ── Entry point ─────────────────────────────────────────────────────────────
 
 
 def main():
-    parser = argparse.ArgumentParser(description="huisheng-coupon-tool 认证模块")
+    parser = argparse.ArgumentParser(description="huisheng-coupon-tool auth module")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    subparsers.add_parser("get-device-token", help="获取/生成 device_token（下单需要）")
-    subparsers.add_parser("logout", help="退出登录，清除 pt-passport CLI 缓存（保留 device_token）")
-    subparsers.add_parser("clear-device-token", help="清除设备标识，仅在用户明确要求时调用")
+    subparsers.add_parser(
+        "get-device-token", help="Get/generate device_token (required for ordering)"
+    )
+    subparsers.add_parser(
+        "logout", help="Log out and clear the pt-passport CLI cache (keeps device_token)"
+    )
+    subparsers.add_parser(
+        "clear-device-token",
+        help="Clear the device identifier; call only when the user explicitly asks",
+    )
 
     args = parser.parse_args()
 

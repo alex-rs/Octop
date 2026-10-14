@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""plugin_version_lite.py — 插件版本探测精简版（行为同 plugin_version.py，去注释/调试/明细）。"""
+"""plugin_version_lite.py — slim plugin version detection (same behavior as plugin_version.py, with comments/debug/detail removed)."""
 
 from __future__ import annotations
 
@@ -15,14 +15,14 @@ _CB_MARKETS = (
     "codebuddy-plugins-official",
     "codebuddy-builtin",
 )
-_CB_BUILTIN_MARKETPLACE = "codebuddy-builtin"  # Linux 内置插件所在 marketplace
-# qclaw 版本号优先看 package.json，再回退 openclaw.plugin.json / plugin.json
+_CB_BUILTIN_MARKETPLACE = "codebuddy-builtin"  # marketplace that holds Linux built-in plugins
+# For the qclaw version, check package.json first, then fall back to openclaw.plugin.json / plugin.json
 _OC_MANIFESTS = ("package.json", "openclaw.plugin.json", "plugin.json")
 DEFAULT_PLUGIN = "weixinpay"
 NOT_SUPPORTED = "0"
-X402_THRESHOLD = "1.5.106"  # 版本 >= 此值认为支持 x402 协议
+X402_THRESHOLD = "1.5.106"  # versions >= this value are considered to support the x402 protocol
 
-# qclaw 目录名映射：openclaw 规范名优先，回退兼容旧名。WorkBuddy 不受影响（始终 weixinpay）。
+# qclaw directory name mapping: the canonical openclaw name first, legacy names as fallback. WorkBuddy is unaffected (always weixinpay).
 _OC_PLUGIN_ALIASES = {"weixinpay": ("openclaw-weixinpay", "weixinpay")}
 
 
@@ -62,12 +62,12 @@ def _ver_from(path: Path, rel: Path = _CB_VER_REL) -> str | None:
 
 
 def detect_agent() -> str:
-    # ① 身份环境变量（最可靠）。Qclaw 大小写存在版本差异，两种写法都认（env 名大小写敏感）
+    # ① Identity environment variables (most reliable). Qclaw case differs across versions, so accept both spellings (env names are case-sensitive)
     if os.environ.get("Qclaw_USER_ID") or os.environ.get("QCLAW_USER_ID"):  # noqa: SIM112
         return "qclaw"
     if os.environ.get("CODEBUDDY_SESSION_ID"):
         return "workbuddy"
-    # ② 平台专属环境变量线索（不看配置目录存在性：删应用后配置残留会误判，导致跨 Agent）
+    # ② Platform-specific environment variable clues (ignore whether config dirs exist: leftover config after uninstalling the app would misdetect and cross Agents)
     if os.environ.get("OPENCLAW_CONFIG_PATH"):
         return "qclaw"
     if (
@@ -89,7 +89,7 @@ def _resolve_config_dir() -> str:
 
 
 def _cb_builtin_plugins_roots_by_platform() -> list[Path]:
-    # 仅桌面端(win/mac)有 builtin-plugins 应用资源目录；Linux 无（走 codebuddy-builtin marketplace）
+    # Only desktop (win/mac) has a builtin-plugins app resource directory; Linux has none (it uses the codebuddy-builtin marketplace)
     name = _platform()
     if name == "macos":
         return [
@@ -122,7 +122,7 @@ def _cb_builtin_plugins_roots_by_platform() -> list[Path]:
 
 
 def _builtin_roots() -> list[Path]:
-    # 桌面端与 Linux 内置插件命名不同，按平台区分
+    # Desktop and Linux name built-in plugins differently; distinguish by platform
     if _platform() == "linux":
         return [
             Path(_resolve_config_dir())
@@ -151,7 +151,7 @@ def _oc_ver(root: Path) -> str | None:
 
 
 def detect_workbuddy(name: str = DEFAULT_PLUGIN) -> str:
-    # ① 内置 builtin-plugins 优先（SKILLS_DIR -> CONFIG_DIR -> 平台推测）
+    # ① built-in builtin-plugins first (SKILLS_DIR -> CONFIG_DIR -> platform inference)
     for broot in _builtin_roots():
         v = _ver_from(broot / name)
         if v:
@@ -164,7 +164,7 @@ def detect_workbuddy(name: str = DEFAULT_PLUGIN) -> str:
             v = _ver_from(Path(d))
             if v:
                 return v
-    # ③④⑤ 配置目录 + marketplace / flat
+    # ③④⑤ config dir + marketplace / flat
     cfg = os.environ.get("WORKBUDDY_CONFIG_DIR") or os.environ.get("CODEBUDDY_CONFIG_DIR")
     if not cfg:
         wb = _home() / ".workbuddy"
@@ -187,16 +187,16 @@ def detect_qclaw(name: str = DEFAULT_PLUGIN) -> str:
     if not config:
         return NOT_SUPPORTED
     plugins = config.get("plugins", {}) or {}
-    names = _oc_candidates(name)  # openclaw-weixinpay 优先，weixinpay 回退
+    names = _oc_candidates(name)  # openclaw-weixinpay first, weixinpay as fallback
     installs = plugins.get("installs", {}) or {}
-    # ① installs.<候选>.installPath
+    # ① installs.<candidate>.installPath
     for nm in names:
         install = (installs.get(nm) or {}).get("installPath")
         if install:
             v = _oc_ver(Path(install))
             if v:
                 return v
-    # ② plugins.load.paths（内置/已加载插件）
+    # ② plugins.load.paths (built-in / already-loaded plugins)
     load = (plugins.get("load", {}) or {}).get("paths", [])
     load = [load] if isinstance(load, str) else [str(p) for p in (load or []) if p]
     for lp in load:
@@ -231,12 +231,12 @@ def _ver_ge(a: str, b: str) -> bool:
 
 
 def weixinpay_installed(version: str) -> bool:
-    """版本 > 0（非 "0"）认为 weixinpay 插件存在。"""
+    """Version > 0 (not "0") means the weixinpay plugin is present."""
     return version != NOT_SUPPORTED
 
 
 def weixinpay_support_x402(version: str) -> bool:
-    """版本 >= X402_THRESHOLD（默认 1.5.106）认为 weixinpay 支持 x402 协议。"""
+    """Version >= X402_THRESHOLD (default 1.5.106) means weixinpay supports the x402 protocol."""
     return weixinpay_installed(version) and _ver_ge(version, X402_THRESHOLD)
 
 
@@ -246,19 +246,19 @@ def get_plugin_version(name: str = DEFAULT_PLUGIN, system: str = "auto") -> str:
         return detect_workbuddy(name)
     if system == "qclaw":
         return detect_qclaw(name)
-    # auto：严格按 Agent 身份单查，绝不跨平台
-    # （WorkBuddy 不查 qclaw 路径，Qclaw 不查 workbuddy 路径）
+    # auto: query strictly by Agent identity alone, never across platforms
+    # (WorkBuddy does not query qclaw paths, Qclaw does not query workbuddy paths)
     agent = detect_agent()
     if agent == "qclaw":
         return detect_qclaw(name)
-    # workbuddy 或无法判定时，保守只查 workbuddy（不跨到 qclaw）
+    # For workbuddy, or when it cannot be determined, conservatively check workbuddy only (do not cross over to qclaw)
     return detect_workbuddy(name)
 
 
 def main(argv: list[str] | None = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
     name, system, as_json = DEFAULT_PLUGIN, "auto", False
-    mode = "installed"  # 默认：返回是否支持微信插件
+    mode = "installed"  # default: return whether the WeChat plugin is supported
     i = 0
     while i < len(argv):
         a = argv[i]

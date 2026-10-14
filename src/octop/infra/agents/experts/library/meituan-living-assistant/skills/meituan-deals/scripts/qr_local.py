@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-本地二维码生成兜底模块
-当美团服务端 getQrCodeImage 接口不可用/失败时，用 qrcode 库本地生成。
+Local QR code generation fallback module
+When the Meituan server-side getQrCodeImage API is unavailable/fails, generate the QR code locally with the qrcode library.
 
-输出 JSON:
+Output JSON:
   { ok: true, type: "image", imageUrl: "data:image/png;base64,..." }
-  { ok: true, type: "ascii", ascii: "<字符画二维码>" }
+  { ok: true, type: "ascii", ascii: "<ASCII-art QR code>" }
   { ok: false, error: "..." }
 
-用法:
+Usage:
   python qr_local.py <url> [--ascii]
 """
 

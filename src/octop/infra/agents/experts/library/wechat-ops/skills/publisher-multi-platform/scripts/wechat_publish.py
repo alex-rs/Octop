@@ -22,7 +22,7 @@ Commands:
     check           Check environment configuration
     server-status   Check wenyan server connection
     setup-server    Interactive guide for deploying wenyan server
-    multi-publish   Publish to WeChat + XHS simultaneously (一文多发)
+    multi-publish   Publish to WeChat + XHS simultaneously (one article, multi-platform)
 
 Environment:
     WECHAT_APP_ID       WeChat Official Account AppID (required)
@@ -786,11 +786,11 @@ def cmd_themes(args):
         # Fallback: list known built-in themes
         print("📎 Built-in themes (wenyan-cli):\n")
         themes = [
-            ("github", "GitHub 风格，清爽简洁"),
-            ("elegant", "优雅风格，适合文学类"),
-            ("dark", "暗色主题"),
-            ("condensed", "紧凑排版"),
-            ("default", "默认主题"),
+            ("github", "GitHub style, clean and simple"),
+            ("elegant", "Elegant style, suited to literary content"),
+            ("dark", "Dark theme"),
+            ("condensed", "Compact layout"),
+            ("default", "Default theme"),
         ]
         for tid, desc in themes:
             print(f"  • {tid:<15} {desc}")
@@ -889,67 +889,67 @@ def cmd_setup_server(args):
     host = args.host
     print(f"""
 ╔══════════════════════════════════════════════════════╗
-║   Wenyan Server 部署指南 — 个人 IP 白名单代理         ║
+║   Wenyan Server Guide — Personal IP Whitelist Proxy  ║
 ╚══════════════════════════════════════════════════════╝
 
-目的：在你的云服务器上部署 wenyan server，解决本地 IP 不固定的问题。
-服务器只需要有固定公网 IP 即可。
+Purpose: deploy a wenyan server on your cloud server to work around an unstable
+local IP. The server only needs a fixed public IP.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Step 1: 在服务器上安装 Node.js 和 wenyan-cli
+Step 1: Install Node.js and wenyan-cli on the server
 
     ssh root@{host}
-    # 安装 Node.js (如果没有)
+    # Install Node.js (if not already installed)
     curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
     apt-get install -y nodejs
 
-    # 安装 wenyan-cli
+    # Install wenyan-cli
     npm install -g @wenyan-md/cli
     wenyan --help
 
-Step 2: 配置环境变量
+Step 2: Configure environment variables
 
     export WECHAT_APP_ID="your_app_id"
     export WECHAT_APP_SECRET="your_app_secret"
 
-Step 3: 启动 wenyan server
+Step 3: Start the wenyan server
 
-    # 前台运行（测试）
+    # Foreground (for testing)
     wenyan serve --port 7788
 
-    # 后台运行（生产）
+    # Background (production)
     nohup wenyan serve --port 7788 >> /var/log/wenyan-server.log 2>&1 &
 
-Step 4: 将服务器 IP 加入微信白名单
+Step 4: Add the server IP to the WeChat whitelist
 
-    # 获取服务器公网 IP
+    # Get the server's public IP
     curl ifconfig.me
 
-    # 登录微信开发者平台 → API IP白名单 → 添加上面的 IP
+    # Log in to the WeChat developer platform → API IP whitelist → add the IP above
 
-Step 5: 配置本地环境
+Step 5: Configure the local environment
 
-    # 在本地 ~/.bashrc 或 ~/.zshrc 中添加：
+    # Add to your local ~/.bashrc or ~/.zshrc:
     export WENYAN_SERVER="http://{host}:7788"
-    export WENYAN_API_KEY="your_api_key"  # 如果设置了 API key
+    export WENYAN_API_KEY="your_api_key"  # if an API key is configured
 
-Step 6: 验证
+Step 6: Verify
 
     python3 {os.path.abspath(__file__)} server-status --server http://{host}:7788
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-完成后，你就可以在本地使用任意网络发布文章了：
+Once that is done, you can publish articles from any local network:
 
     python3 {os.path.abspath(__file__)} publish article.md
 
-wenyan-cli 会自动通过 server 转发请求到微信 API。
+wenyan-cli forwards requests to the WeChat API through the server automatically.
 """)
 
 
 def cmd_multi_publish(args):
-    """Publish to WeChat + XHS simultaneously (一文多发)."""
+    """Publish to WeChat + XHS simultaneously (one article, multi-platform)."""
     xhs_script = Path(__file__).parent / "xhs_publish.py"
     if not xhs_script.exists():
         print(f"Error: xhs_publish.py not found at {xhs_script}", file=sys.stderr)
@@ -966,11 +966,11 @@ def cmd_multi_publish(args):
         title = fm.get("title", Path(md_file).stem)
 
         print(f"\n{'=' * 60}")
-        print(f"📄 一文多发: {title}")
+        print(f"📄 Multi-platform publish: {title}")
         print(f"{'=' * 60}")
 
         # Step 1: Publish to WeChat
-        print("\n📱 [1/2] 发布到内容运营平台...")
+        print("\n📱 [1/2] Publishing to the content operation platform...")
         print(f"{'-' * 40}")
         try:
             # Reuse existing publish logic
@@ -983,10 +983,12 @@ def cmd_multi_publish(args):
             cmd_publish(wechat_args)
             results["wechat"] = True
         except SystemExit:
-            print("  ⚠️  微信发布失败，继续社交内容平台发布...")
+            print(
+                "  ⚠️  WeChat publish failed, continuing with the social content platform publish..."
+            )
 
         # Step 2: Publish to XHS
-        print("\n📕 [2/2] 发布到社交内容平台...")
+        print("\n📕 [2/2] Publishing to the social content platform...")
         print(f"{'-' * 40}")
         try:
             xhs_cmd = [
@@ -1004,21 +1006,25 @@ def cmd_multi_publish(args):
             if result.returncode == 0:
                 results["xhs"] = True
         except subprocess.TimeoutExpired:
-            print("  ⚠️  社交内容平台发布超时 (180s)。", file=sys.stderr)
+            print("  ⚠️  Social content platform publish timed out (180s).", file=sys.stderr)
         except Exception as e:
-            print(f"  ⚠️  社交内容平台发布出错: {e}", file=sys.stderr)
+            print(f"  ⚠️  Social content platform publish error: {e}", file=sys.stderr)
 
         # Summary
         print(f"\n{'=' * 60}")
-        print(f"📊 发布结果汇总: {title}")
-        print(f"  内容运营平台: {'✅ 成功' if results['wechat'] else '❌ 失败'}")
-        print(f"  社交内容平台:     {'✅ 成功' if results['xhs'] else '❌ 失败'}")
+        print(f"📊 Publish result summary: {title}")
+        print(f"  Content operation platform: {'✅ success' if results['wechat'] else '❌ failed'}")
+        print(f"  Social content platform:     {'✅ success' if results['xhs'] else '❌ failed'}")
         print(f"{'=' * 60}")
 
         if results["wechat"]:
-            print("\n💡 下一步:")
-            print(f"  1. 登录公众号后台，在草稿箱找到《{title}》并发布")
-            print("  2. 发布后去搜狗微信搜索验证: https://weixin.sogou.com/")
+            print("\n💡 Next steps:")
+            print(
+                f"  1. Log in to the Official Account backend, find '{title}' in the draft box, and publish it"
+            )
+            print(
+                "  2. After publishing, verify with Sogou WeChat search: https://weixin.sogou.com/"
+            )
         print()
 
 
@@ -1071,7 +1077,9 @@ def build_parser():
     p.set_defaults(func=cmd_setup_server)
 
     # multi-publish
-    p = sub.add_parser("multi-publish", help="Publish to WeChat + XHS simultaneously (一文多发)")
+    p = sub.add_parser(
+        "multi-publish", help="Publish to WeChat + XHS simultaneously (one article, multi-platform)"
+    )
     p.add_argument("files", nargs="+", help="Markdown file(s) to publish")
     p.add_argument("--theme", "-t", help="Rendering theme for WeChat (default: github)")
     p.add_argument("--server", help="Wenyan server URL (env: WENYAN_SERVER)")
