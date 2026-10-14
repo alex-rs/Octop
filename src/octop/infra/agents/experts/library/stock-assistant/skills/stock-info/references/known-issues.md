@@ -1,35 +1,35 @@
-# 已知问题接口与替代方案
+# Known-Issue Endpoints and Alternatives
 
-调用前先检查此列表，命中则直接用替代方案，不要浪费时间尝试。
+Check this list before calling; if an entry matches, use the alternative directly and do not waste time trying.
 
-## 完全损坏（不要使用）
+## Completely broken (do not use)
 
-| 损坏接口 | 替代方案 |
+| Broken endpoint | Alternative |
 |---------|---------|
-| `stock_us_spot_em` | `stock_us_daily`（新浪源） |
+| `stock_us_spot_em` | `stock_us_daily` (Sina source) |
 | `stock_zh_index_spot_sina` | `index_global_spot_em` |
-| `fund_etf_spot_em` | `fund_etf_hist_em` 取最新日 |
-| `stock_financial_analysis_indicator_em` | `stock_financial_analysis_indicator`（新浪源） |
-| `stock_profit_sheet_by_report_em` | `stock_financial_benefit_new_ths`（同花顺） |
-| `stock_balance_sheet_by_report_em` | `stock_financial_debt_new_ths`（同花顺） |
-| `stock_cash_flow_sheet_by_report_em` | `stock_financial_cash_new_ths`（同花顺） |
+| `fund_etf_spot_em` | `fund_etf_hist_em` taking the latest day |
+| `stock_financial_analysis_indicator_em` | `stock_financial_analysis_indicator` (Sina source) |
+| `stock_profit_sheet_by_report_em` | `stock_financial_benefit_new_ths` (Tonghuashun) |
+| `stock_balance_sheet_by_report_em` | `stock_financial_debt_new_ths` (Tonghuashun) |
+| `stock_cash_flow_sheet_by_report_em` | `stock_financial_cash_new_ths` (Tonghuashun) |
 | `stock_intraday_sina` | `stock_intraday_em` |
 
-## 极慢（非必要不用）
+## Extremely slow (avoid unless necessary)
 
-| 接口 | 耗时 | 轻量替代 |
+| Endpoint | Duration | Lightweight alternative |
 |------|------|---------|
 | `stock_zh_a_spot_em` | 59s | `stock_individual_info_em` (0.1s) |
 | `stock_hk_spot_em` | 59s | `stock_hk_hist` (0.6s) |
-| `stock_main_fund_flow("全部股票")` | 62s | `stock_individual_fund_flow_rank("今日")` (7s) |
+| `stock_main_fund_flow("all stocks")` | 62s | `stock_individual_fund_flow_rank("today")` (7s) |
 
-## 轻量接口替代表
+## Lightweight endpoint substitution table
 
-| 场景 | 禁止（慢/损坏） | 应该用（快） |
+| Scenario | Forbidden (slow/broken) | Use instead (fast) |
 |------|----------------|-------------|
-| 查单只 A 股 | `stock_zh_a_spot_em` (30-60s) | `stock_individual_info_em` (0.1s) + `stock_zh_a_hist` (0.2s) |
-| 查单只港股 | `stock_hk_spot_em` (59s) | `stock_hk_hist` (0.6s) |
-| 查单只美股 | `stock_us_spot_em` 损坏 | `stock_us_daily` |
-| 名称→代码 | `stock_zh_a_spot_em` 遍历 | `stock_info_sh_name_code` (1s) + `stock_info_sz_name_code` (0.6s) |
-| 大盘指数 | `stock_zh_index_spot_sina` 损坏 | `index_global_spot_em` (0.3s) |
-| ETF 实时 | `fund_etf_spot_em` 超时 | `fund_etf_hist_em` (0.2s) 取最新日 |
+| Look up a single A-share | `stock_zh_a_spot_em` (30-60s) | `stock_individual_info_em` (0.1s) + `stock_zh_a_hist` (0.2s) |
+| Look up a single Hong Kong stock | `stock_hk_spot_em` (59s) | `stock_hk_hist` (0.6s) |
+| Look up a single US stock | `stock_us_spot_em` broken | `stock_us_daily` |
+| Name to code | `stock_zh_a_spot_em` iteration | `stock_info_sh_name_code` (1s) + `stock_info_sz_name_code` (0.6s) |
+| Market index | `stock_zh_index_spot_sina` broken | `index_global_spot_em` (0.3s) |
+| ETF real-time | `fund_etf_spot_em` timeout | `fund_etf_hist_em` (0.2s) taking the latest day |

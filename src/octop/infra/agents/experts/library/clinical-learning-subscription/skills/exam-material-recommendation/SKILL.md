@@ -1,77 +1,77 @@
 ---
 name: exam-material-recommendation
-description: 根据医生自述的考试或岗位目标（副高、中级、规培、执业医师等）推荐学习材料、教材与学习顺序，并按目标动态调整学习内容。必须以官方考试大纲为准，不得断言考试范围或承诺通过结果，也不得输出个体诊疗内容。
+description: Recommend study materials, textbooks, and study order based on the exam or job goal the doctor describes (associate chief, intermediate, residency training, licensed physician, etc.), and dynamically adjust learning content to that goal. The official exam outline must be the authority; never assert the exam scope or promise a passing result, and never output individual diagnosis or treatment content.
 metadata:
   octop:
     emoji: "📚"
     label:
-      zh: "备考材料推荐"
+      zh: "Exam Material Recommendation"
       en: "Exam Material Recommendation"
     summary:
-      zh: "按考试或岗位目标推荐教材与学习顺序，以官方大纲为准。"
+      zh: "Recommend textbooks and study order for the exam or job goal, based on the official outline."
       en: "Recommend study materials and order from official exam outlines."
 ---
 
-# 备考与岗位导向的学习材料推荐
+# Exam-Preparation and Job-Oriented Study Material Recommendation
 
-用户反馈：助手无法根据自身情况（例如正在准备副高考试）推荐相应教材，只能给固定内容。本 skill 让学习内容由**用户的目标**驱动。
+User feedback: the assistant cannot recommend corresponding textbooks based on their own situation (for example, preparing for the associate chief exam) and only offers fixed content. This skill makes learning content driven by **the user's goal**.
 
-## 必读边界
+## Required Reading Boundaries
 
 - ../../references/compliance-boundary.md
 - ../../references/source-policy.yaml
 - ../../references/output-templates.md
 
-## 采集目标（最少提问）
+## Information to Collect (Minimal Questioning)
 
-需要以下信息，缺失时一次性只问最关键的 1-2 项，不要连环追问：
+The following information is needed; when something is missing, ask only for the 1-2 most critical items at a time and do not ask follow-up questions in a chain:
 
-1. **考试或岗位目标**：副高／正高／中级／规培结业／执业医师／专项能力培训／单纯工作复习。
-2. **目标时间**：年月即可，不确定可写待定。
-3. **每日可投入时间**：用于决定材料数量与颗粒度。
-4. **专业方向**：可复用已登记的科室；未登记时直接问，不强制走完整 5 项登记。
+1. **Exam or job goal**: associate chief / chief / intermediate / residency training completion / licensed physician / special-skills training / review for work only.
+2. **Target date**: year and month are enough; write "to be determined" if unsure.
+3. **Daily time available**: used to decide material volume and granularity.
+4. **Specialty direction**: the already registered department may be reused; if not registered, ask directly rather than forcing the full 5-item registration.
 
-只有需要按科室、地区、职称长期定制或开启订阅时，才转 doctor-registration 获取档案与同意。**单次推荐不要求登记。**
+Only when long-term customization or subscriptions by department, region, or rank are needed do you hand off to doctor-registration to obtain the profile and consent. **A single recommendation does not require registration.**
 
-## 推荐材料的优先级
+## Priority of Recommended Materials
 
-1. **当年官方考试大纲**（考办／卫健委／人事考试网正式发布）——最高优先级，是范围基准。
-2. **权威指南与共识**——对应大纲中的疾病与主题。
-3. **国家或行业规范、教材**——管理、质控、公共卫生类知识。
-4. **政策文件**——涉及医保、基层服务规范时。
+1. **The current year's official exam outline** (formally published by the exam office / health commission / personnel testing authority) — highest priority, the baseline for scope.
+2. **Authoritative guidelines and consensus statements** — corresponding to the diseases and topics in the outline.
+3. **National or industry standards and textbooks** — knowledge on management, quality control, and public health.
+4. **Policy documents** — when insurance or primary-care service standards are involved.
 
-必须严格区分两类内容并在输出中分开标注：
+You must strictly distinguish the two categories and label them separately in the output:
 
-- **官方大纲要求**：来自正式文件的范围表述。
-- **助手补充建议**：你基于科室高频主题给出的补充，明确标为建议。
+- **Official outline requirements**: scope statements taken from formal documents.
+- **Assistant supplementary suggestions**: additions you make based on high-frequency departmental topics, explicitly labeled as suggestions.
 
-## 硬性风险边界
+## Hard Risk Boundaries
 
-- 结尾必须写「以官方考试大纲为准」，并说明本推荐不代表考试范围、题型、分值或必考点。
-- **不得承诺通过率、押题、划重点式断言必考**。
-- **不得编造**教材名称、版本、书号、出版社或大纲条目。取不到权威大纲原文时，只给学习方向初稿并标注「待核验官方大纲」。
-- 大纲会逐年调整；引用往年大纲时必须标注年份并提示以当年为准。
-- 本 skill 只推荐**学习材料**，不输出任何个体诊疗内容、药物剂量或处置建议。
+- The ending must say "subject to the official exam outline" and explain that this recommendation does not represent the exam scope, question types, score weighting, or guaranteed test points.
+- **Never promise pass rates, predict questions, or assert in highlight style that something must appear on the exam.**
+- **Never fabricate** textbook titles, editions, ISBNs, publishers, or outline entries. When the authoritative outline text cannot be obtained, give only an initial draft of the learning direction and mark it "official outline pending verification".
+- Outlines are adjusted year by year; when citing a previous year's outline you must state the year and note that the current year governs.
+- This skill recommends **study materials** only; it does not output any individual diagnosis or treatment content, drug dosages, or management suggestions.
 
-## 与学习目标、轨道的衔接
+## Connection with Learning Goals and Tracks
 
-用户确认后，可把考试目标保存为学习目标，用于驱动后续轨道选材与内容深度：
+After the user confirms, the exam goal can be saved as a learning goal to drive subsequent track material selection and content depth:
 
     python ../../scripts/clinical_profile.py learning-goal-save \
-      --label <考试目标名称> --kind exam \
-      --daily-minutes <5-240> --target-date <YYYY-MM-DD，可省略> \
+      --label <exam goal name> --kind exam \
+      --daily-minutes <5-240> --target-date <YYYY-MM-DD, optional> \
       --priority <0-100> --confirm true
 
-保存前先复述目标、每日时间和目标日期并取得明确确认。保存后：
+Before saving, restate the goal, daily time, and target date and obtain explicit confirmation. After saving:
 
-- 创建轨道时用 `--goal-id` 绑定该目标，使每日单元围绕备考重点排序。
-- 内容深度参考职称对应层级（见 BOOTSTRAP.md 的自动识别规则）。
-- 用户目标变更（如考期推迟、改考方向）时更新目标，不要静默沿用旧选材。
+- When creating a track, bind the goal with `--goal-id` so that daily units are ordered around exam-preparation priorities.
+- Content depth follows the level corresponding to the rank (see the automatic identification rules in BOOTSTRAP.md).
+- When the user's goal changes (for example, the exam is postponed or the direction changes), update the goal; do not silently keep using the old material selection.
 
-## 输出与校验
+## Output and Validation
 
-使用 output-templates.md 的「备考学习材料推荐」模板。发送前运行：
+Use the "Exam-Preparation Study Material Recommendation" template in output-templates.md. Before sending, run:
 
     python ../../scripts/validate_output.py --module exam_material_recommendation
 
-校验失败时先修正；不得绕过。
+If validation fails, fix it first; do not bypass it.

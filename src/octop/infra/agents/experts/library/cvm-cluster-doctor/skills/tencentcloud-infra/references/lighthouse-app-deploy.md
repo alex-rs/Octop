@@ -1,65 +1,65 @@
-# 腾讯云 Lighthouse 应用部署指引
+# Tencent Cloud Lighthouse Application Deployment Guide
 
-你对腾讯云 Lighthouse 实例创建、防火墙配置、镜像查询相关 API 的参数可能已过时。
-**执行前请先用 `tccli lighthouse <操作> help` 确认最新参数。**
+Your knowledge of the parameters for the Tencent Cloud Lighthouse instance creation, firewall configuration, and image query APIs may be outdated.
+**Before executing, confirm the latest parameters with `tccli lighthouse <operation> help` first.**
 
-> 适用场景：在腾讯云 Lighthouse 上部署任意 Web 应用（Go / Node.js / Python / Java / 静态站点 / Docker / GitHub 项目等）
-> 全程通过 `tccli` + SSH 完成，无需登录控制台
-
----
-
-## 一、总体流程
-
-```
-阶段一：创建实例
-  1. 查询镜像 → 选择操作系统
-  2. 查询套餐 → 选择 CPU/内存/带宽
-  3. 创建实例 → 获取实例 ID
-  4. 等待实例 RUNNING → 获取公网 IP
-  5. 重置密码 → 获取 SSH 登录凭证
-  6. 开放防火墙端口
-
-阶段二：部署应用
-  7. 准备代码（本地项目 / GitHub clone / Docker 镜像）
-  8. 上传或拉取代码到实例
-  9. 安装运行环境 + 构建 + 启动
-  10. 配置 systemd / pm2 / docker-compose 守护进程
-
-阶段三：验证与优化
-  11. 验证服务可访问
-  12. （可选）绑定域名 + HTTPS + Nginx 反向代理
-```
+> Applies to: deploying any web application on Tencent Cloud Lighthouse (Go / Node.js / Python / Java / static site / Docker / GitHub project, etc.)
+> The whole process is completed through `tccli` + SSH, with no need to log in to the console
 
 ---
 
-## 二、阶段一：创建实例
+## 1. Overall flow
 
-### 2.1 凭证配置
+```
+Phase 1: Create the instance
+  1. Query images → choose the OS
+  2. Query bundles → choose CPU/memory/bandwidth
+  3. Create the instance → get the instance ID
+  4. Wait for RUNNING → get the public IP
+  5. Reset the password → get SSH login credentials
+  6. Open firewall ports
+
+Phase 2: Deploy the application
+  7. Prepare the code (local project / GitHub clone / Docker image)
+  8. Upload or pull the code to the instance
+  9. Install the runtime + build + start
+  10. Configure the systemd / pm2 / docker-compose daemon
+
+Phase 3: Verify and optimize
+  11. Verify the service is reachable
+  12. (Optional) Bind a domain + HTTPS + Nginx reverse proxy
+```
+
+---
+
+## 2. Phase 1: Create the instance
+
+### 2.1 Credential configuration
 
 ```bash
 export TENCENTCLOUD_SECRET_ID="<your-secret-id>"
 export TENCENTCLOUD_SECRET_KEY="<your-secret-key>"
 ```
 
-> 所需权限：`QcloudLighthouseFullAccess`
+> Required permission: `QcloudLighthouseFullAccess`
 
-### 2.2 查询镜像
+### 2.2 Query images
 
 ```bash
-# 纯系统镜像（推荐 Ubuntu 24.04）
+# Pure OS images (Ubuntu 24.04 recommended)
 tccli lighthouse DescribeBlueprints --region <region> \
   --cli-unfold-argument \
   --Filters.0.Name blueprint-type \
   --Filters.0.Values PURE_OS
 
-# 应用镜像（WordPress / 宝塔 / Docker CE 等）
+# Application images (WordPress / BT Panel / Docker CE, etc.)
 tccli lighthouse DescribeBlueprints --region <region> \
   --cli-unfold-argument \
   --Filters.0.Name blueprint-type \
   --Filters.0.Values APP_OS
 ```
 
-过滤示例（以 Ubuntu 24.04 为例）：
+Filtering example (using Ubuntu 24.04 as the example):
 ```bash
 ... | python3 -c "
 import json, sys
@@ -70,17 +70,17 @@ for b in data.get('BlueprintSet', []):
 "
 ```
 
-**镜像选择建议：**
+**Image selection advice:**
 
-| 部署类型 | 推荐镜像 |
+| Deployment type | Recommended image |
 |---------|---------|
-| Go / Rust / C++ | Ubuntu 24.04（纯系统，自行编译） |
-| Node.js / Python / Ruby | Ubuntu 24.04（纯系统，装运行时）|
-| Docker 项目 | Docker CE 应用镜像（预装 Docker） |
-| WordPress / CMS | WordPress 应用镜像 |
-| 需要面板管理 | 宝塔面板应用镜像 |
+| Go / Rust / C++ | Ubuntu 24.04 (pure OS, compile it yourself) |
+| Node.js / Python / Ruby | Ubuntu 24.04 (pure OS, install the runtime) |
+| Docker projects | Docker CE application image (Docker preinstalled) |
+| WordPress / CMS | WordPress application image |
+| Panel-based management needed | BT Panel application image |
 
-### 2.3 查询套餐
+### 2.3 Query bundles
 
 ```bash
 tccli lighthouse DescribeBundles --region <region> \
@@ -89,15 +89,15 @@ tccli lighthouse DescribeBundles --region <region> \
   --Filters.0.Values GENERAL_BUNDLE
 ```
 
-**套餐选择建议：**
+**Bundle selection advice:**
 
-| 应用类型 | 推荐配置 |
+| Application type | Recommended spec |
 |---------|---------|
-| 静态站点 / 轻量 API | 2核 2G |
-| Go / Node.js Web 应用 | 2核 4G |
-| Java / 数据库 / Docker 多容器 | 4核 8G |
+| Static site / lightweight API | 2 vCPU 2G |
+| Go / Node.js web application | 2 vCPU 4G |
+| Java / database / multiple Docker containers | 4 vCPU 8G |
 
-### 2.4 创建实例
+### 2.4 Create the instance
 
 ```bash
 tccli lighthouse CreateInstances --region <region> \
@@ -111,29 +111,29 @@ tccli lighthouse CreateInstances --region <region> \
   --Zones <zone>
 ```
 
-> ⚠️ 踩坑点：
-> - `--InstanceChargePrepaid.Period` 必填，单位为月
-> - `AutoGeneratePassword` 值必须是大写 `YES` 或 `NO`，不是 `True`/`true`/`Yes`
+> ⚠️ Common pitfalls:
+> - `--InstanceChargePrepaid.Period` is required and is measured in months
+> - `AutoGeneratePassword` must be the uppercase `YES` or `NO`, not `True`/`true`/`Yes`
 
-### 2.5 等待实例启动
+### 2.5 Wait for the instance to start
 
 ```bash
-# 每 15-30 秒轮询，直到 RUNNING
+# Poll every 15-30 seconds until RUNNING
 tccli lighthouse DescribeInstances --region <region> \
   --cli-unfold-argument \
   --InstanceIds <instance-id> 2>&1 | python3 -c "
 import json, sys
 data = json.load(sys.stdin)
 inst = data['InstanceSet'][0]
-print(f\"状态: {inst['InstanceState']}\")
+print(f\"State: {inst['InstanceState']}\")
 pub = inst.get('PublicAddresses', [])
-print(f\"公网IP: {pub[0] if pub else '未分配'}\")
+print(f\"Public IP: {pub[0] if pub else 'unassigned'}\")
 "
 ```
 
-状态流转：`PENDING` → `RUNNING`（约 30–60 秒）
+State transition: `PENDING` → `RUNNING` (about 30-60 seconds)
 
-### 2.6 重置密码
+### 2.6 Reset the password
 
 ```bash
 tccli lighthouse ResetInstancesPassword --region <region> \
@@ -143,13 +143,13 @@ tccli lighthouse ResetInstancesPassword --region <region> \
   --UserName root
 ```
 
-> 密码要求：8-30 位，至少包含大写、小写、数字、特殊字符中的三种。
-> 重置后等待约 15-20 秒生效。
+> Password requirements: 8-30 characters, containing at least three of uppercase letters, lowercase letters, digits, and special characters.
+> After the reset, wait about 15-20 seconds for it to take effect.
 
-### 2.7 开放防火墙端口
+### 2.7 Open firewall ports
 
 ```bash
-# 开放 HTTP 80
+# Open HTTP 80
 tccli lighthouse CreateFirewallRules --region <region> \
   --cli-unfold-argument \
   --InstanceId <instance-id> \
@@ -160,54 +160,54 @@ tccli lighthouse CreateFirewallRules --region <region> \
   --FirewallRules.0.FirewallRuleDescription "HTTP"
 ```
 
-> 返回 `InvalidParameter.FirewallRulesExist` 表示规则已存在，可忽略。
+> A return of `InvalidParameter.FirewallRulesExist` means the rule already exists and can be ignored.
 
-常见端口开放：
+Commonly opened ports:
 
-| 端口 | 用途 |
+| Port | Purpose |
 |------|------|
 | 80 | HTTP |
 | 443 | HTTPS |
-| 8080 | 常见应用端口 |
+| 8080 | Common application port |
 | 3000 | Node.js / Grafana |
 | 5000 | Flask / Registry |
-| 8888 | 宝塔面板 |
+| 8888 | BT Panel |
 
 ---
 
-## 三、阶段二：部署应用
+## 3. Phase 2: Deploy the application
 
-以下按不同来源/技术栈分别说明。所有方案的前提是已完成阶段一（实例已 RUNNING、密码已重置、端口已开放）。
+The following sections cover each source and technology stack separately. Every approach assumes Phase 1 is complete (the instance is RUNNING, the password has been reset, and the ports are open).
 
-定义 SSH 快捷方式供后续使用：
+Define SSH shortcuts for later use:
 ```bash
-SSH="sshpass -p '<password>' ssh -o StrictHostKeyChecking=no root@<公网IP>"
+SSH="sshpass -p '<password>' ssh -o StrictHostKeyChecking=no root@<public-IP>"
 SCP="sshpass -p '<password>' scp -o StrictHostKeyChecking=no"
 ```
 
 ---
 
-### 方案 A：部署本地项目（上传代码）
+### Option A: Deploy a local project (upload the code)
 
-适用：本地已有代码，打包上传到实例。
+Applies to: the code already exists locally and is packaged and uploaded to the instance.
 
 ```bash
-# 1. 本地打包
+# 1. Package locally
 cd /path/to/project
 tar czf /tmp/project.tar.gz --exclude='.git' --exclude='node_modules' .
 
-# 2. 上传
-$SCP /tmp/project.tar.gz root@<公网IP>:/tmp/
+# 2. Upload
+$SCP /tmp/project.tar.gz root@<public-IP>:/tmp/
 
-# 3. 远程解压
+# 3. Extract remotely
 $SSH 'mkdir -p /opt/app && cd /opt/app && tar xzf /tmp/project.tar.gz'
 ```
 
 ---
 
-### 方案 B：部署 GitHub 项目（直接 clone）
+### Option B: Deploy a GitHub project (clone directly)
 
-适用：从 GitHub / GitLab / Gitee 拉取开源项目。
+Applies to: pulling an open-source project from GitHub / GitLab / Gitee.
 
 ```bash
 $SSH '
@@ -215,30 +215,30 @@ apt update && apt install -y git
 cd /opt
 git clone https://github.com/<user>/<repo>.git app
 cd app
-# 如需切换分支或版本
+# Switch branch or version if needed
 # git checkout v1.0.0
 '
 ```
 
-> 私有仓库需配置 SSH Key 或使用 Personal Access Token：
+> A private repository needs an SSH Key or a Personal Access Token:
 > `git clone https://<token>@github.com/<user>/<repo>.git`
 
 ---
 
-### 方案 C：Docker 部署
+### Option C: Docker deployment
 
-适用：项目有 Dockerfile 或 docker-compose.yml。
+Applies to: the project has a Dockerfile or docker-compose.yml.
 
 ```bash
 $SSH '
-# 安装 Docker（如非 Docker CE 镜像）
+# Install Docker (unless this is a Docker CE image)
 curl -fsSL https://get.docker.com | sh
 systemctl enable docker && systemctl start docker
 
-# 拉取并运行
+# Pull and run
 docker run -d --name app --restart=always -p 80:8080 <image>
 
-# 或使用 docker-compose
+# Or use docker-compose
 cd /opt/app
 docker compose up -d
 '
@@ -246,40 +246,40 @@ docker compose up -d
 
 ---
 
-### 各技术栈环境安装 + 构建 + 运行
+### Install + build + run for each technology stack
 
-#### Go 项目
+#### Go project
 
 ```bash
 $SSH '
-# 安装 Go
+# Install Go
 wget -q https://go.dev/dl/go1.22.5.linux-amd64.tar.gz -O /tmp/go.tar.gz
 rm -rf /usr/local/go && tar -C /usr/local -xzf /tmp/go.tar.gz
 export PATH=$PATH:/usr/local/go/bin
 
-# 构建
+# Build
 cd /opt/app
 go build -o server ./cmd/server/
-# 或 go build -o server .
+# or go build -o server .
 '
 ```
 
-#### Node.js 项目
+#### Node.js project
 
 ```bash
 $SSH '
-# 安装 Node.js（via NodeSource）
+# Install Node.js (via NodeSource)
 curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
 apt install -y nodejs
 
-# 安装依赖 & 构建
+# Install dependencies & build
 cd /opt/app
 npm install
-npm run build  # 如有构建步骤
+npm run build  # if there is a build step
 '
 ```
 
-#### Python 项目
+#### Python project
 
 ```bash
 $SSH '
@@ -292,26 +292,26 @@ pip install -r requirements.txt
 '
 ```
 
-#### Java 项目（Spring Boot）
+#### Java project (Spring Boot)
 
 ```bash
 $SSH '
 apt update && apt install -y openjdk-21-jdk-headless
 
 cd /opt/app
-# 如有 Maven Wrapper
+# If there is a Maven Wrapper
 ./mvnw package -DskipTests
-# 或直接上传 jar
+# or upload the jar directly
 '
 ```
 
-#### 纯静态站点（HTML/CSS/JS）
+#### Pure static site (HTML/CSS/JS)
 
 ```bash
 $SSH '
 apt update && apt install -y nginx
 
-# 将静态文件放到 Nginx 默认目录
+# Copy the static files into the Nginx default directory
 cp -r /opt/app/* /var/www/html/
 systemctl restart nginx
 '
@@ -319,9 +319,9 @@ systemctl restart nginx
 
 ---
 
-### 配置进程守护（systemd）
+### Configure the process supervisor (systemd)
 
-适用于 Go / Node.js / Python / Java 等需要常驻运行的应用。
+Applies to applications that must run continuously, such as Go / Node.js / Python / Java.
 
 ```bash
 $SSH 'cat > /etc/systemd/system/app.service <<EOF
@@ -333,7 +333,7 @@ After=network.target
 Type=simple
 User=root
 WorkingDirectory=/opt/app
-ExecStart=<启动命令>
+ExecStart=<start command>
 Environment=PORT=80
 Restart=always
 RestartSec=5
@@ -348,9 +348,9 @@ systemctl restart app
 '
 ```
 
-**各技术栈的 ExecStart 示例：**
+**ExecStart examples for each technology stack:**
 
-| 技术栈 | ExecStart |
+| Stack | ExecStart |
 |--------|-----------|
 | Go | `/opt/app/server` |
 | Node.js | `/usr/bin/node /opt/app/index.js` |
@@ -358,7 +358,7 @@ systemctl restart app
 | Python (Uvicorn) | `/opt/app/venv/bin/uvicorn main:app --host 0.0.0.0 --port 80` |
 | Java | `/usr/bin/java -jar /opt/app/target/app.jar --server.port=80` |
 
-> Node.js 也可使用 pm2 替代 systemd：
+> Node.js can also use pm2 instead of systemd:
 > ```bash
 > npm install -g pm2
 > cd /opt/app && pm2 start index.js --name app
@@ -367,65 +367,65 @@ systemctl restart app
 
 ---
 
-## 四、阶段三：验证与优化
+## 4. Phase 3: Verify and optimize
 
-### 4.1 验证服务
+### 4.1 Verify the service
 
 ```bash
-# 检查服务状态
+# Check the service status
 $SSH 'systemctl status app --no-pager'
 
-# HTTP 验证
-curl -s -o /dev/null -w "HTTP %{http_code}\n" http://<公网IP>/
+# HTTP check
+curl -s -o /dev/null -w "HTTP %{http_code}\n" http://<public-IP>/
 
-# 浏览器访问
-http://<公网IP>
+# Open in a browser
+http://<public-IP>
 ```
 
-### 4.2 查看日志
+### 4.2 View logs
 
 ```bash
-# systemd 服务日志
+# systemd service logs
 $SSH 'journalctl -u app -n 100 --no-pager'
 
-# Docker 日志
+# Docker logs
 $SSH 'docker logs app --tail 100'
 
-# pm2 日志
+# pm2 logs
 $SSH 'pm2 logs app --lines 100'
 ```
 
-### 4.3 绑定域名
+### 4.3 Bind a domain
 
 ```bash
-# 添加 DNS A 记录
+# Add a DNS A record
 tccli dnspod CreateRecord \
   --Domain "<domain>" \
   --SubDomain "@" \
   --RecordType "A" \
-  --RecordLine "默认" \
-  --Value "<公网IP>" \
+  --RecordLine "default" \
+  --Value "<public-IP>" \
   --TTL 600
 
-# www 子域名
+# www subdomain
 tccli dnspod CreateRecord \
   --Domain "<domain>" \
   --SubDomain "www" \
   --RecordType "A" \
-  --RecordLine "默认" \
-  --Value "<公网IP>" \
+  --RecordLine "default" \
+  --Value "<public-IP>" \
   --TTL 600
 ```
 
-> DNS 生效需 5-30 分钟。
+> DNS takes effect within 5-30 minutes.
 
-### 4.4 HTTPS + Nginx 反向代理
+### 4.4 HTTPS + Nginx reverse proxy
 
 ```bash
 $SSH '
 apt install -y nginx certbot python3-certbot-nginx
 
-# Nginx 反向代理配置
+# Nginx reverse proxy configuration
 cat > /etc/nginx/sites-available/app <<EOF
 server {
     listen 80;
@@ -445,72 +445,72 @@ ln -sf /etc/nginx/sites-available/app /etc/nginx/sites-enabled/
 rm -f /etc/nginx/sites-enabled/default
 nginx -t && systemctl restart nginx
 
-# 申请 SSL 证书（需域名已解析到此 IP）
+# Apply for an SSL certificate (the domain must already resolve to this IP)
 certbot --nginx -d <domain> -d www.<domain> --non-interactive --agree-tos -m <email>
 '
 ```
 
-> 使用 Nginx 反向代理时，应用监听 8080（或其他内部端口），Nginx 监听 80/443。
+> When using an Nginx reverse proxy, the application listens on 8080 (or another internal port) while Nginx listens on 80/443.
 
-### 4.5 代码更新
+### 4.5 Update the code
 
 ```bash
-# 方案 A：本地上传
+# Option A: upload from local
 tar czf /tmp/project.tar.gz --exclude='.git' --exclude='node_modules' .
-$SCP /tmp/project.tar.gz root@<公网IP>:/tmp/
+$SCP /tmp/project.tar.gz root@<public-IP>:/tmp/
 $SSH 'cd /opt/app && tar xzf /tmp/project.tar.gz && <rebuild> && systemctl restart app'
 
-# 方案 B：GitHub pull
+# Option B: GitHub pull
 $SSH 'cd /opt/app && git pull && <rebuild> && systemctl restart app'
 
-# 方案 C：Docker 更新
+# Option C: Docker update
 $SSH 'docker pull <image> && docker stop app && docker rm app && docker run -d --name app --restart=always -p 80:8080 <image>'
 ```
 
 ---
 
-## 五、常见问题
+## 5. Common issues
 
-| 问题 | 原因与解决 |
+| Issue | Cause and fix |
 |------|-----------|
-| `AutoGeneratePassword` 参数错误 | 值必须是大写字符串 `YES` / `NO` |
+| `AutoGeneratePassword` parameter error | The value must be the uppercase string `YES` / `NO` |
 | `sshpass: command not found` | `apt install sshpass` |
-| SSH 连接被拒绝 | 密码重置后等 15-20 秒；检查 22 端口防火墙 |
-| 页面无法访问 | 检查防火墙规则 + 应用监听地址是否为 `0.0.0.0`（不是 `127.0.0.1`） |
-| Go 构建失败 | 确认 `go.mod` 存在；检查 `go version` |
-| Node.js `npm install` 失败 | 内存不足时加 swap：`fallocate -l 1G /swapfile && mkswap /swapfile && swapon /swapfile` |
-| systemd 服务启动失败 | `journalctl -u app -n 50 --no-pager` 查看错误日志 |
-| Docker 端口冲突 | `docker ps` 检查端口占用；`netstat -tlnp` 排查 |
-| 域名无法访问 | DNS 传播需 5-30 分钟；先用 IP 直连验证服务正常 |
-| Let's Encrypt 申请失败 | 确认域名已解析到实例 IP；80 端口可访问 |
+| SSH connection refused | Wait 15-20 seconds after the password reset; check the firewall for port 22 |
+| Page unreachable | Check the firewall rules + whether the application listens on `0.0.0.0` (not `127.0.0.1`) |
+| Go build fails | Confirm `go.mod` exists; check `go version` |
+| Node.js `npm install` fails | When memory is short, add swap: `fallocate -l 1G /swapfile && mkswap /swapfile && swapon /swapfile` |
+| systemd service fails to start | Inspect the error log with `journalctl -u app -n 50 --no-pager` |
+| Docker port conflict | Check port usage with `docker ps`; investigate with `netstat -tlnp` |
+| Domain unreachable | DNS propagation takes 5-30 minutes; first connect directly by IP to confirm the service works |
+| Let's Encrypt application fails | Confirm the domain resolves to the instance IP and that port 80 is reachable |
 
 ---
 
-## 六、API 速查
+## 6. API quick reference
 
-| 功能 | 服务 | 接口 |
+| Function | Service | Interface |
 |------|------|------|
-| 查询套餐 | lighthouse | `DescribeBundles` |
-| 查询镜像 | lighthouse | `DescribeBlueprints` |
-| 创建实例 | lighthouse | `CreateInstances` |
-| 查询实例 | lighthouse | `DescribeInstances` |
-| 重置密码 | lighthouse | `ResetInstancesPassword` |
-| 创建防火墙规则 | lighthouse | `CreateFirewallRules` |
-| 查询防火墙规则 | lighthouse | `DescribeFirewallRules` |
-| 添加 DNS 解析 | dnspod | `CreateRecord` |
-| 查询 DNS 解析 | dnspod | `DescribeRecordList` |
-| 修改 DNS 解析 | dnspod | `ModifyRecord` |
-| 删除 DNS 解析 | dnspod | `DeleteRecord` |
+| Query bundles | lighthouse | `DescribeBundles` |
+| Query images | lighthouse | `DescribeBlueprints` |
+| Create instance | lighthouse | `CreateInstances` |
+| Query instances | lighthouse | `DescribeInstances` |
+| Reset password | lighthouse | `ResetInstancesPassword` |
+| Create a firewall rule | lighthouse | `CreateFirewallRules` |
+| Query firewall rules | lighthouse | `DescribeFirewallRules` |
+| Add DNS record | dnspod | `CreateRecord` |
+| Query DNS records | dnspod | `DescribeRecordList` |
+| Modify DNS record | dnspod | `ModifyRecord` |
+| Delete DNS record | dnspod | `DeleteRecord` |
 
 ---
 
-## 何时使用
+## When to use
 
-| 场景 | 建议 |
+| Scenario | Recommendation |
 |------|------|
-| 用户要部署 Go/Node/Python/Java/Docker 应用 | 按本文档三阶段流程执行 |
-| 用户要部署 GitHub 项目 | 参考本文档方案 B |
-| 用户要建站（WordPress/宝塔/CMS） | 不使用本文档，用 references/lighthouse-website-setup.md |
-| 用户要部署 OpenClaw | 不使用本文档，用 references/lighthouse-openclaw-setup.md |
-| 用户要绑定域名和 HTTPS | 参考本文档第四阶段 |
-| 用户要做安全检查 | 不使用本文档，用 references/cvm-security-check.md |
+| The user wants to deploy a Go/Node/Python/Java/Docker application | Follow the three-phase flow in this document |
+| The user wants to deploy a GitHub project | See Option B in this document |
+| The user wants to build a website (WordPress/BT Panel/CMS) | Do not use this document; use references/lighthouse-website-setup.md |
+| The user wants to deploy OpenClaw | Do not use this document; use references/lighthouse-openclaw-setup.md |
+| The user wants to bind a domain and HTTPS | See Phase 4 of this document |
+| The user wants a security check | Do not use this document; use references/cvm-security-check.md |

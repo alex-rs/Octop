@@ -8,7 +8,7 @@ metadata:
       zh: "LLM Wiki"
       en: "LLM Wiki"
     summary:
-      zh: "摄取来源、维护互链 Wiki，并据此回答与核验知识库。"
+      zh: "Ingest sources, maintain an interlinked wiki, and answer from and verify the knowledge base."
       en: "Ingest sources, maintain a linked wiki, and answer from the knowledge base."
 ---
 

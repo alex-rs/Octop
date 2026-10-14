@@ -33,10 +33,10 @@ def test_template_exposes_general_and_guideline_learning_entrypoints() -> None:
     assert {"预览下一学习单元", "创建学习轨道", "检查指南新版迁移"} <= titles
 
     soul = (_ROOT / "SOUL.md").read_text(encoding="utf-8")
-    assert "其他普通任务" in soul
-    assert "指南中的诊断标准学习" in soul
-    assert "具体患者" in soul
-    assert "平台拥有的投递服务" in soul
+    assert "other ordinary tasks" in soul
+    assert "studying diagnostic criteria from guidelines" in soul
+    assert "a specific patient" in soul
+    assert "platform-owned delivery service" in soul
     assert (_ROOT / "references" / "learning-track-template.md").is_file()
 
     failover_root = _ROOT / "skills" / "medical-source-failover"
@@ -71,7 +71,9 @@ def test_learning_diagnostic_summary_is_opt_in_and_can_be_cleared(tmp_path: Path
     diagnostic = state["learning_diagnosis"]
     assert diagnostic["status"] == "saved"
     assert diagnostic["priority_topics"] == ["诊断标准", "分层概念"]
-    assert "原始答题过程" in (tmp_path / "USER.md").read_text(encoding="utf-8")
+    assert "the original answering process is not saved" in (tmp_path / "USER.md").read_text(
+        encoding="utf-8"
+    )
 
     cleared = profile.clear_learning_diagnosis(confirm=True, root=tmp_path)
     assert cleared["learning_diagnosis"]["status"] == "not_started"
@@ -96,13 +98,13 @@ def test_learning_diagnostic_rejects_unconfirmed_or_patient_like_storage(tmp_pat
             root=tmp_path,
         )
     except ValueError as exc:
-        assert "显式确认" in str(exc)
+        assert "explicit confirmation" in str(exc)
     else:
         raise AssertionError("expected explicit-confirmation rejection")
 
     try:
         profile.save_learning_diagnosis(
-            goal="患者病例复习",
+            goal="patient case review",
             guideline_title="",
             source_url="",
             self_assessed_level="developing",
@@ -113,7 +115,7 @@ def test_learning_diagnostic_rejects_unconfirmed_or_patient_like_storage(tmp_pat
             root=tmp_path,
         )
     except ValueError as exc:
-        assert "患者" in str(exc)
+        assert "patient" in str(exc)
     else:
         raise AssertionError("expected patient-like content rejection")
 
@@ -122,14 +124,15 @@ def test_learning_diagnostic_validator_requires_educational_structure_and_source
     validator = _load_module(
         _ROOT / "scripts" / "validate_output.py", "clinical_output_validator_test"
     )
-    text = """【指南学习诊断｜仅评估学习状态】
-学习目标：副高考试复习
-学习信号：建议巩固（依据：本次作答）
-优先补齐：诊断标准
-建议起点：先学习定义章节
-下一步：展开该章节
-来源：示例页面：[链接](https://www.nhc.gov.cn/example)
-边界：本结果只反映本次学习信号，不是患者诊断、临床胜任力认证或诊疗建议。
+    text = """[Guideline Learning Diagnosis | Assessment Only]
+Basis: Primary-Care Hypertension Management Guideline (2024, National Health Commission)
+Learning objective: exam preparation for the associate senior title
+Learning signals: recommend consolidation (basis: this session's answers)
+Priority gaps to close: diagnostic criteria
+Suggested starting point: study the definition section first
+Next step: expand that section
+Source: example page: [link](https://www.nhc.gov.cn/example)
+Boundary: This result only reflects the learning signals of this session; it is not a patient diagnosis, a clinical competence certification, or diagnosis-and-treatment advice.
 """
 
     result = validator.validate(
@@ -145,19 +148,19 @@ def test_daily_learning_validator_requires_fixed_unit_structure() -> None:
     validator = _load_module(
         _ROOT / "scripts" / "validate_output.py", "clinical_daily_validator_test"
     )
-    text = """【指南学习单元｜全科】
-轨道：高血压学习轨道
-依据：高血压防治指南（2024，国家卫生健康委）
-学习单元：1 / 2
-章节：第一章 1.1
-主题：适用范围与核心定义
-1. 学习适用范围与核心概念，避免将学习条目代入具体患者。
-2. 关注概念之间的关系和质量意识，不把它写成处置命令。
-3. 医院制度和本地执行口径需要以正式文件确认。
-下一单元预告：
-风险分层框架 — 学习识别风险分层的核心概念。
-来源：示例页面：[链接](https://www.nhc.gov.cn/example)
-说明：本内容用于医生继续学习，不提供个体诊疗、处方剂量或急诊处置建议。
+    text = """[Guideline Learning Unit | General Practice]
+Track: Hypertension learning track
+Basis: Hypertension Prevention and Treatment Guideline (2024, National Health Commission)
+Learning unit: 1 / 2
+Section: Chapter 1, 1.1
+Topic: Scope of application and core definitions
+1. Study the scope of application and core concepts, and do not apply learning items to a specific patient.
+2. Focus on the relationships between concepts and on quality awareness, and do not write them as management orders.
+3. Hospital policies and local execution rules must be confirmed by formal documents.
+Next unit preview:
+Risk stratification framework — learn to recognize the core concepts of risk stratification.
+Source: example page: [link](https://www.nhc.gov.cn/example)
+Note: This content is for doctors' continuing learning and does not provide individual diagnosis or treatment, prescription dosages, or emergency management advice.
 """
     result = validator.validate(
         text,
@@ -172,20 +175,20 @@ def test_clinical_validator_rejects_english_process_phrases() -> None:
     validator = _load_module(
         _ROOT / "scripts" / "validate_output.py", "clinical_process_language_test"
     )
-    text = """【指南学习单元｜全科】
-轨道：高血压学习轨道
-依据：高血压防治指南（2024，国家卫生健康委）
-学习单元：1 / 2
-章节：第一章 1.1
-主题：适用范围与核心定义
-1. 学习适用范围与核心概念，避免将学习条目代入具体患者。
-2. 关注概念之间的关系和质量意识，不把它写成处置命令。
-3. 医院制度和本地执行口径需要以正式文件确认。
+    text = """[Guideline Learning Unit | General Practice]
+Track: Hypertension learning track
+Basis: Hypertension Prevention and Treatment Guideline (2024, National Health Commission)
+Learning unit: 1 / 2
+Section: Chapter 1, 1.1
+Topic: Scope of application and core definitions
+1. Study the scope of application and core concepts, and do not apply learning items to a specific patient.
+2. Focus on the relationships between concepts and on quality awareness, and do not write them as management orders.
+3. Hospital policies and local execution rules must be confirmed by formal documents.
 Let me search for the next unit.
-下一单元预告：
-风险分层框架 — 学习识别风险分层的核心概念。
-来源：示例页面：[链接](https://www.nhc.gov.cn/example)
-说明：本内容用于医生继续学习，不提供个体诊疗、处方剂量或急诊处置建议。
+Next unit preview:
+Risk stratification framework — learn to recognize the core concepts of risk stratification.
+Source: example page: [link](https://www.nhc.gov.cn/example)
+Note: This content is for doctors' continuing learning and does not provide individual diagnosis or treatment, prescription dosages, or emergency management advice.
 """
     result = validator.validate(
         text,
@@ -201,19 +204,19 @@ def test_clinical_validator_ignores_english_in_source_titles() -> None:
     validator = _load_module(
         _ROOT / "scripts" / "validate_output.py", "clinical_source_title_language_test"
     )
-    text = """【指南学习单元｜全科】
-轨道：高血压学习轨道
-依据：高血压防治指南（2024，国家卫生健康委）
-学习单元：1 / 2
-章节：第一章 1.1
-主题：适用范围与核心定义
-1. 学习适用范围与核心概念，避免将学习条目代入具体患者。
-2. 关注概念之间的关系和质量意识，不把它写成处置命令。
-3. 医院制度和本地执行口径需要以正式文件确认。
-下一单元预告：
-风险分层框架 — 学习识别风险分层的核心概念。
-来源：Let me explain hypertension：[链接](https://www.nhc.gov.cn/example)
-说明：本内容用于医生继续学习，不提供个体诊疗、处方剂量或急诊处置建议。
+    text = """[Guideline Learning Unit | General Practice]
+Track: Hypertension learning track
+Basis: Hypertension Prevention and Treatment Guideline (2024, National Health Commission)
+Learning unit: 1 / 2
+Section: Chapter 1, 1.1
+Topic: Scope of application and core definitions
+1. Study the scope of application and core concepts, and do not apply learning items to a specific patient.
+2. Focus on the relationships between concepts and on quality awareness, and do not write them as management orders.
+3. Hospital policies and local execution rules must be confirmed by formal documents.
+Next unit preview:
+Risk stratification framework — learn to recognize the core concepts of risk stratification.
+Source: Let me explain hypertension: [link](https://www.nhc.gov.cn/example)
+Note: This content is for doctors' continuing learning and does not provide individual diagnosis or treatment, prescription dosages, or emergency management advice.
 """
     result = validator.validate(
         text,
@@ -228,25 +231,25 @@ def test_daily_learning_final_unit_requires_confirmed_next_stage_choices() -> No
     validator = _load_module(
         _ROOT / "scripts" / "validate_output.py", "clinical_final_daily_validator_test"
     )
-    text = """【指南学习单元｜全科】
-轨道：儿童合理用药学习轨道
-依据：关于进一步加强儿童临床用药管理工作的通知（2023，国家卫生健康委）
-学习单元：6 / 6
-章节：健康宣教与随访
-主题：家长指导与用药随访
-1. 学习家长沟通中的核心信息与安全边界。
-2. 关注随访制度与用药连续性管理的衔接。
-3. 本地执行口径仍需以医疗机构正式制度为准。
+    text = """[Guideline Learning Unit | General Practice]
+Track: Pediatric medication track
+Basis: Pediatric Medication Notice (2023, National Health Commission)
+Learning unit: 6 / 6
+Section: Health education
+Topic: Parent guidance
+1. Study the core information in parent communication.
+2. Study how follow-up supports continuity of medication.
+3. Local execution follows formal institutional policies.
 
-下一阶段可选指南（待确认）：
-A. 《基层儿童健康管理指南》（2025，国家卫生健康委）：[链接](https://www.nhc.gov.cn/next-a)
-   推荐衔接：继续学习儿童健康管理与随访框架。
-B. 《儿童用药质量控制规范》（2024，中华医学会）：[链接](https://www.cma.org.cn/next-b)
-   推荐衔接：从健康宣教延伸到机构用药质量控制。
-回复 A/B，或告诉我其他学习方向。确认前不会创建或启用新轨道。
+Optional guidelines for the next stage (pending confirmation):
+A. "Primary-Care Child Health Guideline"(2025, National Health Commission): [link](https://www.nhc.gov.cn/next-a)
+   Recommended connection: continue with child health.
+B. "Pediatric Medication Quality Control Standard"(2024, Chinese Medical Association): [link](https://www.cma.org.cn/next-b)
+   Recommended connection: move on to institutional quality control.
+Reply A/B, or tell me another learning direction. No new track will be created or enabled before confirmation.
 
-来源：儿童临床用药管理通知：[链接](https://www.nhc.gov.cn/example)
-说明：本内容用于医生继续学习，不提供个体诊疗、处方剂量或急诊处置建议。
+Source: Pediatric medication notice: [link](https://www.nhc.gov.cn/example)
+Note: For doctors' continuing learning only; no individual diagnosis or treatment, prescription dosages, or emergency advice.
 """
     result = validator.validate(
         text,
@@ -261,19 +264,19 @@ def test_daily_learning_final_unit_rejects_canned_waiting_preview() -> None:
     validator = _load_module(
         _ROOT / "scripts" / "validate_output.py", "clinical_canned_final_validator_test"
     )
-    text = """【指南学习单元｜全科】
-轨道：儿童合理用药学习轨道
-依据：关于进一步加强儿童临床用药管理工作的通知（2023，国家卫生健康委）
-学习单元：6 / 6
-章节：健康宣教与随访
-主题：家长指导与用药随访
-1. 学习家长沟通中的核心信息。
-2. 关注随访制度与用药连续性。
-3. 本地执行口径以正式制度为准。
-下一单元预告：
-本轨道单元已全部送达，等待用户复盘或确认新轨道。
-来源：儿童临床用药管理通知：[链接](https://www.nhc.gov.cn/example)
-说明：本内容用于医生继续学习，不提供个体诊疗、处方剂量或急诊处置建议。
+    text = """[Guideline Learning Unit | General Practice]
+Track: Pediatric rational medication learning track
+Basis: Notice on Further Strengthening the Management of Pediatric Clinical Medication (2023, National Health Commission)
+Learning unit: 6 / 6
+Section: Health education and follow-up
+Topic: Parent guidance and medication follow-up
+1. Study the core information in parent communication.
+2. Focus on the follow-up system and continuity of medication.
+3. Local execution rules are governed by formal policies.
+Next unit preview:
+All units of this track have been delivered; waiting for the user to review or confirm a new track.
+Source: Notice on pediatric clinical medication management: [link](https://www.nhc.gov.cn/example)
+Note: This content is for doctors' continuing learning and does not provide individual diagnosis or treatment, prescription dosages, or emergency management advice.
 """
     result = validator.validate(
         text,
@@ -282,19 +285,20 @@ def test_daily_learning_final_unit_rejects_canned_waiting_preview() -> None:
         allow_no_source=False,
     )
     assert result["ok"] is False
-    assert "最后单元不得继续使用下一单元预告" in result["errors"]
+    assert "the final unit must not keep using a next unit preview" in result["errors"]
 
 
 def test_source_validator_rejects_review_as_final_evidence() -> None:
     validator = _load_module(_ROOT / "scripts" / "validate_output.py", "review_source_test")
-    text = """【指南学习诊断｜仅评估学习状态】
-学习目标：继续学习
-学习信号：建议巩固
-优先补齐：核心概念
-建议起点：从规范性文件开始
-下一步：确认学习方向
-来源：儿童合理用药系统综述：[链接](https://www.medjournals.cn/review)
-边界：本结果只反映本次学习信号，不是患者诊断、临床胜任力认证或诊疗建议。
+    text = """[Guideline Learning Diagnosis | Assessment Only]
+Basis: Pediatric rational medication learning plan
+Learning objective: continue learning
+Learning signals: recommend consolidation
+Priority gaps to close: core concepts
+Suggested starting point: start from the normative document
+Next step: confirm the learning direction
+Source: Pediatric rational medication systematic review: [link](https://www.medjournals.cn/review)
+Boundary: This result only reflects the learning signals of this session; it is not a patient diagnosis, a clinical competence certification, or diagnosis-and-treatment advice.
 """
     result = validator.validate(
         text,
@@ -303,26 +307,29 @@ def test_source_validator_rejects_review_as_final_evidence() -> None:
         allow_no_source=False,
     )
     assert result["ok"] is False
-    assert "最终依据不得使用非规范性文档类型：systematic_review" in result["errors"]
+    assert (
+        "final evidence must not use a non-normative document type: systematic_review"
+        in result["errors"]
+    )
 
 
 def test_daily_learning_final_unit_can_ask_for_direction_without_review_fallback() -> None:
     validator = _load_module(
         _ROOT / "scripts" / "validate_output.py", "clinical_final_direction_validator_test"
     )
-    text = """【指南学习单元｜全科】
-轨道：儿童合理用药学习轨道
-依据：关于进一步加强儿童临床用药管理工作的通知（2023，国家卫生健康委）
-学习单元：6 / 6
-章节：健康宣教与随访
-主题：家长指导与用药随访
-1. 学习家长沟通中的核心信息。
-2. 关注随访制度与用药连续性。
-3. 本地执行口径以正式制度为准。
-下一阶段规划（待你选择）：
-未取得足够的可核验正式指南，因此不使用综述或研究论文补位。请告诉我希望继续的学习方向。确认前不会创建或启用新轨道。
-来源：儿童临床用药管理通知：[链接](https://www.nhc.gov.cn/example)
-说明：本内容用于医生继续学习，不提供个体诊疗、处方剂量或急诊处置建议。
+    text = """[Guideline Learning Unit | General Practice]
+Track: Pediatric rational medication learning track
+Basis: Notice on Further Strengthening the Management of Pediatric Clinical Medication (2023, National Health Commission)
+Learning unit: 6 / 6
+Section: Health education and follow-up
+Topic: Parent guidance and medication follow-up
+1. Study the core information in parent communication.
+2. Focus on the follow-up system and continuity of medication.
+3. Local execution rules are governed by formal policies.
+next-stage planning (awaiting your choice):
+not enough verifiable formal guidelines were obtained, so this does not use reviews or research papers to fill the gap. Please tell me the learning direction you would like to continue. No new track will be created or enabled before confirmation.
+Source: Notice on pediatric clinical medication management: [link](https://www.nhc.gov.cn/example)
+Note: This content is for doctors' continuing learning and does not provide individual diagnosis or treatment, prescription dosages, or emergency management advice.
 """
     result = validator.validate(
         text,
@@ -351,27 +358,33 @@ def test_source_policy_filters_content_type_and_prefers_current_version() -> Non
     assert "formal_journal_full_text" not in policy["allowed_final_evidence_content_types"]
 
     source_verify = (_ROOT / "skills" / "source-verify" / "SKILL.md").read_text(encoding="utf-8")
-    assert "权威网站不等于" in source_verify
-    assert "科普、转载/摘编、访谈/媒体报道" in source_verify
-    assert "不得出现在最终“来源”、下一阶段指南候选或正式学习轨道来源中" in source_verify
-    assert "最新且当前有效的正式版本" in source_verify
-    assert "网页更新时间" in source_verify
+    assert "An authoritative website does not mean every page on it is an authoritative basis" in (
+        source_verify
+    )
+    assert "Popular science, reprints/excerpts, interviews/media reports" in source_verify
+    assert (
+        'must not appear in the final "source", the next-stage guideline candidates, '
+        "or the sources of a formal learning track"
+    ) in source_verify
+    assert "prefer the latest and currently effective formal version" in source_verify
+    assert "do not treat a web page update time as the document version" in source_verify
 
 
 def _carrier_learning_text(*, carrier_url: str, include_primary: bool = True) -> str:
     primary_source = (
-        "来源：原始元数据（中华医学会）：[链接](https://www.cma.org.cn/art/2025/example.shtml)\n"
+        "Source: original metadata (Chinese Medical Association): "
+        "[link](https://www.cma.org.cn/art/2025/example.shtml)\n"
         if include_primary
         else ""
     )
-    return f"""【指南章节展开｜随访管理】
-依据：中国基层随访管理指南（2025）
-章节：随访管理章节
-原文定位：正式全文中的随访管理章节
-原文要点：学习随访管理的原则与质量要求。
-学习提示：结合原文理解，不代入具体患者。
-边界：本内容不替代原文，不提供个体诊疗、处方剂量或急诊处置建议。
-{primary_source}来源：正文承载（原始正文访问受限）：[链接]({carrier_url})
+    return f"""[Guideline Section Expansion | Follow-up management]
+Basis: China Primary-Care Follow-up Management Guideline (2025)
+Section: Follow-up management section
+Original-text locator: the follow-up management section in the formal full text
+Key points of the original text: study the principles and quality requirements of follow-up management.
+Learning tips: understand it together with the original text; do not apply it to a specific patient.
+Boundary: This content does not replace the original text and does not provide individual diagnosis, prescription dosages, or emergency management advice.
+{primary_source}Source: body-of-text host (original text access restricted): [link]({carrier_url})
 """
 
 
@@ -429,8 +442,11 @@ def test_secondary_fulltext_requires_primary_metadata_pair(url: str) -> None:
         allow_no_source=False,
     )
     assert unpaired["ok"] is False
-    assert "B+正文承载链接必须同时提供S/A原始元数据链接" in unpaired["errors"]
-    assert "B+受控降级必须标明：原始元数据" in unpaired["errors"]
+    assert (
+        "a B+ body-of-text host link must also provide an S/A original-metadata link"
+        in unpaired["errors"]
+    )
+    assert "a B+ controlled downgrade must be labeled: original metadata" in unpaired["errors"]
 
 
 def test_secondary_carrier_rejects_guideline_interpretation() -> None:
@@ -439,7 +455,8 @@ def test_secondary_carrier_rejects_guideline_interpretation() -> None:
     )
     result = validator.validate(
         _carrier_learning_text(carrier_url="https://www.dxy.cn/bbs/newweb/pc/post/example").replace(
-            "中国基层随访管理指南（2025）", "中国基层随访管理指南解读"
+            "China Primary-Care Follow-up Management Guideline (2025)",
+            "China Primary-Care Follow-up Management Guideline Interpretation",
         ),
         module="guideline_section_expansion",
         policy_path=_ROOT / "references" / "source-policy.yaml",
@@ -447,9 +464,9 @@ def test_secondary_carrier_rejects_guideline_interpretation() -> None:
     )
     assert result["ok"] is False
     assert (
-        "最终依据不得使用非规范性文档类型：guideline_or_consensus_interpretation"
-        in result["errors"]
-    )
+        "final evidence must not use a non-normative document type: "
+        "guideline_or_consensus_interpretation"
+    ) in result["errors"]
 
 
 @pytest.mark.parametrize(
@@ -472,21 +489,21 @@ def test_discovery_and_legacy_academic_domains_cannot_be_final(url: str) -> None
         allow_no_source=False,
     )
     assert result["ok"] is False
-    assert f"来源域名不在白名单：{url.split('/', 3)[2]}" in result["errors"]
+    assert f"source domain is not on the allowlist: {url.split('/', 3)[2]}" in result["errors"]
 
 
 def test_fully_attributed_c_tier_relay_is_background_only() -> None:
     validator = _load_module(_ROOT / "scripts" / "validate_output.py", "attributed_relay_test")
-    text = """【指南章节展开｜随访管理】
-依据：中国基层随访管理指南（2025）
-章节：随访管理章节
-定位状态：未取得原文
-原文要点：仅说明该页面的背景转述，不提取精确推荐。
-学习提示：等待取得规范性原文后再核验。
-边界：本内容不替代原文，不提供个体诊疗、处方剂量或急诊处置建议。
-来源：转述页面（C级，仅作背景）：[链接](https://example.org/clinical-report)
-原始出处：中华医学杂志｜中国基层随访管理指南｜2025｜DOI未提供
-核验状态：未取得可核验原文，以上仅为背景转述，不作为权威依据。
+    text = """[Guideline Section Expansion | Follow-up management]
+Basis: China Primary-Care Follow-up Management Guideline (2025)
+Section: Follow-up management section
+Locator status: original text not obtained
+Key points of the original text: only this page's background relay is described; no precise recommendation is extracted.
+Learning tips: wait until the normative original text is obtained before verifying.
+Boundary: This content does not replace the original text and does not provide individual diagnosis, prescription dosages, or emergency management advice.
+Source: relay page (C-tier, background only): [link](https://example.org/clinical-report)
+Original source: Chinese Medical Journal | China Primary-Care Follow-up Management Guideline | 2025 | DOI not provided
+Verification status: no verifiable original text was obtained; the following is only a background relay and is not an authoritative basis.
 """
     result = validator.validate(
         text,
@@ -495,7 +512,10 @@ def test_fully_attributed_c_tier_relay_is_background_only() -> None:
         allow_no_source=False,
     )
     assert result["ok"] is True
-    assert "包含C级全网转述页面：只能作为背景，不是最终证据" in result["warnings"]
+    assert (
+        "contains a C-tier web-wide relay page: background only, not final evidence"
+        in result["warnings"]
+    )
 
 
 def test_clinical_fast_path_and_route_catalogs_are_registered() -> None:
@@ -600,7 +620,7 @@ def test_learning_track_preview_is_read_only_and_delivery_lifecycle_is_not_expos
     assert preview["lesson"]["id"] == lesson_ids[0]
     assert profile.load_state(tmp_path)["learning"]["delivery_ledger"] == []
 
-    with pytest.raises(RuntimeError, match="平台受鉴权"):
+    with pytest.raises(RuntimeError, match="authenticated outbox"):
         profile._claim_delivery_for_platform(
             track_id=track_id,
             lesson_id=lesson_ids[0],
@@ -725,7 +745,7 @@ def test_version_migration_requires_confirmation_and_keeps_old_track(tmp_path: P
     assert preview["preview_only"] is True
     assert preview["impact"]["requires_new_lessons"] is True
 
-    with pytest.raises(ValueError, match="显式确认"):
+    with pytest.raises(ValueError, match="explicit confirmation"):
         profile.migrate_track(
             track_id=track_id,
             publisher="国家卫生健康委",
@@ -764,4 +784,4 @@ def test_user_summary_and_cli_state_hide_weixin_session_identifier(tmp_path: Pat
     summary = (tmp_path / "USER.md").read_text(encoding="utf-8")
     assert "private-session-value" not in summary
     assert "session_key" not in summary
-    assert profile._public_state(state)["subscriptions"]["weixin_session_key"] == "[已隐藏]"
+    assert profile._public_state(state)["subscriptions"]["weixin_session_key"] == "[hidden]"

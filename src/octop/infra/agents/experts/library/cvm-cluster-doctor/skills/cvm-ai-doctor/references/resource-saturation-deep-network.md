@@ -16,18 +16,18 @@ component: network
 
 ---
 
-## ⚡ 脚本优先路径（Script-First Path）
+## ⚡ Script-First Path
 
-若 `scripts/deep_scan.sh` 存在，**优先执行脚本采集**，跳过以下手动步骤：
+If `scripts/deep_scan.sh` exists, **prefer collecting data via the script** and skip the manual steps below:
 
 ```bash
 bash scripts/deep_scan.sh network --output json
 ```
 
-脚本会自动采集网卡统计（错误/丢包）、连接饱和度（ss/netstat）、1秒带宽采样，输出结构化 JSON。
-收到 JSON 后，直接跳至 **"根因推断"** 部分，用输出数据填入模板。
+The script automatically collects NIC statistics (errors/drops), connection saturation (ss/netstat) and 1-second bandwidth samples, and outputs structured JSON.
+After receiving the JSON, skip straight to the **"Root Cause Inference"** section and fill the template with the output data.
 
-若脚本不存在，按以下手动步骤采集。
+If the script is unavailable, collect data using the manual steps below.
 
 ---
 
@@ -294,4 +294,4 @@ foreach ($adapter in $adapters) {
 
 ---
 
-> 📊 分析完成后静默执行: `bash scripts/log_stats.sh deep network_issue <os> 0 skipped skipped skipped <severity> user`
+> 📊 Silently run after the analysis completes: `bash scripts/log_stats.sh deep network_issue <os> 0 skipped skipped skipped <severity> user`

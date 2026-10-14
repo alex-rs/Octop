@@ -1,215 +1,215 @@
-# 集群修复操作
+# Cluster Remediation Operations
 
-> **风险门控的集群级修复操作指南。**
-> 所有操作通过 tencentcloud-infra 技能执行（TAT 或云 API）。
-> **修复必须串行，每台节点操作后验证恢复再继续下一台。**
+> **Risk-gated guide to cluster-level remediation operations.**
+> All operations are performed through the tencentcloud-infra skill (TAT or cloud API).
+> **Remediation must be serial: after each node, verify recovery before moving on to the next.**
 
 ---
 
-## 风险等级体系
+## Risk Level System
 
-### 🟢 自动执行（无需确认，只读或低风险）
-- 拉取实例状态和监控指标
-- TAT 执行只读诊断命令（ps、df、ss、journalctl、cat）
-- 展示报告和建议
+### 🟢 Automatic Execution (no confirmation needed; read-only or low risk)
+- Pull instance state and monitoring metrics
+- Run read-only diagnostic commands via TAT (ps, df, ss, journalctl, cat)
+- Show reports and recommendations
 
-### 🟡 一次确认（可逆的服务级操作）
-**执行前必须告知用户，等待确认后方可执行：**
-- TAT 重启单个服务：`systemctl restart <service>`
-- TAT 清理 /tmp 临时文件：`find /tmp -mtime +7 -delete`
-- TAT 强制执行日志轮转：`logrotate -f /etc/logrotate.conf`
-- TAT 清理旧日志文件（只清 7 天前）
+### 🟡 Single Confirmation (reversible service-level operations)
+**You must inform the user before executing, and only proceed after they confirm:**
+- Restart a single service via TAT: `systemctl restart <service>`
+- Clean up temporary files in /tmp via TAT: `find /tmp -mtime +7 -delete`
+- Force log rotation via TAT: `logrotate -f /etc/logrotate.conf`
+- Clean up old log files via TAT (only those older than 7 days)
 
-**确认提示模板：**
+**Confirmation prompt template:**
 ```
-⚠️ 即将在 <N> 个节点上执行：systemctl restart nginx
-影响：nginx 服务将重启约 15-30 秒，期间该节点不对外提供服务
-可逆：是（重启后自动恢复）
-负载均衡器会在健康检查失败后自动摘除该节点
+⚠️ About to run on <N> nodes: systemctl restart nginx
+Impact: the nginx service will restart for about 15-30 seconds, during which that node serves no traffic
+Reversible: yes (it recovers automatically after the restart)
+The load balancer will remove the node automatically once its health check fails
 
-确认执行吗？（回复 "yes" 继续）
+Confirm execution? (reply "yes" to continue)
 ```
 
-### 🔴 明确确认（云端实例生命周期，重大影响）
-**必须让用户明确说出 "确认重启 ins-xxx" 才能执行：**
-- 重启实例：`tccli cvm RebootInstances`
-- 停止实例：`tccli cvm StopInstances`
-- 启动实例：`tccli cvm StartInstances`
+### 🔴 Explicit Confirmation (cloud instance lifecycle, major impact)
+**The user must explicitly say "confirm restart ins-xxx" before you execute:**
+- Restart an instance: `tccli cvm RebootInstances`
+- Stop an instance: `tccli cvm StopInstances`
+- Start an instance: `tccli cvm StartInstances`
 
-**确认提示模板：**
+**Confirmation prompt template:**
 ```
-🔴 高风险操作：将重启实例 ins-xxx (order-api-3)
+🔴 High-risk operation: about to restart instance ins-xxx (order-api-3)
 ---
-影响：
-- 该实例约 1-3 分钟不可用（重启期间）
-- 正在运行的连接将被中断
-- 若已配置 CLB 健康检查，流量将自动转移到其他节点
+Impact:
+- The instance will be unavailable for about 1-3 minutes (during the restart)
+- Connections currently in progress will be interrupted
+- If CLB health checks are configured, traffic will shift to the other nodes automatically
 
-注意事项：
-- 当前集群 RUNNING 节点数：3/4
-- 重启后仅剩 2/4 节点处理流量，请确认其余节点有足够容量
+Precautions:
+- Current number of RUNNING nodes in the cluster: 3/4
+- After the restart only 2/4 nodes will handle traffic; please confirm the remaining nodes have enough capacity
 
-要继续请明确回复：确认重启 ins-xxx
+To continue, reply explicitly: confirm restart ins-xxx
 ```
 
-### 💀 绝不执行（即使用户明确要求）
-- **同时重启 ≥ 50% 的节点**（可能导致服务整体不可用）
-- `rm -rf` 任何目录
+### 💀 Never Execute (even if the user explicitly asks)
+- **Restarting ≥ 50% of the nodes at the same time** (may make the whole service unavailable)
+- `rm -rf` on any directory
 - `DROP TABLE` / `DELETE FROM`
-- 删除 /etc/ssh 或 sshd 配置
-- 清空整个日志目录（允许清旧文件，不允许清当前日志）
+- Deleting /etc/ssh or the sshd configuration
+- Emptying an entire log directory (cleaning old files is allowed; clearing the current logs is not)
 
-遇到此类请求，回复：
+When such a request comes in, reply:
 ```
-❌ 此操作风险极高（影响整集群可用性），无法执行。
+❌ This operation is extremely risky (it affects the whole cluster's availability), so it cannot be executed.
 
-安全替代方案：
-1. 逐台重启（每台间隔 2 分钟，最多同时操作 1 台）
-2. 先在腾讯云控制台确认实例健康后再操作
+Safe alternatives:
+1. Restart node by node (2 minutes apart, at most 1 node at a time)
+2. Confirm the instance is healthy in the Tencent Cloud console before acting
 
-如确需操作，请手动在腾讯云控制台操作，并提前通知相关团队。
+If the operation is truly necessary, please do it manually in the Tencent Cloud console and notify the relevant team in advance.
 ```
 
 ---
 
-## 串行修复执行原则
+## Serial Remediation Principles
 
-**核心规则：绝不并发操作多台节点**
+**Core rule: never operate on more than one node concurrently**
 
 ```
-正确流程：
-  节点1 → 执行操作 → 等待 10 秒 → 验证恢复 →
-  节点2 → 执行操作 → 等待 10 秒 → 验证恢复 →
-  节点3 → ...
+Correct flow:
+  node1 → run the operation → wait 10 seconds → verify recovery →
+  node2 → run the operation → wait 10 seconds → verify recovery →
+  node3 → ...
 
-错误做法（禁止）：
-  节点1、节点2、节点3 同时执行操作 ❌
+Wrong approach (forbidden):
+  node1, node2, and node3 run the operation at the same time ❌
 ```
 
-最大并发：**1 台节点**（不管集群有多少台）
+Maximum concurrency: **1 node** (no matter how many nodes the cluster has)
 
 ---
 
-## 常见修复操作手册
+## Common Remediation Playbook
 
-### 操作 A：重启集群中某服务（🟡 中风险）
+### Operation A: Restart a Service in the Cluster (🟡 medium risk)
 
-**场景：** 某服务（如 nginx/java/node）崩溃或响应异常
+**Scenario:** a service (such as nginx/java/node) has crashed or is responding abnormally
 
-**执行流程：**
+**Execution flow:**
 
 ```
-1. 确认操作范围（哪几个节点？）
-2. 输出风险提示，等待用户确认
+1. Confirm the scope (which nodes?)
+2. Print the risk notice and wait for user confirmation
 
-3. 对节点 1 执行 TAT（通过 tencentcloud-infra）：
+3. Run TAT on node 1 (through tencentcloud-infra):
    tccli tat RunCommand \
      --InstanceIds '["ins-xxx"]' \
      --CommandType SHELL --Timeout 30 \
      --Content "$(printf '%s' 'systemctl restart nginx' | base64 -w 0)"
 
-4. 等待 TAT 完成（轮询 DescribeInvocationTasks）
+4. Wait for TAT to finish (poll DescribeInvocationTasks)
 
-5. 验证服务恢复（TAT 执行）：
+5. Verify the service recovered (run via TAT):
    systemctl is-active nginx && echo "OK" || echo "FAILED"
 
-6. 若验证通过，间隔 10 秒后对节点 2 执行相同操作
-7. 若验证失败，暂停并报告
+6. If verification passes, wait 10 seconds and run the same operation on node 2
+7. If verification fails, pause and report
 ```
 
-### 操作 B：清理磁盘（🟡 中风险）
+### Operation B: Clean Up Disk Space (🟡 medium risk)
 
-**场景：** 磁盘使用率 > 80%
+**Scenario:** disk usage > 80%
 
-**执行流程（只清安全文件，不删业务数据）：**
+**Execution flow (clean only safe files; never delete business data):**
 
 ```bash
-# 清 7 天前的 /tmp 文件
+# Clean /tmp files older than 7 days
 find /tmp -mtime +7 -delete 2>/dev/null && echo "tmp cleaned"
 
-# 强制日志轮转
+# Force log rotation
 logrotate -f /etc/logrotate.conf 2>/dev/null && echo "logrotate done"
 
-# 清已压缩的旧日志（*.gz 保留最新 3 个）
+# Clean old compressed logs (keep the newest 3 *.gz files)
 find /var/log -name "*.gz" | sort | head -n -3 | xargs rm -f 2>/dev/null && echo "old gz cleaned"
 ```
 
-**不执行：** 删除任何 .log 文件（正在写入），不清 /var/log/\* 当前日志
+**Do not execute:** deleting any .log file (they are being written to); do not clear the current logs in /var/log/\*
 
-### 操作 C：重启实例（🔴 高风险）
+### Operation C: Restart an Instance (🔴 high risk)
 
-**场景：** 节点无响应、内核死锁、TAT 连不通
+**Scenario:** a node is unresponsive, the kernel is deadlocked, or TAT cannot reach it
 
-**执行流程：**
+**Execution flow:**
 
 ```
-1. 确认该节点状态：DescribeInstances
-2. 确认 CLB 健康检查已经将该节点摘除（否则重启期间会有流量损失）
-3. 输出 🔴 高风险提示，等待用户明确确认
+1. Confirm the node's state: DescribeInstances
+2. Confirm the CLB health check has already removed the node (otherwise traffic will be lost during the restart)
+3. Print the 🔴 high-risk notice and wait for explicit user confirmation
 
-4. 通过 tencentcloud-infra 执行重启：
+4. Execute the restart through tencentcloud-infra:
    tccli cvm RebootInstances \
      --region <region> \
      --InstanceIds '["ins-xxx"]' \
      --StopType SOFT
 
-5. 每 10 秒轮询 DescribeInstances，直到 InstanceState = RUNNING
-   最长等待：10 分钟（600 秒）
+5. Poll DescribeInstances every 10 seconds until InstanceState = RUNNING
+   Maximum wait: 10 minutes (600 seconds)
 
-6. 实例 RUNNING 后，再等 30 秒让系统服务完全启动
+6. Once the instance is RUNNING, wait another 30 seconds for the system services to finish starting
 
-7. 通过 TAT 执行恢复验证：
+7. Run a recovery check via TAT:
    systemctl is-active sshd && \
    uptime && \
    free -m | awk '/Mem:/{print "MEM:", $3"/"$2, "MB"}' && \
    df / | awk 'NR==2{print "DISK:", $5}'
 
-8. 更新 MEMORY.md 诊断历史
+8. Update the MEMORY.md diagnosis history
 ```
 
-### 操作 D：启动已停止的实例（🔴 高风险）
+### Operation D: Start a Stopped Instance (🔴 high risk)
 
-**场景：** 发现集群中有 STOPPED 实例，且不是计划内停机
+**Scenario:** a STOPPED instance is found in the cluster and it was not a planned shutdown
 
 ```
-1. 先确认：询问用户该实例停止是否计划内
-2. 若非计划内，输出 🔴 提示，等待确认
+1. Confirm first: ask the user whether stopping this instance was planned
+2. If it was not planned, print the 🔴 notice and wait for confirmation
 
-3. 通过 tencentcloud-infra 启动：
+3. Start it through tencentcloud-infra:
    tccli cvm StartInstances \
      --region <region> \
      --InstanceIds '["ins-xxx"]'
 
-4. 轮询 DescribeInstances 直到 RUNNING
-5. 等待 60 秒（服务启动）
-6. TAT 验证（同操作 C 步骤 7）
+4. Poll DescribeInstances until RUNNING
+5. Wait 60 seconds (for services to start)
+6. Verify via TAT (same as operation C step 7)
 ```
 
 ---
 
-## 修复后验证标准
+## Post-Remediation Verification Criteria
 
-操作完成后，使用以下标准判断是否修复成功：
+After the operation completes, use the following criteria to decide whether the fix succeeded:
 
-| 指标 | 成功标准 |
+| Metric | Success criterion |
 |------|---------|
-| sshd 状态 | `systemctl is-active sshd` = `active` |
-| 目标服务 | `systemctl is-active <service>` = `active` |
-| 磁盘 | `disk_root_pct < 80%`（清理后） |
-| 实例状态 | `DescribeInstances InstanceState` = `RUNNING` |
-| 系统负载 | `load/ncpu < 1.0`（重启后 5 分钟内） |
+| sshd status | `systemctl is-active sshd` = `active` |
+| Target service | `systemctl is-active <service>` = `active` |
+| Disk | `disk_root_pct < 80%` (after cleanup) |
+| Instance state | `DescribeInstances InstanceState` = `RUNNING` |
+| System load | `load/ncpu < 1.0` (within 5 minutes of the restart) |
 
 ---
 
-## 操作日志记录
+## Operation Logging
 
-每次修复操作结束后，写入 MEMORY.md 诊断历史：
+After every remediation operation, write to the MEMORY.md diagnosis history:
 
 ```markdown
-### <YYYY-MM-DD HH:MM> — 集群修复操作
-- **症状**: <用户报告的问题>
-- **受影响节点**: [ins-xxx, ins-yyy]
-- **操作**: <执行了什么操作>
-- **结果**: <成功/部分失败>
-- **验证**: <验证命令和结果>
+### <YYYY-MM-DD HH:MM> — Cluster remediation operation
+- **Symptom**: <issue reported by the user>
+- **Affected nodes**: [ins-xxx, ins-yyy]
+- **Actions**: <what was executed>
+- **Result**: <success/partial failure>
+- **Verification**: <verification commands and results>
 ```

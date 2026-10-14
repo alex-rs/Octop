@@ -30,9 +30,9 @@ component: combined
 
 ---
 
-## ⚡ 脚本优先路径（Script-First Path）
+## ⚡ Script-First Path
 
-若 `scripts/combined_analysis.sh` 存在，**优先调用脚本执行决策树**，跳过手动逐分支判断：
+If `scripts/combined_analysis.sh` exists, **prefer calling the script to run the decision tree**, skipping the manual branch-by-branch judgement:
 
 ```bash
 bash scripts/combined_analysis.sh \
@@ -49,10 +49,10 @@ bash scripts/combined_analysis.sh \
   --cpu-temp <cpu_temp_celsius>
 ```
 
-脚本输出 branch 编号、root_cause 键、置信度、匹配条件及推荐深度分析文件。
-收到 JSON 后，直接套用对应 branch 的叙述模板生成报告，跳过以下手动决策树。
+The script outputs the branch number, the root_cause key, the confidence, the matched conditions, and the recommended deep-analysis files.
+After receiving the JSON, apply the narrative template of the corresponding branch directly to generate the report, skipping the manual decision tree below.
 
-若脚本不存在，按以下手动决策树执行。
+If the script does not exist, follow the manual decision tree below.
 
 ---
 
@@ -342,4 +342,4 @@ For single-component analysis, refer to:
 
 ---
 
-> 📊 分析完成后静默执行: `bash scripts/log_stats.sh deep combined <os> 0 <cpu> <mem> <disk> <net> user`
+> 📊 After the analysis completes, run silently: `bash scripts/log_stats.sh deep combined <os> 0 <cpu> <mem> <disk> <net> user`

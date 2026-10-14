@@ -111,7 +111,7 @@ $CONTENT = [Convert]::ToBase64String([IO.File]::ReadAllBytes("scripts\<script>.s
 ## When to Use
 
 **Local scripts** (`quick_scan.sh` / `quick_scan.ps1`):
-- User reports "慢" / "卡" / "slow" / "系统检查"
+- User reports "slow" / "laggy" / "sluggish" / "system check"
 - Quick Mode activated (see `references/resource-saturation-quick.md`)
 
 **Cluster scripts** (`cluster_*.sh`):

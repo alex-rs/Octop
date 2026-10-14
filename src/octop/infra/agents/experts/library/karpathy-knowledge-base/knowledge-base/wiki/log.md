@@ -1,8 +1,8 @@
 # Wiki Operation Log
 
-> 只追加，不改写历史。条目格式：## [YYYY-MM-DD] operation | subject。
+> Append only; never rewrite history. Entry format: ## [YYYY-MM-DD] operation | subject.
 
 ## [2026-08-23] initialize | knowledge base
 
-- 创建 raw 来源层、wiki 编译层、完整索引和 MEMORY 热索引。
-- 当前尚未设置主题或摄取来源。
+- Created the raw source layer, the wiki compilation layer, the full index, and the MEMORY hot index.
+- No topic has been set and no sources have been ingested yet.

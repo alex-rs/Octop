@@ -26,7 +26,7 @@ User Question → Quick Mode (5s) → Analyze → Deep Mode (10-15s, if issues)
 
 | Mode | Duration | Purpose | When to Use |
 |------|----------|---------|-------------|
-| **Quick** | 5s | Check if NTP is enabled and synced | Health check, "检查时间", daily routine |
+| **Quick** | 5s | Check if NTP is enabled and synced | Health check, "check the time", daily routine |
 | **Deep** | 10-15s | Detailed offset analysis + troubleshooting | Quick shows not synced, time drift issues |
 
 **Decision Logic**:
@@ -427,7 +427,7 @@ Recommendation:
 
 ## 💡 Complete Usage Examples
 
-### Example 1: User Reports "Kerberos 认证失败"
+### Example 1: User Reports "Kerberos authentication failure"
 
 **Step 1: Quick Mode**
 ```
@@ -451,41 +451,41 @@ Status: WARNING - NTP enabled but not synced
 
 **Final Report**:
 ```
-🔴 时间严重偏移 - Kerberos 失败原因找到
+🔴 Severe time offset - Kerberos failure cause found
 
-检测结果：
-- NTP 服务：运行中
-- 时间偏移：8.3 秒（超过 Kerberos 5 秒阈值）
-- NTP 服务器：可达（2 个）
+Check results:
+- NTP service: running
+- Time offset: 8.3 seconds (exceeds the 5-second Kerberos threshold)
+- NTP servers: reachable (2)
 
-根因：时间漂移超过 5 秒，Kerberos 拒绝认证
+Root cause: time drift exceeds 5 seconds, Kerberos rejects authentication
 
-影响：
-- 🔴 Kerberos 认证失败（>5 秒阈值）
-- SSL 证书验证可能失败
-- 分布式事务错误
-- 日志时间戳不可靠
+Impact:
+- 🔴 Kerberos authentication failure (>5 second threshold)
+- SSL certificate verification may fail
+- Distributed transaction errors
+- Log timestamps unreliable
 
-立即修复：
-1. 强制时间同步：
+Immediate fix:
+1. Force time synchronization:
    sudo chronyc makestep
    
-2. 验证修复：
+2. Verify the fix:
    timedatectl status
-   # 应显示 "System clock synchronized: yes"
+   # should display "System clock synchronized: yes"
    
-3. 测试 Kerberos：
+3. Test Kerberos:
    kinit <username>
    
-4. 后续排查：
-   - 为什么时间漂移如此严重？
-   - 检查硬件时钟（RTC）电池
-   - 检查 NTP 日志：journalctl -u chronyd
+4. Follow-up investigation:
+   - Why is the time drifting so severely?
+   - Check the hardware clock (RTC) battery
+   - Check NTP logs: journalctl -u chronyd
 ```
 
 ---
 
-### Example 2: User Asks "检查时间同步"
+### Example 2: User Asks "Check time synchronization"
 
 **Step 1: Quick Mode**
 ```
@@ -509,40 +509,40 @@ Status: CRITICAL - NTP disabled
 
 **Final Report**:
 ```
-🔴 NTP 未启用 - 时间正在漂移
+🔴 NTP not enabled - time is drifting
 
-检测结果：
-- NTP 服务：未运行
-- 当前偏移：+127 秒（相对于标准时间）
-- 网络：NTP 服务器可达
+Check results:
+- NTP service: not running
+- Current offset: +127 seconds (relative to the standard time)
+- Network: NTP servers reachable
 
-根因：系统未配置时间同步服务
+Root cause: the system has no time synchronization service configured
 
-影响：
-- 时间持续漂移（已偏移 127 秒）
-- 日志时间戳错误
-- 定时任务可能异常
-- 分布式系统将出现一致性问题
+Impact:
+- Time keeps drifting (already off by 127 seconds)
+- Log timestamps are wrong
+- Scheduled tasks may fail
+- Distributed systems will see consistency problems
 
-立即修复：
-1. 启用 NTP：
+Immediate fix:
+1. Enable NTP:
    sudo timedatectl set-ntp true
    
-2. 如果失败，安装 chrony：
+2. If that fails, install chrony:
    sudo apt-get install -y chrony
    sudo systemctl enable chronyd
    sudo systemctl start chronyd
    
-3. 强制立即同步：
+3. Force an immediate sync:
    sudo chronyc makestep
    
-4. 验证：
+4. Verify:
    timedatectl status
-   # 应显示：
+   # should display:
    # NTP service: active
    # System clock synchronized: yes
    
-预期结果：时间将在 1 分钟内同步到准确值
+Expected result: the time will sync to the accurate value within 1 minute
 ```
 
 ---
@@ -566,21 +566,21 @@ chronyc tracking | grep "Last offset"
 
 **Final Report**:
 ```
-时间同步检查 - 一切正常 ✅
+Time synchronization check - all normal ✅
 
-状态：
-- NTP 服务：运行中
-- 时钟已同步：是
-- 当前偏移：+0.0002 秒（几乎完美）
-- NTP 服务器：可达
+Status:
+- NTP service: running
+- Clock synced: yes
+- Current offset: +0.0002 seconds (nearly perfect)
+- NTP servers: reachable
 
-结论：时间同步健康，无需采取行动
-建议：继续定期检查（每季度）
+Conclusion: time synchronization is healthy, no action needed
+Recommendation: continue periodic checks (quarterly)
 ```
 
 ---
 
-### Example 4: User Reports "日志时间不对"
+### Example 4: User Reports "The log time is wrong"
 
 **Step 1: Quick Mode**
 ```
@@ -607,34 +607,34 @@ timedatectl status
 
 **Final Report**:
 ```
-⚠️  时区配置问题（非时间同步问题）
+⚠️  Timezone configuration problem (not a time synchronization problem)
 
-检测结果：
-- NTP 同步：正常
-- 时间偏移：< 1 秒
-- 问题：硬件时钟设置为本地时间（应为 UTC）
+Check results:
+- NTP sync: normal
+- Time offset: < 1 second
+- Problem: the hardware clock is set to local time (should be UTC)
 
-根因：RTC (硬件时钟) 配置错误
+Root cause: RTC (hardware clock) is misconfigured
 
-影响：
-- 夏令时切换时，时间会跳变
-- 双系统（如 Windows）时间冲突
-- 更改时区时，时间会错误
+Impact:
+- Time jumps when daylight saving time changes
+- Time conflicts in dual-boot setups (e.g. Windows)
+- Time is wrong after changing the timezone
 
-修复：
-1. 设置 RTC 为 UTC：
+Fix:
+1. Set the RTC to UTC:
    sudo timedatectl set-local-rtc 0
    
-2. 验证：
+2. Verify:
    timedatectl status
-   # 应显示 "RTC in local TZ: no"
+   # should display "RTC in local TZ: no"
    
-3. 如果双系统（Windows + Linux）：
-   - 在 Windows 中配置使用 UTC
-   - 运行（管理员命令提示符）：
+3. If dual-booting (Windows + Linux):
+   - Configure Windows to use UTC
+   - Run (administrator command prompt):
      reg add "HKLM\System\CurrentControlSet\Control\TimeZoneInformation" /v RealTimeIsUniversal /d 1 /t REG_DWORD /f
 
-注意：此修复不会影响当前时间，但防止未来问题
+Note: this fix does not affect the current time, but it prevents future problems
 ```
 
 ---

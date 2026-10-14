@@ -1,173 +1,173 @@
-# 集群健康评分
+# Cluster Health Score
 
-> **将快速检查数据转换为可量化的健康分数，生成集群报告。**
-> 输入来自 references/cluster-quick-check.md Step 4 的汇总数据。
+> **Turn quick-check data into a quantifiable health score and generate a cluster report.**
+> The input comes from the summary data in references/cluster-quick-check.md Step 4.
 
 ---
 
-## 节点评分算法（100 分制，扣分制）
+## Node Scoring Algorithm (100-point scale, deduction-based)
 
-### 初始分：100
+### Starting score: 100
 
-### 扣分规则（按顺序计算，不叠加超过上限）
+### Deduction Rules (computed in order; deductions do not stack beyond the caps)
 
-#### Layer 1：云端实例状态
+#### Layer 1: Cloud Instance State
 
-| 条件 | 扣分 | 说明 |
+| Condition | Deduction | Notes |
 |------|------|------|
-| `instance_state` = STOPPED / SHUTDOWN / TERMINATING | 最终得分 = **0** | 实例不可用，终止计算 |
-| `instance_state` = REBOOTING | 暂不评分 | 标注"重启中" |
+| `instance_state` = STOPPED / SHUTDOWN / TERMINATING | Final score = **0** | Instance unavailable, stop the calculation |
+| `instance_state` = REBOOTING | Not scored for now | Mark it as "rebooting" |
 
-#### Layer 2B：OS 负载（TAT 数据，若 tat_available=false 跳过此段）
+#### Layer 2B: OS Load (TAT data; skip this section if tat_available=false)
 
-| 条件 | 扣分 |
+| Condition | Deduction |
 |------|------|
-| `load_ratio` > 2.0（LOAD / NCPU > 200%） | **-25** |
-| `load_ratio` > 1.5（150%） | **-10** |
-| `load_ratio` > 1.0（100%） | **-5** |
+| `load_ratio` > 2.0 (LOAD / NCPU > 200%) | **-25** |
+| `load_ratio` > 1.5 (150%) | **-10** |
+| `load_ratio` > 1.0 (100%) | **-5** |
 
-#### Layer 2B：内存使用率（TAT 数据）
+#### Layer 2B: Memory Usage (TAT data)
 
-| 条件 | 扣分 |
+| Condition | Deduction |
 |------|------|
 | `mem_pct` > 90% | **-20** |
 | `mem_pct` > 75% | **-10** |
 | `mem_pct` > 60% | **-5** |
 
-#### Layer 2B：磁盘使用率（TAT 数据）
+#### Layer 2B: Disk Usage (TAT data)
 
-| 条件 | 扣分 |
+| Condition | Deduction |
 |------|------|
 | `disk_root_pct` > 90 | **-25** |
 | `disk_root_pct` > 80 | **-10** |
 | `disk_root_pct` > 70 | **-5** |
 
-#### Layer 2B：SSH 守护进程状态（TAT 数据）
+#### Layer 2B: SSH Daemon Status (TAT data)
 
-| 条件 | 扣分 |
+| Condition | Deduction |
 |------|------|
-| `sshd_active` = false（非 active 状态） | **-40** |
+| `sshd_active` = false (not in the active state) | **-40** |
 
-#### Layer 2A：云端 CPU 均值（GetMonitorData）
+#### Layer 2A: Cloud CPU Average (GetMonitorData)
 
-| 条件 | 扣分 |
+| Condition | Deduction |
 |------|------|
 | `cpu_cloud_avg_pct` > 85% | **-15** |
 | `cpu_cloud_avg_pct` > 70% | **-5** |
 
-#### Layer 2A：云端内存均值（GetMonitorData）
+#### Layer 2A: Cloud Memory Average (GetMonitorData)
 
-| 条件 | 扣分 |
+| Condition | Deduction |
 |------|------|
 | `mem_cloud_avg_pct` > 90% | **-15** |
 | `mem_cloud_avg_pct` > 80% | **-5** |
 
-#### 降级补偿
+#### Degradation Compensation
 
-| 条件 | 处理 |
+| Condition | Handling |
 |------|------|
-| `tat_available` = false | OS 相关扣分项跳过，结果标注"仅云端指标（置信度较低）" |
-| 云端指标 N/A | 云端指标扣分项跳过 |
+| `tat_available` = false | OS-related deductions are skipped; the result is marked "cloud metrics only (lower confidence)" |
+| Cloud metrics N/A | Cloud-metric deductions are skipped |
 
-**最低分：0（不会出现负数）**
-
----
-
-## 集群评分：木桶原理
-
-```
-集群得分 = MIN(所有节点得分)
-
-原理：集群的实际可用性由最弱节点决定。
-      1 台崩溃 = 部分请求失败，无论其他节点多健康。
-```
+**Minimum score: 0 (it never goes negative)**
 
 ---
 
-## 健康等级
+## Cluster Scoring: The Bucket Principle
 
-| 分段 | 等级 | 显示 |
+```
+Cluster score = MIN(score of all nodes)
+
+Rationale: the cluster's actual availability is decided by its weakest node.
+           1 node down = some requests fail, no matter how healthy the others are.
+```
+
+---
+
+## Health Levels
+
+| Range | Level | Display |
 |------|------|------|
-| 90-100 | 健康 | ✅ 健康 |
-| 75-89 | 轻微异常 | ✅ 正常（有小问题） |
-| 60-74 | 需要关注 | ⚠️ 需关注 |
-| 40-59 | 异常 | 🚨 异常 |
-| 0-39 | 严重 | 🔴 严重 |
+| 90-100 | Healthy | ✅ Healthy |
+| 75-89 | Minor anomaly | ✅ Normal (minor issues) |
+| 60-74 | Needs attention | ⚠️ Needs attention |
+| 40-59 | Abnormal | 🚨 Abnormal |
+| 0-39 | Critical | 🔴 Critical |
 
 ---
 
-## 报告模板
+## Report Template
 
 ```
-## 集群健康报告 [<cluster_name>]
-时间：<YYYY-MM-DD HH:MM:SS> （<region>）
+## Cluster Health Report [<cluster_name>]
+Time: <YYYY-MM-DD HH:MM:SS> (<region>)
 
-📊 集群评分：<score>/100 <等级图标>
-   木桶短板：<最低分节点名>（<最低分>分）
+📊 Cluster score: <score>/100 <level icon>
+   Weakest link: <lowest-scoring node name> (<lowest score> points)
 
-节点状态总览：
-  ✅ 健康节点：<N> 台
-  ⚠️ 需关注：<N> 台
-  🔴 异常节点：<N> 台
-  ⏹️ 已停止：<N> 台
+Node status overview:
+  ✅ Healthy nodes: <N>
+  ⚠️ Needs attention: <N>
+  🔴 Abnormal nodes: <N>
+  ⏹️ Stopped: <N>
 
-| 节点          | 状态    | 评分 | 负载/核  | 内存%  | 磁盘% | SSH   | 云CPU% | 异常概述 |
+| Node         | State   | Score | Load/core | Mem%  | Disk% | SSH   | Cloud CPU% | Anomaly summary |
 |--------------|---------|------|---------|-------|-------|-------|--------|---------|
 | order-api-1  | RUNNING | 95   | 0.3/4   | 42%   | 55%   | ✅    | 38%    | —       |
-| order-api-2  | RUNNING | 78   | 0.8/4   | 78%   | 61%   | ✅    | 65%    | 内存偏高 |
-| order-api-3  | RUNNING | 55   | 3.2/4   | 88%   | 79%   | ✅    | 92%    | CPU高/内存高/磁盘偏高 |
-| order-api-4  | STOPPED | 0    | —       | —     | —     | N/A   | —      | 实例已停止 |
+| order-api-2  | RUNNING | 78   | 0.8/4   | 78%   | 61%   | ✅    | 65%    | Memory high |
+| order-api-3  | RUNNING | 55   | 3.2/4   | 88%   | 79%   | ✅    | 92%    | CPU high / memory high / disk elevated |
+| order-api-4  | STOPPED | 0    | —       | —     | —     | N/A   | —      | Instance stopped |
 
 ---
-<如有跨节点关联问题，在这里列出，否则省略>
+<If there are cross-node correlated issues, list them here; otherwise omit>
 
-⚠️ 检测到集群级问题：
-1. [关联] order-api-2 和 order-api-3 同时内存 > 75%，疑似共享资源压力
-   → 建议检查共用的 MySQL/Redis 实例（调用 tencentcloud-infra GetMonitorData）
+⚠️ Cluster-level issues detected:
+1. [Correlation] order-api-2 and order-api-3 both have memory > 75%, suggesting shared-resource pressure
+   → Recommended: check the shared MySQL/Redis instances (call tencentcloud-infra GetMonitorData)
 
 ---
-💡 建议操作（按优先级）：
+💡 Suggested actions (by priority):
 
-🔴 立即处理：
-→ order-api-3 CPU 使用率 92%，进程需要深度排查
-   输入 "深度分析 order-api-3" 查看 top 进程
+🔴 Handle immediately:
+→ order-api-3 CPU usage is 92%; its processes need in-depth investigation
+   Type "deep analysis order-api-3" to view the top processes
 
-🟡 尽快处理：
-→ order-api-4 已停止，请确认是否计划内
-   若需启动：需确认后通过 tencentcloud-infra 执行
+🟡 Handle as soon as possible:
+→ order-api-4 is stopped; please confirm whether this was planned
+   If it needs to be started: confirm first, then do it via tencentcloud-infra
 
-🟢 关注：
-→ order-api-2 内存 78%，建议 24 小时内复查趋势
+🟢 Monitor:
+→ order-api-2 memory is 78%; recommend rechecking the trend within 24 hours
 ```
 
 ---
 
-## 关联问题检测（快速版）
+## Correlation Detection (quick version)
 
-在生成报告前，对以下模式进行快速扫描（详细分析见 cluster-deep-analysis.md）：
+Before generating the report, quickly scan for the following patterns (for detailed analysis see cluster-deep-analysis.md):
 
-**模式 A：内存级联**
-条件：`≥ 3 个节点 mem_pct > 75%`
-报告中追加："[关联] 多节点内存同时偏高，疑似共享后端压力"
+**Pattern A: Memory cascade**
+Condition: `≥ 3 nodes with mem_pct > 75%`
+Append to the report: "[Correlation] Multiple nodes have elevated memory at the same time, suggesting shared backend pressure"
 
-**模式 B：负载不均**
-条件：`MAX(load_ratio) - MIN(load_ratio) > 0.5`（正常节点间）
-报告中追加："[关联] 负载分布不均（最高 X，最低 Y），建议检查负载均衡"
+**Pattern B: Uneven load**
+Condition: `MAX(load_ratio) - MIN(load_ratio) > 0.5` (among healthy nodes)
+Append to the report: "[Correlation] Load is unevenly distributed (max X, min Y); recommend checking load balancing"
 
-**模式 C：磁盘增长同步**
-条件：`≥ 2 个节点 disk_root_pct > 75%`
-报告中追加："[关联] 多节点磁盘使用率较高，可能是统一的日志未清理"
+**Pattern C: Synchronized disk growth**
+Condition: `≥ 2 nodes with disk_root_pct > 75%`
+Append to the report: "[Correlation] Multiple nodes have high disk usage; possibly uniform log files that were never cleaned up"
 
 ---
 
-## 报告写入 MEMORY.md
+## Writing the Report to MEMORY.md
 
-每次检查结束后，将简要摘要写入 MEMORY.md 诊断历史：
+After every check, write a brief summary into the MEMORY.md diagnosis history:
 
 ```markdown
-### <YYYY-MM-DD HH:MM> — 集群快速检查
-- **集群评分**: <N>/100
-- **异常节点**: <节点列表>（若无则填"无"）
-- **主要问题**: <一句话描述>
-- **操作**: <本次执行了哪些操作，若无填"仅检查，未操作">
+### <YYYY-MM-DD HH:MM> — Cluster quick check
+- **Cluster score**: <N>/100
+- **Abnormal nodes**: <node list> (write "none" if there are none)
+- **Main issues**: <one-sentence description>
+- **Actions**: <which actions were performed this time; if none, write "check only, no actions">
 ```

@@ -1,45 +1,45 @@
-# 学习轨道与新版迁移模板
+# Learning Track and New-Version Migration Template
 
-本模板用于把已核验指南变成用户可确认的学习计划；不是每日订阅正文，也不代表已经保存、启用或发送。
+This template turns a verified guideline into a learning plan the user can confirm; it is not the body of a daily subscription, nor does it mean that anything has been saved, enabled, or sent.
 
-## 候选学习轨道
+## Candidate learning track
 
-    【候选学习轨道｜待确认】
-    学习目标：{目标；未保存时明确“仅本次建议”}
-    依据：{指南完整名称}（{版本/年份}，{发布机构}）
-    权威来源：{文件名}：[链接]({URL})
-    建议节奏：{每次时长、频率、预估单元数}
+    [Candidate Learning Track | Pending Confirmation]
+    Learning objective: {objective; when not saved, state clearly "this recommendation only"}
+    Basis: {full guideline name} ({version/year}, {issuing body})
+    Authoritative source: {file name}: [link]({URL})
+    Suggested cadence: {duration per session, frequency, estimated number of units}
 
-    学习单元：
-    1. {章节锚点}｜{主题}｜{学习目标}
-    2. {章节锚点}｜{主题}｜{学习目标}
-    3. {章节锚点}｜{主题}｜{学习目标}
+    Learning units:
+    1. {section anchor} | {topic} | {learning objective}
+    2. {section anchor} | {topic} | {learning objective}
+    3. {section anchor} | {topic} | {learning objective}
 
-    保存前说明：确认后将保存学习目标（如选择）、指南版本、章节锚点、学习节奏和最小进度元数据；不会保存课程全文、原始答题、患者信息或微信会话标识。
-    下一步：请确认是否保存为学习轨道；确认后仍需单独确认启用订阅。
+    Note before saving: after confirmation, the learning objective (if selected), guideline version, section anchors, learning cadence, and minimal progress metadata will be saved; the full course text, original answers, patient information, or WeChat session identifiers will not be saved.
+    Next step: please confirm whether to save this as a learning track; after confirmation, enabling the subscription still requires a separate confirmation.
 
-## 轨道进度
+## Track progress
 
-    【学习轨道进度】
-    轨道：{名称}
-    依据：{指南版本}
-    已由通道受理：{由平台回执服务提供的已确认送达单元数} / {总单元数}
-    用户标记掌握：{已掌握单元数} / {总单元数}
-    下一单元：{序号、章节和主题；如无则说明原因}
-    说明：通道受理数据只能来自平台回执服务，不从专家工作区推断；它不等于已阅读、已掌握或具备临床胜任力。
+    [Learning Track Progress]
+    Track: {name}
+    Basis: {guideline version}
+    Accepted by the channel: {number of units with confirmed delivery provided by the platform receipt service} / {total number of units}
+    User-marked mastery: {number of mastered units} / {total number of units}
+    Next unit: {ordinal, section, and topic; if none, explain why}
+    Note: channel-acceptance data can only come from the platform receipt service and must not be inferred from the expert workspace; it does not equal having read, mastered, or gained clinical competence.
 
-## 新版迁移建议
+## New-version migration recommendation
 
-    【指南新版迁移建议｜待确认】
-    当前轨道：{旧指南名称}（{旧版本}）
-    候选版本：{新指南名称}（{新版本}）
-    已保留：旧轨道、既有学习单元和已确认送达记录不会被覆盖。
-    受影响范围：{旧版尚未送达单元、可能变化的章节或“待核验”}
-    需要重新规划：{新增/调整章节及原因}
+    [Guideline Version Migration Advice | Pending Confirmation]
+    Current track: {old guideline name} ({old version})
+    Candidate version: {new guideline name} ({new version})
+    Retained: the old track, the existing learning units, and the confirmed delivery records will not be overwritten.
+    Affected scope: {units of the old version not yet delivered, sections that may change, or "pending verification"}
+    Needs replanning: {added/adjusted sections and the reason}
 
-    可选项：
-    1. 保持旧版本继续学习
-    2. 确认创建新版本草稿轨道，重新规划并再次确认启用
-    3. 暂停当前轨道
+    Options:
+    1. Keep the old version and continue learning
+    2. Confirm creating a draft track for the new version, replan, and confirm enabling again
+    3. Pause the current track
 
-    说明：未经确认，不会迁移、替换版本、改写旧进度或发送新内容。
+    Note: without confirmation, nothing will be migrated, no version will be replaced, no old progress will be rewritten, and no new content will be sent.

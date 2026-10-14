@@ -1,100 +1,100 @@
 ---
 name: guideline-update-reminder
-description: 为基层医生学习小助手生成专业指南更新提醒。适用于每3天一次或按需输出与医生科室、亚专业、职称深度和基层场景相关的指南、共识、规范、临床路径或质控标准更新。只提供学习提醒和权威信源，不输出临床行动、疾病SOP、个体患者建议、药物剂量或院内流程变更。
+description: Generate professional guideline update reminders for the primary-care doctor learning assistant. Applies to output every 3 days or on demand, covering guideline, consensus, standard, clinical pathway, or quality control standard updates relevant to the doctor's department, subspecialty, rank depth, and primary-care setting. Provides learning reminders and authoritative sources only; does not output clinical actions, disease SOPs, individual patient advice, drug dosages, or in-hospital process changes.
 metadata:
   octop:
     emoji: "🔔"
     label:
-      zh: "指南更新提醒"
+      zh: "Guideline Update Reminder"
       en: "Guideline Update Reminder"
     summary:
-      zh: "按科室与基层场景提醒相关指南、共识与规范更新。"
+      zh: "Remind about relevant guideline, consensus, and standard updates by department and primary-care setting."
       en: "Remind doctors of relevant guideline and consensus updates."
 ---
 
-# 专业指南更新提醒
+# Professional Guideline Update Reminder
 
-## 必读文件
+## Required Files
 
-起草前必须先读取：
+Before drafting, you must read:
 
-- `../../USER.md`（脚本生成的只读摘要）
+- `../../USER.md` (script-generated read-only summary)
 - `../../references/compliance-boundary.md`
 - `../../references/source-policy.yaml`
 - `../../references/professional-society-source-routes.yaml`
 - `../../references/output-templates.md`
 
-只有用户订阅明确要求国际更新，或国内现行文件未覆盖对应主题时，再读取
-`../../references/international-guideline-source-routes.yaml`。
+Read
+`../../references/international-guideline-source-routes.yaml` only when the user's subscription explicitly requires international updates or when current domestic documents do not cover the corresponding topic.
 
-## 使用档案
+## Using the Profile
 
-优先调用 `../../scripts/clinical_profile.py get` 获取结构化档案；`USER.md` 只作为脚本生成的只读摘要。不得直接编辑 `USER.md`。
+Prefer calling `../../scripts/clinical_profile.py get` to obtain the structured profile; `USER.md` serves only as the script-generated read-only summary. Do not edit `USER.md` directly.
 
-从档案获取：
+Obtain from the profile:
 
-- 科室、科室系统、亚专业
-- 职称学习深度
-- 地区和医院能力边界
+- Department, department system, subspecialty
+- Rank learning depth
+- Region and hospital capability boundaries
 
-如果 5 项登记不完整，先提示补全登记，不生成正式更新提醒。
+If the 5 registration items are incomplete, first prompt the user to complete registration; do not generate a formal update reminder.
 
-## 更新范围
+## Update Scope
 
-只纳入以下可回溯权威原文的文件：
+Include only the following documents that can be traced to an authoritative original text:
 
-- 指南
-- 专家共识
-- 临床路径
-- 诊疗规范
-- 专业质控标准
-- 重大官方药品说明书安全提示或监管通告
+- Guidelines
+- Expert consensus statements
+- Clinical pathways
+- Diagnosis and treatment standards
+- Professional quality control standards
+- Major official drug label safety notices or regulatory announcements
 
-不得推送科普、转载/摘编、访谈、体检知识或解读、会议、培训、新闻、泛行政活动、营销材料、公众号解读，或无法追溯权威原文的二手材料。只有链接正式原文的页面必须继续回溯并引用原文。
+Do not push popular science, reprints/excerpts, interviews, physical examination knowledge or commentary, conferences, training, news, general administrative activities, marketing material, WeChat official account commentary, or second-hand material whose authoritative original text cannot be traced. Pages that only link to the formal original text must continue to be traced back and must cite the original.
 
-## 筛选顺序
+## Filtering Order
 
-1. 与档案中的科室和亚专业直接相关。
-2. 与基层高频场景、质控、报告、随访、慢病管理或转诊识别相关。
-3. 与职称学习深度匹配。
-4. 有权威原文、发布机构和发布时间。
-5. 同一主题优先最新且当前有效的正式版本，并核对替代或废止信息。
-6. 先按科室/亚专业匹配专业学会信源路由并做限定域名增量检索；没有匹配项时才扩大到通用白名单，不得在一次提醒中遍历全部 91 个中华医学会分会。
-7. 用户要求国际补充或国内无覆盖时，可纳入国际 A 级官方正式指南，但普通主题只从 WHO、NICE、ESC、ADA、KDIGO 默认池选择最匹配的 1 站；明确属于 GINA、GOLD、ACG、EASL 等体系时直接访问对应官网。只有首站确实不覆盖时才增加第 2 站，不并行铺开。必须明确制定机构、地区适用性和版本；不得替代国内现行文件。
-8. A/B 均未取得正式原文时可做一次全网检索；只找到声明转述自权威期刊的页面时，最多作为“C级待核验线索”披露原始出处身份和未核验状态，不得列入“可靠更新”或生成精确变化要点。
+1. Directly related to the department and subspecialty in the profile.
+2. Related to high-frequency primary-care settings, quality control, reports, follow-up, chronic disease management, or referral recognition.
+3. Matching the rank learning depth.
+4. Having an authoritative original text, issuing body, and publication date.
+5. For the same topic, prefer the latest currently valid formal version, and check supersession or repeal information.
+6. First match professional society source routes by department/subspecialty and do a restricted-domain incremental search; only when there is no match, expand to the general whitelist, and do not traverse all 91 Chinese Medical Association branches in a single reminder.
+7. When the user requests international supplementation or there is no domestic coverage, international Grade A official formal guidelines may be included, but for ordinary topics choose only the single best match from the default pool of WHO, NICE, ESC, ADA, KDIGO; when they explicitly belong to systems such as GINA, GOLD, ACG, EASL, go directly to the corresponding official website. Add a 2nd site only when the first site genuinely does not cover the topic, and do not spread out in parallel. You must state the issuing body, regional applicability, and version clearly; do not replace current domestic documents.
+8. When neither A nor B yields a formal original text, one web-wide search may be done; when only pages claiming to paraphrase an authoritative journal are found, they may at most be disclosed as a "Grade C lead pending verification", giving the identity of the original source and its unverified status, and must not be listed as a "reliable update" or used to generate precise change points.
 
-## 输出边界
+## Output Boundaries
 
-只输出：
+Output only:
 
-- 更新文件名称
-- 发布机构和发布日期/年份
-- 适用人群、疾病、检查、报告或管理场景
-- 变化主题和学习价值
-- 权威信源链接
-- 来源行必须写成 `来源：{文件或页面名称}：[链接]({URL})`。链接文字固定为“链接”，不得裸露长 URL。
+- Updated document title
+- Issuing body and publication date/year
+- Applicable population, disease, examination, report, or management setting
+- Change topic and learning value
+- Authoritative source link
+- The source line must be written as `Source: {document or page name}: [Link]({URL})`. The link text is fixed as "Link", and long URLs must not be exposed.
 
-不得输出：
+Do not output:
 
-- SOP 是否应调整
-- 医生应如何处置患者
-- 药物剂量、给药途径、频次或疗程
-- HIS 提醒、病历书写要求或院内流程变更
+- Whether a SOP should be adjusted
+- How doctors should manage patients
+- Drug dosage, route of administration, frequency, or course of treatment
+- HIS reminders, medical record writing requirements, or in-hospital process changes
 
-## 无更新处理
+## Handling No Updates
 
-如果没有可靠更新，直接输出无更新模板。不得用新闻、旧内容、公众号文章或泛行政文件填充。
+If there are no reliable updates, output the no-update template directly. Do not pad the output with news, old content, WeChat official account articles, or general administrative documents.
 
-如果没有执行实时检索或信源核验，必须说明本次只是格式测试，不能判断是否有真实更新。
+If you have not performed a real-time search or source verification, you must state that this round is only a format test and cannot determine whether there are real updates.
 
-## 输出要求
+## Output Requirements
 
-**输出语言与格式**：全程使用简体中文；只输出最终提醒正文，不输出思考、推理、检索或执行过程（禁止出现 I'll、Let me、搜索过程、检索日志等过程语句）；执行检索和核验时静默，只在正文生成后输出。
+**Output language and format**: use Simplified Chinese throughout; output only the final reminder body text, not your thinking, reasoning, search, or execution process (process statements such as I'll, Let me, search process, or retrieval logs are prohibited); stay silent while performing searches and verification, and output only after the body text is generated.
 
-使用 `../../references/output-templates.md` 中的“专业指南更新提醒”模板。
+Use the "Professional Guideline Update Reminder" template in `../../references/output-templates.md`.
 
-发送前必须运行或按同等规则检查：
+Before sending, you must run or check by equivalent rules:
 
 - `../../scripts/validate_output.py --module guideline_update_reminder`
 
-只有明确输出“无更新”时，才允许使用 `--allow-no-source`。
+Only when you clearly output "no updates" is `--allow-no-source` allowed.

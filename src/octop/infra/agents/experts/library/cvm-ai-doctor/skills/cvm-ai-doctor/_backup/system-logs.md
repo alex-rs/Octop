@@ -24,7 +24,7 @@ User Question → Quick Mode (10s) → Analyze Results → Deep Mode (20-40s, if
 
 | Mode | Duration | Purpose | When to Use |
 |------|----------|---------|-------------|
-| **Quick** | 10s | Count errors across all categories | Health check, triage, "检查日志" |
+| **Quick** | 10s | Count errors across all categories | Health check, triage, "check the logs" |
 | **Deep** | 20-40s | Detailed error analysis + root cause | Quick finds errors, troubleshooting |
 
 **Decision Logic**:
@@ -566,7 +566,7 @@ Pattern 4: Permission Denied
 
 ## 💡 Complete Usage Examples
 
-### Example 1: User Reports "系统有错误"
+### Example 1: User Reports "the system has errors"
 
 **Step 1: Quick Mode**
 ```bash
@@ -608,15 +608,15 @@ systemctl status failed_service
 
 **Final Report**:
 ```
-检测到 2 个问题：
+Detected 2 problems:
 
-1. 磁盘硬件错误 (/dev/sda)
-   - 根因：硬盘出现坏道
-   - 建议：立即备份数据，运行 smartctl -a /dev/sda 检查健康度
+1. Disk hardware error (/dev/sda)
+   - Root cause: bad sectors appeared on the drive
+   - Recommendation: back up data immediately and run smartctl -a /dev/sda to check health
 
-2. 服务启动失败 (failed_service)
-   - 根因：端口被占用
-   - 建议：运行 lsof -i :<port> 查找冲突进程
+2. Service failed to start (failed_service)
+   - Root cause: port already in use
+   - Recommendation: run lsof -i :<port> to find the conflicting process
 ```
 
 ---
@@ -642,18 +642,18 @@ dmesg | grep "killed process" | awk '{print $(NF-7)}' | sort | uniq -c
 
 **Final Report**:
 ```
-检测到严重内存问题：
+Severe memory problem detected:
 
-根因：Java 进程存在内存泄漏
-证据：
-- Java 进程被 OOM Killer 杀死 8 次
-- 内存使用持续增长
+Root cause: the Java process has a memory leak
+Evidence:
+- The Java process was killed by the OOM Killer 8 times
+- Memory usage keeps growing
 
-建议：
-1. 重启 Java 应用
-2. 检查应用日志，查找内存增长原因
-3. 使用 jmap/jstat 分析 Java 堆内存
-4. 考虑增加系统内存或优化应用
+Recommendations:
+1. Restart the Java application
+2. Check the application logs to find the cause of the memory growth
+3. Use jmap/jstat to analyze the Java heap memory
+4. Consider adding system memory or optimizing the application
 ```
 
 ---
@@ -674,12 +674,12 @@ OVERALL: OK - No issues detected
 
 **Final Report**:
 ```
-系统日志检查完成 - 一切正常 ✅
-- 无内核错误
-- 无 OOM 事件
-- 无文件系统错误
-- 无异常登录
-- 所有服务运行正常
+System log check complete - everything normal ✅
+- No kernel errors
+- No OOM events
+- No file system errors
+- No abnormal logins
+- All services running normally
 ```
 
 ---

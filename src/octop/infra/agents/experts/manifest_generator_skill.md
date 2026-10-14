@@ -62,7 +62,7 @@ Return exactly this shape:
 ## Requirements
 
 - Produce an expert role name in `label`.
-- `label.zh` must be a natural Chinese expert name ending with `专家`.
+- `label.zh` must be a natural Chinese expert name ending with the Chinese word for expert (Zhuanjia).
 - `label.en` must be a natural English expert name ending with `Expert`.
 - If the source name is a task or domain name, convert it into an expert role
   name instead of copying it directly.
@@ -74,10 +74,10 @@ Return exactly this shape:
   “I am…”, and do **not** tell users to pick quick-start cards. Summarize what
   the expert helps with.
   Prefer forms like:
-  - zh: `把灵感扩展成可长期连载的长篇大纲`
+  - zh: `Expand ideas into long-form outlines that can run as an ongoing series`
   - en: `Expand ideas into serialization-ready outlines`
 - Keep `welcome_message` as one complete short phrase. Do not truncate with
-  ellipsis (`…` / `...`) and do not leave hanging connectors like “再到…”.
+  ellipsis (`…` / `...`) and do not leave hanging connectors like “and then…”.
 - `welcome_message.zh` must be natural Simplified Chinese only.
 - `welcome_message.en` must be natural English only; never copy Chinese text into
   `.en`, and never put English into `.zh`.
@@ -94,11 +94,11 @@ Return exactly this shape:
   blank input cue. Do not include numbered step lists, long SOP instructions,
   or multi-paragraph guidance inside `prompt`.
 - Prefer forms like:
-  - zh: `请作为「…专家」，帮我完成「…」。\n我的情况/目标/材料是：\n`
+  - zh: `Act as the “…” Expert and help me complete “…”.\nMy context, goals, or materials are:\n`
   - en: `As the … Expert, help me with: ….\nMy context, goals, or materials are:\n`
 - Treat each quick prompt as a starter template for a real user. When the task
   requires project details, data, code, documents, goals, or constraints, end
-  `prompt.zh` with a final blank input cue line `我的情况/目标/材料是：` and end
+  `prompt.zh` with a final blank input cue line (the Chinese equivalent of “My context, goals, or materials are:”) and end
   `prompt.en` with `My context, goals, or materials are:`. Do not fill content
   after those cue lines.
 - Keep each `prompt.zh` / `prompt.en` under roughly 120 characters excluding the
@@ -124,7 +124,7 @@ Return exactly this shape:
   These are empty-state cards on the **tasks / cron** page: each string is a
   natural-language request that asks the expert to **create a scheduled job**.
 - Every task example must include a concrete schedule in quotes, for example
-  `每天「09:00」` / `every weekday at 18:00`, and should say to enable the job
+  `Every day at “09:00”` / `every weekday at 18:00`, and should say to enable the job
   after creation when that is the first card.
 - Domain-specific only — do not reuse generic drink-water / zodiac / tech-news
   examples. Cover daily patrol, weekly recap, and at least one deliverable push

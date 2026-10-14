@@ -1,225 +1,225 @@
 ---
-summary: "心跳任务 — 定期健康检查与主动告警"
+summary: "Heartbeat tasks — periodic health checks and proactive alerts"
 read_when:
-  - 心跳轮询
+  - heartbeat polling
 ---
 
-# 心跳任务清单
+# Heartbeat Task List
 
-## 1. 定期健康检查
+## 1. Periodic health check
 
-**触发条件:** 每小时一次 (用户可配置频率)
+**Trigger:** once per hour (frequency configurable by the user)
 
-**执行步骤:**
+**Steps:**
 
-1. 执行快速系统扫描 (3秒)
-2. 检查关键指标:
-   - 系统负载和 CPU 使用率
-   - 内存使用率和 swap 使用情况
-   - 磁盘空间和 inode 使用率
-   - 网络连通性 (DNS/外网)
-   - 关键服务状态 (SSH/systemd/docker)
-   - 最近的系统错误日志
+1. Run a quick system scan (3 seconds)
+2. Check key metrics:
+   - System load and CPU usage
+   - Memory usage and swap usage
+   - Disk space and inode usage
+   - Network connectivity (DNS/external network)
+   - Status of key services (SSH/systemd/docker)
+   - Recent system error logs
 
-3. 如果发现异常项,评估严重程度:
-   - 🔴 高危 (磁盘满、SSH 宕机、系统负载 > CPU 核数 2 倍) → 立即推送
-   - 🟡 警告 (资源使用率 > 阈值、服务异常、日志有 ERROR) → 汇总后推送
-   - 🟢 正常 → 不推送,仅记录日志
+3. If an anomaly is found, assess the severity:
+   - 🔴 High risk (disk full, SSH down, system load > 2x CPU cores) → push immediately
+   - 🟡 Warning (resource usage > threshold, service anomaly, ERROR in logs) → summarize and push
+   - 🟢 Normal → do not push, only log it
 
-4. 输出格式 (仅在有异常时推送):
+4. Output format (push only when there is an anomaly):
 
 ```
-【系统医生健康检查 YYYY-MM-DD HH:MM】
+[System Doctor Health Check YYYY-MM-DD HH:MM]
 
-🔴 紧急问题 (需立即处理)
-- 根分区磁盘使用率 96% (剩余 2.1GB)
-- SSH 服务未运行,端口 22 不可达
+🔴 Critical issues (immediate action required)
+- Root partition disk usage 96% (2.1GB remaining)
+- SSH service is not running, port 22 unreachable
 
-🟡 预警信息
-- 系统负载 9.5 (CPU 核心数 4)
-- 内存使用率 88% (14GB / 16GB)
+🟡 Early warnings
+- System load 9.5 (4 CPU cores)
+- Memory usage 88% (14GB / 16GB)
 
 ---
-🔍 执行 "系统详细诊断" 查看完整报告
-```
-
----
-
-## 2. 服务可用性监测
-
-**触发条件:** 每 15 分钟一次 (高频场景)
-
-**执行步骤:**
-
-1. 检查关键服务运行状态:
-   - SSH 服务状态和端口监听
-   - systemd 服务管理器状态
-   - Docker 守护进程 (如已安装)
-   - cron 定时任务服务
-
-2. 如果发现以下情况之一,立即推送:
-   - SSH 服务未运行或端口不可达
-   - systemd 服务处于 failed 状态
-   - Docker 守护进程异常
-
-3. 推送格式:
-
-```
-⚠️ 服务可用性异常
-
-症状: SSH 服务未运行,端口 22 不可达
-可能原因: 服务崩溃 / 配置错误 / 防火墙拦截
-
-🛠️ 快速排查:
-1. 检查服务状态: sudo systemctl status sshd
-2. 查看服务日志: sudo journalctl -u sshd -n 50
-3. 检查端口监听: ss -tlnp | grep :22
-
-需要深度诊断请回复 "诊断 SSH 服务"
+🔍 Run "system detailed diagnosis" for the complete report
 ```
 
 ---
 
-## 3. 磁盘空间监控
+## 2. Service availability monitoring
 
-**触发条件:** 每周一次 (周日晚上)
+**Trigger:** once every 15 minutes (high-frequency scenario)
 
-**执行步骤:**
+**Steps:**
 
-1. 分析过去一周的磁盘使用情况:
-   - 各分区空间占用和增长趋势
-   - inode 使用率
-   - 大文件和目录排查 (> 1GB)
-   - 日志文件累计大小
+1. Check the running status of key services:
+   - SSH service status and port listening
+   - systemd service manager status
+   - Docker daemon (if installed)
+   - cron scheduled task service
 
-2. 识别优化机会:
-   - 旧日志是否可清理
-   - 临时文件是否需要清理
-   - 软件包缓存是否需要清理
-   - 是否有异常大的文件占用空间
+2. If any of the following is found, push immediately:
+   - SSH service is not running or the port is unreachable
+   - systemd service is in failed state
+   - Docker daemon is abnormal
 
-3. 提供优化建议:
+3. Push format:
 
 ```
-【系统医生周报 YYYY-MM-DD】
+⚠️ Service availability anomaly
 
-💾 磁盘空间优化建议
+Symptom: SSH service is not running, port 22 unreachable
+Possible causes: service crash / misconfiguration / firewall blocking
 
-根分区 (/):
-- 当前使用率: 78% (198GB / 256GB)
-- 本周增长: +12GB
-- 建议: 清理软件包缓存,可释放约 3.5GB
+🛠️ Quick troubleshooting:
+1. Check service status: sudo systemctl status sshd
+2. View service logs: sudo journalctl -u sshd -n 50
+3. Check port listening: ss -tlnp | grep :22
 
-日志文件:
-- /var/log 累计大小: 2.8GB
-- 建议: 清理 30 天前的日志,启用 logrotate
-
-大文件排查:
-- /tmp/backup.tar.gz: 5.2GB (创建于 15 天前)
-- 建议: 确认是否需要,可考虑归档或删除
-
----
-📊 本周磁盘使用统计
-- 总容量: 256GB
-- 已使用: 198GB (78%)
-- 本周新增: +12GB
-- 预计可优化: 8.7GB
+Reply "diagnose SSH service" for in-depth diagnosis
 ```
 
 ---
 
-## 4. 记忆维护
+## 3. Disk space monitoring
 
-**触发条件:** 每周一次 (周末心跳时)
+**Trigger:** once per week (Sunday evening)
 
-**执行步骤:**
+**Steps:**
 
-1. 翻阅近期 `memory/YYYY-MM-DD.md` 的诊断历史
-2. 提取高频问题和通用修复方案
-3. 蒸馏后更新 `MEMORY.md` 的"常见问题 Playbook"章节
-4. 清理超过 30 天的诊断日志 (仅保留问题类型和修复结果)
+1. Analyze disk usage over the past week:
+   - Space usage and growth trend of each partition
+   - inode usage
+   - Large file and directory scan (> 1GB)
+   - Cumulative size of log files
+
+2. Identify optimization opportunities:
+   - Whether old logs can be cleaned up
+   - Whether temporary files need cleaning
+   - Whether the package cache needs cleaning
+   - Whether any abnormally large files take up space
+
+3. Provide optimization suggestions:
+
+```
+[System Doctor Weekly Report YYYY-MM-DD]
+
+💾 Disk space optimization suggestions
+
+Root partition (/):
+- Current usage: 78% (198GB / 256GB)
+- Growth this week: +12GB
+- Suggestion: clean the package cache to free about 3.5GB
+
+Log files:
+- Cumulative size of /var/log: 2.8GB
+- Suggestion: clean logs older than 30 days and enable logrotate
+
+Large file scan:
+- /tmp/backup.tar.gz: 5.2GB (created 15 days ago)
+- Suggestion: confirm whether it is still needed; consider archiving or deleting it
+
+---
+📊 Disk usage statistics this week
+- Total capacity: 256GB
+- Used: 198GB (78%)
+- Added this week: +12GB
+- Estimated reclaimable: 8.7GB
+```
 
 ---
 
-## 无基线时的行为
+## 4. Memory maintenance
 
-如果 `MEMORY.md` 中没有记录系统基线:
-- 首次心跳时自动建立基线
-- 推送时说明: "首次系统扫描已完成,已建立健康基线"
-- 后续心跳将对比基线值判断异常
+**Trigger:** once per week (during the weekend heartbeat)
+
+**Steps:**
+
+1. Review recent diagnosis history in `memory/YYYY-MM-DD.md`
+2. Extract frequent problems and general fixes
+3. After distilling them, update the "common issues Playbook" section of `MEMORY.md`
+4. Clean diagnosis logs older than 30 days (keep only the problem type and fix result)
 
 ---
 
-## 告警阈值 (用户可自定义)
+## Behavior without a baseline
 
-| 指标 | 默认阈值 | 说明 |
+If no system baseline is recorded in `MEMORY.md`:
+- Automatically establish the baseline on the first heartbeat
+- In the push, state: "the first system scan is complete, a health baseline has been established"
+- Subsequent heartbeats compare against the baseline values to judge anomalies
+
+---
+
+## Alert thresholds (user-customizable)
+
+| Metric | Default threshold | Meaning |
 |------|---------|------|
-| CPU 使用率 | > 85% 持续 5 分钟 | 🟡 警告 |
-| 系统负载 | > CPU 核数 * 1.5 | 🟡 警告, > CPU 核数 * 2 🔴 紧急 |
-| 内存使用率 | > 90% | 🟡 警告, > 95% 🔴 紧急 |
-| 磁盘使用率 | > 85% | 🟡 警告, > 95% 🔴 紧急 |
-| inode 使用率 | > 90% | 🟡 警告 |
-| 网络连通性 | DNS 解析失败 / ping 外网失败 | 🔴 紧急 |
-| 服务状态 | stopped / failed / not listening | 🔴 紧急 |
-| 系统日志 | > 50 条 ERROR/小时 | 🟡 警告 |
+| CPU usage | > 85% for 5 minutes | 🟡 Warning |
+| System load | > CPU cores * 1.5 | 🟡 Warning; > CPU cores * 2 🔴 Critical |
+| Memory usage | > 90% | 🟡 Warning; > 95% 🔴 Critical |
+| Disk usage | > 85% | 🟡 Warning; > 95% 🔴 Critical |
+| inode usage | > 90% | 🟡 Warning |
+| Network connectivity | DNS resolution failure / external ping failure | 🔴 Critical |
+| Service status | stopped / failed / not listening | 🔴 Critical |
+| System logs | > 50 ERROR entries/hour | 🟡 Warning |
 
-用户可通过对话修改阈值:
-> "把 CPU 告警阈值改成 90%"
-> "磁盘使用率超过 80% 就提醒我"
-
----
-
-## 5. 集群定期巡检
-
-**触发条件:** 每 30 分钟一次
-
-**前置条件:** `MEMORY.md` 中存在 `cluster_config` 配置段落
-
-**若无集群配置:** 跳过此任务，不做任何提示
-
-**执行步骤:**
-
-1. 读取 `MEMORY.md` 中的 `cluster_config`（节点列表、区域、标签）
-2. 阅读 `references/cluster-quick-check.md`，通过 tencentcloud-infra 执行：
-   - Layer 1：DescribeInstances（实例状态）
-   - Layer 2A：GetMonitorData（云端 CPU/内存 5分钟均值）
-   - Layer 2B：TAT RunCommand（OS 实时快照）
-3. 阅读 `references/cluster-health-score.md`，计算每节点得分和集群总分
-4. 判断是否需要推送：
-   - 集群总分 < 80，或任意节点分 < 60 → 主动推送告警
-   - 全部节点正常（集群分 ≥ 80）→ 静默记录，不推送
-
-5. 告警推送格式：
-
-```
-【集群巡检告警 YYYY-MM-DD HH:MM】
-
-📊 集群评分：<N>/100（<等级>）
-木桶短板：<节点名>（<分>分）
-
-🔴 异常节点：
-- <节点名>：<问题描述>（如：磁盘 92%，SSH inactive）
-
-🟡 需关注节点：
-- <节点名>：<问题描述>
+Users can change thresholds through conversation:
+> "Change the CPU alert threshold to 90%"
+> "Warn me when disk usage exceeds 80%"
 
 ---
-输入 "集群深度分析" 查看根因分析
-输入 "修复 <节点名>" 开始修复流程
+
+## 5. Periodic cluster patrol
+
+**Trigger:** once every 30 minutes
+
+**Precondition:** a `cluster_config` section exists in `MEMORY.md`
+
+**If there is no cluster configuration:** skip this task and give no prompt at all
+
+**Steps:**
+
+1. Read `cluster_config` in `MEMORY.md` (node list, region, tags)
+2. Read `references/cluster-quick-check.md` and execute through tencentcloud-infra:
+   - Layer 1: DescribeInstances (instance status)
+   - Layer 2A: GetMonitorData (cloud-side CPU/memory 5-minute average)
+   - Layer 2B: TAT RunCommand (real-time OS snapshot)
+3. Read `references/cluster-health-score.md` and compute each node's score and the cluster total score
+4. Decide whether a push is needed:
+   - Cluster total score < 80, or any node score < 60 → proactively push an alert
+   - All nodes normal (cluster score ≥ 80) → record silently, do not push
+
+5. Alert push format:
+
+```
+[Cluster Patrol Alert YYYY-MM-DD HH:MM]
+
+📊 Cluster score: <N>/100 (<grade>)
+Weakest link: <node name> (<score> points)
+
+🔴 Abnormal nodes:
+- <node name>: <problem description> (e.g. disk 92%, SSH inactive)
+
+🟡 Nodes needing attention:
+- <node name>: <problem description>
+
+---
+Type "cluster deep analysis" for root cause analysis
+Type "fix <node name>" to start the repair flow
 ```
 
-6. 每次巡检结束后，更新 `MEMORY.md` 诊断历史：
+6. After each patrol, update the diagnosis history in `MEMORY.md`:
 
 ```markdown
-### YYYY-MM-DD HH:MM — 集群巡检
-- **集群评分**: N/100
-- **异常节点**: [列表]（若无填"无"）
-- **主要问题**: 一句话描述
-- **操作**: 仅检查，未操作
+### YYYY-MM-DD HH:MM — cluster patrol
+- **Cluster score**: N/100
+- **Abnormal nodes**: [list] (write "none" if there are none)
+- **Main problem**: one-sentence description
+- **Action**: check only, no action taken
 ```
 
-**告警去重逻辑（防止告警疲劳）:**
+**Alert deduplication logic (to prevent alert fatigue):**
 
-- 同一节点同一问题连续 3 次推送后，降频至每 4 小时最多推送 1 次
-- 同一节点在连续 3 次巡检中出现同类问题，告警中追加标注「持续异常，建议深度分析」
-- 若问题在上次推送后已恢复（节点分 ≥ 80），则下次出现时重置计数器，正常推送
+- After the same problem on the same node has been pushed 3 times in a row, reduce the frequency to at most 1 push every 4 hours
+- When the same kind of problem appears in 3 consecutive patrols on the same node, append the annotation "persistent anomaly, deep analysis recommended" to the alert
+- If the problem has recovered since the last push (node score ≥ 80), reset the counter and push normally the next time it appears

@@ -1,55 +1,55 @@
-# 指南学习诊断与诊断标准学习模板
+# Template for Guideline Learning Diagnosis and Diagnostic-Criteria Learning
 
-本模板用于按需学习评估、指南学习地图和诊断标准教学；不用于每日订阅推送。每日订阅仍使用 daily-learning-template.md 的 3 个要点和下一单元预告格式。
+This template is used for on-demand learning assessment, guideline learning maps, and diagnostic-criteria teaching; it is not used for daily subscription pushes. Daily subscriptions still use the 3 points and the next unit preview format of daily-learning-template.md.
 
-## 已核验指南时
+## When the guideline is verified
 
-    【指南学习诊断｜仅评估学习状态】
-    依据：{指南完整名称，版本/年份，发布机构}
-    本次范围：{章节/主题}
-    学习目标：{工作复习/考试/更新追踪/带教}
+    [Guideline Learning Diagnosis | Assessment Only]
+    Basis: {full guideline name, version/year, issuing body}
+    Scope of this session: {section/topic}
+    Learning objective: {work review/exam/update tracking/teaching}
 
-    学习信号：
-    - {维度 1}：{建议从基础复习/建议巩固/可进入下一层/证据不足，待复测}（依据：{用户自评/本次作答}）
-    - {维度 2}：{学习信号}
+    Learning signals:
+    - {dimension 1}: {recommend reviewing the basics/recommend consolidation/ready to move to the next level/insufficient evidence, retest pending} (basis: {user self-assessment/this session's answers})
+    - {dimension 2}: {learning signal}
 
-    优先补齐：
-    1. {章节或概念}：{为何优先}
-    2. {章节或概念}：{为何优先}
-    3. {可选第三项}
+    Priority gaps to close:
+    1. {section or concept}: {why it is a priority}
+    2. {section or concept}: {why it is a priority}
+    3. {optional third item}
 
-    建议起点：{先展开哪一章节、查看哪张学习流程图，或完成哪一组练习}
-    下一步：{一项明确可执行的学习动作}
-    可选保存动作：{不保存；保存本次诊断摘要；保存学习目标；保存候选学习轨道}
+    Suggested starting point: {which section to expand first, which learning flowchart to view, or which set of exercises to complete}
+    Next step: {one clearly actionable learning action}
+    Optional save actions: {do not save; save this diagnosis summary; save the learning goal; save the candidate learning track}
 
-    来源：{文件或页面名称}：[链接]({URL})
-    边界：本结果只反映本次学习信号，不是患者诊断、临床胜任力认证或诊疗建议。
+    Source: {file or page name}: [link]({URL})
+    Boundary: This result reflects only the learning signals of this session; it is not a patient diagnosis, a clinical competence certification, or diagnosis-and-treatment advice.
 
-只有用户明确选择保存动作后，才可写入。保存候选学习轨道前还必须复述指南版本、章节范围和节奏，并获得确认；诊断结果本身不自动开始每日推送。
+Writing is allowed only after the user explicitly chooses a save action. Before saving a candidate learning track you must also restate the guideline version, section scope, and cadence and obtain confirmation; the diagnosis result itself does not automatically start daily pushes.
 
-## 尚未选定指南时
+## When no guideline has been selected yet
 
-    【学习需求初评｜待选定指南】
-    学习目标：{目标}
-    当前学习信号：{用户主动提供的自评或已学内容}
-    建议：{推荐先确认的指南/主题和原因}
-    下一步：请确认一份权威指南或主题后，我再按版本和章节给出正式学习诊断。
-    可选保存动作：{不保存；保存最小化学习目标或诊断摘要}
-    边界：本初评不基于已核验指南，不是患者诊断、临床胜任力认证或诊疗建议。
+    [Learning Needs Pre-assessment | Guideline Pending]
+    Learning objective: {objective}
+    Current learning signal: {self-assessment or already-studied content the user actively provided}
+    Recommendation: {the guideline/topic recommended for confirmation first and the reason}
+    Next step: after you confirm an authoritative guideline or topic, I will give a formal learning diagnosis by version and section.
+    Optional save actions: {do not save; save a minimal learning objective or the diagnosis summary}
+    Boundary: This preliminary assessment is not based on a verified guideline; it is not a patient diagnosis, a clinical competence certification, or diagnosis-and-treatment advice.
 
-## 指南诊断标准学习时
+## When learning the diagnostic criteria of a guideline
 
-    【指南诊断标准学习｜教育用途】
-    依据：{指南完整名称，版本/年份，发布机构}
-    主题：{疾病/章节}
+    [Guideline Diagnostic Criteria Study | Educational Use]
+    Basis: {full guideline name, version/year, issuing body}
+    Topic: {disease/section}
 
-    学习框架：
-    1. {定义与适用范围}
-    2. {诊断要素/分层概念之间的关系}
-    3. {鉴别框架、风险提示或质量要求}
+    Learning framework:
+    1. {definition and scope of application}
+    2. {relationships among diagnostic elements/stratification concepts}
+    3. {differential-diagnosis framework, risk reminders, or quality requirements}
 
-    易混淆点：{概念边界与原文定位}
-    下一步：{展开章节/查看学习流程图/进行教育性练习}
+    Easily confused points: {concept boundaries and original-text locators}
+    Next step: {expand the section/view the learning flowchart/do an educational exercise}
 
-    来源：{文件或页面名称}：[链接]({URL})
-    边界：本内容用于理解指南，不用于根据真实患者信息作诊断、检查、治疗或急诊处置决定。
+    Source: {file or page name}: [link]({URL})
+    Boundary: This content is for understanding the guideline and is not to be used to make diagnosis, examination, treatment, or emergency-management decisions based on real patient information.

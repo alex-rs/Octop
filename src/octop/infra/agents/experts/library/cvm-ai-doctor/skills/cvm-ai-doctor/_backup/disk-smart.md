@@ -26,7 +26,7 @@ User Question → Quick Mode (10s) → Analyze → Deep Mode (20-30s, if warning
 
 | Mode | Duration | Purpose | When to Use |
 |------|----------|---------|-------------|
-| **Quick** | 10s | Check overall health status only | Health check, "检查磁盘", daily routine |
+| **Quick** | 10s | Check overall health status only | Health check, "check the disk", daily routine |
 | **Deep** | 20-30s | Detailed SMART attributes + predictive analysis | Quick shows warnings, troubleshooting |
 
 **Decision Logic**:
@@ -397,7 +397,7 @@ Recommendation:
 
 ## 💡 Complete Usage Examples
 
-### Example 1: User Reports "磁盘可能有问题"
+### Example 1: User Reports "the disk may have a problem"
 
 **Step 1: Quick Mode**
 ```bash
@@ -424,32 +424,32 @@ Risk: IMMINENT FAILURE
 
 **Final Report**:
 ```
-🔴 紧急：/dev/sdb 磁盘即将失效
+🔴 URGENT: /dev/sdb disk is about to fail
 
-检测结果：
-- 健康状态：FAILED
-- 待重映射扇区：12 个（严重）
-- 无法纠正错误：3 个（数据已丢失）
-- 已重映射扇区：5 个
+Detection results:
+- Health status: FAILED
+- Pending reallocation sectors: 12 (severe)
+- Uncorrectable errors: 3 (data already lost)
+- Reallocated sectors: 5
 
-失效概率：极高（评分 12/15）
-预计时间：数天到数周内
+Failure probability: extremely high (score 12/15)
+Estimated time: within days to weeks
 
-立即行动：
-1. 🔴 立即备份所有数据（数据丢失风险极高）
-2. 🔴 今天订购替换磁盘
-3. 🔴 不要向此磁盘写入新数据
-4. 持续监控：smartctl -a /dev/sdb
+Immediate action:
+1. 🔴 Back up all data immediately (extremely high risk of data loss)
+2. 🔴 Order a replacement disk today
+3. 🔴 Do not write new data to this disk
+4. Monitor continuously: smartctl -a /dev/sdb
 
-技术细节：
-- 12 个扇区处于不稳定状态
-- 3 个扇区数据已不可读
-- 磁盘硬件正在快速退化
+Technical details:
+- 12 sectors are in an unstable state
+- Data in 3 sectors is already unreadable
+- The disk hardware is degrading rapidly
 ```
 
 ---
 
-### Example 2: User Asks "检查磁盘健康"
+### Example 2: User Asks "check disk health"
 
 **Step 1: Quick Mode**
 ```
@@ -475,25 +475,25 @@ done
 
 **Final Report**:
 ```
-磁盘健康检查 - 全部正常 ✅
+Disk health check - all normal ✅
 
 /dev/sda:
-- 健康状态：PASSED
-- 坏道数：0
-- 温度：42°C（正常）
+- Health status: PASSED
+- Bad sectors: 0
+- Temperature: 42°C (normal)
 
 /dev/sdb:
-- 健康状态：PASSED
-- 坏道数：0
-- 温度：38°C（正常）
+- Health status: PASSED
+- Bad sectors: 0
+- Temperature: 38°C (normal)
 
-结论：所有磁盘健康，无需采取行动
-建议：继续定期检查（每季度）
+Conclusion: all disks are healthy, no action required
+Recommendation: continue periodic checks (quarterly)
 ```
 
 ---
 
-### Example 3: User Reports "磁盘温度高"
+### Example 3: User Reports "the disk temperature is high"
 
 **Step 1: Quick Mode**
 ```
@@ -512,28 +512,28 @@ sudo smartctl -A /dev/sda | grep Temperature
 
 **Final Report**:
 ```
-🔴 磁盘过热警告
+🔴 Disk overheating warning
 
-当前状态：
-- 健康状态：PASSED（硬件尚未损坏）
-- 当前温度：68°C（严重过热）
-- 正常范围：< 50°C
+Current status:
+- Health status: PASSED (hardware is not damaged yet)
+- Current temperature: 68°C (severely overheated)
+- Normal range: < 50°C
 
-根因：散热不良，磁盘温度超标
+Root cause: poor heat dissipation, disk temperature is out of range
 
-影响：
-- 加速磁盘老化
-- 增加失效风险
-- 可能导致数据损坏
+Impact:
+- Accelerates disk aging
+- Increases failure risk
+- May cause data corruption
 
-立即行动：
-1. 检查服务器风扇是否正常运转
-2. 清理机箱内灰尘
-3. 检查机箱内空气流通
-4. 如果温度持续 >60°C，考虑增加散热风扇
-5. 监控温度：watch -n 60 'smartctl -A /dev/sda | grep Temperature'
+Immediate action:
+1. Check whether the server fans are running normally
+2. Clean dust from the chassis
+3. Check the airflow inside the chassis
+4. If the temperature stays >60°C, consider adding cooling fans
+5. Monitor the temperature: watch -n 60 'smartctl -A /dev/sda | grep Temperature'
 
-目标：将温度降至 50°C 以下
+Goal: bring the temperature below 50°C
 ```
 
 ---

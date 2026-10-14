@@ -1,107 +1,107 @@
 ---
 name: guideline-section-expansion
-description: 把已核验的权威指南按原文结构逐节展开讲解，并给出原文定位，帮医生读懂原文；也可把指南整理为学习路径图（学习顺序）。不得生成诊疗方案、床旁处置步骤、疾病 SOP、急诊行动卡、个体患者建议或药物剂量说明。
+description: Expand a verified authoritative guideline section by section following the original structure and give original-text locators to help doctors understand the original text; it can also organize a guideline into a learning pathway map (learning order). Must not generate diagnosis-and-treatment plans, bedside management steps, disease SOPs, emergency action cards, individual patient advice, or drug dosage explanations.
 metadata:
   octop:
     emoji: "📑"
     label:
-      zh: "章节展开"
+      zh: "Section Expansion"
       en: "Section Expansion"
     summary:
-      zh: "按原文结构展开指南章节，或整理学习路径图。"
+      zh: "Expand guideline sections following the original structure, or organize a learning pathway map."
       en: "Expand verified guideline sections or build a learning pathway."
 ---
 
-# 指南章节展开与学习路径图
+# Guideline Section Expansion and Learning Pathway Map
 
-用户反馈里最常见的两句话是「指南查到了但展不开」和「能不能把指南总结成流程」。本 skill 处理这两件事，并把它们严格限定为**学习产物**。
+The two most common sentences in user feedback are "I found the guideline but cannot expand it" and "can you summarize the guideline into a process". This skill handles these two things and strictly limits them to **learning artifacts**.
 
-## 最小必读集
+## Minimal required reading set
 
-- 用户只要求总结筛查、随访、质控等某一专题时，本 skill 已内嵌学习边界、常用信源规则和输出字段；不再读取 `source-policy.yaml`、`compliance-boundary.md` 或 `output-templates.md`。最终仍由 `validate_output.py` 使用完整策略校验。
-- 用户要求完整章节展开或学习路径图时，再按需读取 `../../references/compliance-boundary.md` 和 `../../references/output-templates.md`。
-- 上述均为确定路径；不得通过 `glob`、`grep` 或递归 `ls` 定位。
+- When the user asks only to summarize a single topic such as screening, follow-up, or quality control, this skill already embeds the learning boundaries, common source rules, and output fields; do not read `source-policy.yaml`, `compliance-boundary.md`, or `output-templates.md` any more. In the end, `validate_output.py` still validates with the full policy.
+- When the user asks for a full section expansion or a learning pathway map, then read `../../references/compliance-boundary.md` and `../../references/output-templates.md` as needed.
+- All of the above are definite paths; do not locate them via `glob`, `grep`, or recursive `ls`.
 
-## 先分清用户要哪一种
+## First distinguish which one the user wants
 
-| 用户说法 | 使用 |
+| What the user says | Use |
 | --- | --- |
-| 展开这一章、细看、详解、这节讲了什么、看全文 | 章节展开 |
-| 总结指南中某一专题的学习要点，例如筛查、随访、质控 | 章节展开 |
-| 怎么学这份指南、学习顺序、总结成流程、给我路径 | 学习路径图 |
-| 我掌握得怎么样、测一下、薄弱点 | guideline-learning-diagnosis skill |
-| 建立每日连续学习 | guideline-learning skill |
+| Expand this chapter, look closely, explain in detail, what does this section say, show the full text | Section expansion |
+| Summarize the learning points of one topic in the guideline, such as screening, follow-up, quality control | Section expansion |
+| How to study this guideline, learning order, summarize into a process, give me a pathway | Learning pathway map |
+| How well have I mastered it, test me, weak points | guideline-learning-diagnosis skill |
+| Set up continuous daily learning | guideline-learning skill |
 
-命中「总结某一专题的学习要点」时，直接跳到「专题总结快速路径」；该节已给出完整执行规则，不再另外读取参考文件。
+When the user hits "summarize the learning points of one topic", jump directly to the "Topic summary fast path"; that section already gives the complete execution rules and no additional reference file is read.
 
-用户说「流程」时**必须先确认他要的是学习顺序**。如果他实际想要的是「遇到这种病人先做什么再做什么」，那是床旁处置请求，按 compliance-boundary.md 的高风险口径拒绝，并说明可以改为学习路径图。
+When the user says "process", you **must first confirm that they mean a learning order**. If what they actually want is "what to do first and what next when encountering this kind of patient", that is a bedside management request: refuse it under the high-risk criteria of compliance-boundary.md and explain that it can be changed into a learning pathway map.
 
-## 前置：必须先有可核验的原文
+## Prerequisite: a verifiable original text is required
 
-展开和路径图都必须绑定已核验的权威文件：完整名称、发布机构、版本/年份、权威原文链接。
+Both expansions and pathway maps must be bound to a verified authoritative document: full name, issuing body, version/year, authoritative original link.
 
-- 取不到权威原文时，**不得凭记忆展开**。只能说明「未取得可核验权威原文」，并给出候选来源方向。
-- 完整章节或路径图只能使用 source-policy.yaml 白名单内的最终依据；专题总结按下方快速路径内嵌的同等规则执行。聚合平台默认只作线索；仅在原始正文明确访问受限、同时取得 S/A 正式元数据并完成标题/机构/版本/DOI/全文完整性/现行状态核验时，source-policy.yaml 指定的 B+ 平台才可作为正文承载渠道。
-- 用户明确指定国际指南，或国内现行正式文件未覆盖主题时，读取 `../../references/international-guideline-source-routes.yaml`。普通补充只从 WHO、NICE、ESC、ADA、KDIGO 默认池选择最匹配的 1 站；明确涉及 GINA、GOLD、ACG、EASL 等体系时直接访问对应官网。首站确实不覆盖时最多增加 1 站，不得并行遍历。不得用国际建议静默覆盖中国大陆现行规范。
-- 版本必须写清。指南改版频繁，展开旧版时要标注这是哪一版。
+- When the authoritative original text cannot be obtained, **do not expand from memory**. You may only state "no verifiable authoritative original text was obtained" and give candidate source directions.
+- A full section expansion or pathway map may use only final sources within the source-policy.yaml whitelist; topic summaries follow the equivalent rules embedded in the fast path below. Aggregator platforms serve only as leads by default; only when the original body text is explicitly access-restricted, S/A formal metadata is obtained at the same time, and title/body/version/DOI/full-text completeness/current status have been verified may the B+ platform designated by source-policy.yaml serve as the body-text hosting channel.
+- When the user explicitly specifies an international guideline, or a current domestic formal document does not cover the topic, read `../../references/international-guideline-source-routes.yaml`. For ordinary supplementation, choose only the single best-matching site from the WHO, NICE, ESC, ADA, and KDIGO default pool; when systems such as GINA, GOLD, ACG, and EASL are explicitly involved, go directly to the corresponding official website. If the first site genuinely does not cover the topic, add at most 1 site; do not iterate in parallel. Do not use international recommendations to silently override the current standards of mainland China.
+- The version must be stated clearly. Guidelines are revised frequently, so when expanding an old version, mark which version it is.
 
-## 章节展开怎么做
+## How to do a section expansion
 
-完整章节展开使用 output-templates.md 的「指南章节展开」模板；专题总结直接使用下方快速路径的字段清单。要点：
+A full section expansion uses the "Guideline section expansion" template in output-templates.md; a topic summary uses the field list of the fast path below directly. Key points:
 
-1. **给出原文定位**：章号、节号、条目号或页码范围，让用户能回到原文核对。这是本能力的核心价值。
-2. **按原文结构讲**，不重排成自己的逻辑；说明本节在指南整体结构中的位置和与上下游章节的关系。
-3. **只做结构化摘要，不整段复制全文**。目标是帮用户读懂，不是替代原文，也要避免版权问题。
-4. 标注证据等级、推荐强度（原文有则写，没有不编）。
-5. 点明易混淆处——这是医生真实的学习痛点。
-6. 结尾必须声明**不替代原文**，以权威原文为准。
+1. **Give the original-text locator**: chapter number, section number, item number, or page range, so the user can return to the original text to check. This is the core value of this capability.
+2. **Explain following the original structure** and do not rearrange it into your own logic; state this section's position in the overall guideline structure and its relationship with the preceding and following sections.
+3. **Do structured summaries only; do not copy the full text paragraph by paragraph**. The goal is to help the user understand, not to replace the original text, and copyright issues must also be avoided.
+4. Mark the evidence grade and strength of recommendation (write them if the original text has them, do not invent them if it does not).
+5. Point out the easily confused places — these are the real learning pain points of doctors.
+6. The ending must declare that it **does not replace the original text** and that the authoritative original text prevails.
 
-允许展开指南中的定义、诊断标准、鉴别框架、分层概念、检查与随访要求、质控指标、章节间的概念关系。**不得**把这些条款代入某个真实患者得出结论，不得改写成院内可执行文件。
+Expanding the definitions, diagnostic criteria, differential-diagnosis frameworks, stratification concepts, examination and follow-up requirements, quality-control indicators, and conceptual relationships between sections in a guideline is allowed. These clauses **must not** be applied to a real patient to draw a conclusion, and must not be rewritten into a hospital-executable document.
 
-### 专题总结快速路径（性能硬约束）
+### Topic summary fast path (hard performance constraints)
 
-当用户要求面向基层总结筛查、随访、质控等单一专题时：
+When the user asks for a primary-care-oriented summary of a single topic such as screening, follow-up, or quality control:
 
-0. 默认只选 1 份能够直接覆盖问题的现行主指南。用户未要求跨指南比较时，不主动扩展老年专项、基层专项或其他并行文件；只有主指南确实缺少该主题时才补第 2 份。搜索、抓取、B+ 降级、草稿校验和改稿共享同一份累计工具预算，任何阶段都不得重新计数。
-1. 直接读取 `../../references/verified-source-entrypoints.yaml`，先按 `aliases` 匹配主题。命中时直接 `web_fetch` 该条目的 `canonical_url`，页面标题和 DOI 均匹配后才可作最终依据；不得用本地表项替代原文核对。
-2. 命中条目且当前日期未超过 `recheck_after` 时，该次原文抓取即是实时核验，不再广泛搜索。只有用户明确询问「最新/现行/替代」，或已超过 `recheck_after`，才再加 1 次限定官方域名的时效检索。
-   最终来源行必须使用命中条目的 `canonical_url`；`official_index_url` 只辅助核对卷期/DOI，不取代原文链接。订阅墙导致只能核对摘要或公开附录时，必须把未能核对的具体条款标为「待核验」，不得用二手内容补全。
-2.1 未命中高频入口、但主题能对应专业学会或专科分会时，直接读取 `../../references/professional-society-source-routes.yaml`，按分会名称或 `aliases` 选择一个最相关的官方域名做第 1 次限定检索；不得并行遍历全部分会。标记为 `official_discovery_pending_fulltext_acceptance` 的域名只用于找到完整正式原文，不能直接作为最终来源。
-3. 原始正文遇到 412、验证码、JS 阻断、超时或正文不可获取时，才允许 B+ 受控降级：先用原始发布方/正式期刊元数据页核对标题、机构、年份/版本和 DOI/文号，再抓取指定 B+ 平台的完整正式正文并检查完整性与现行状态。最终同时列“原始元数据”和“正文承载”两条来源；只有 B+ 页面或任一字段不一致时立即停止，不生成学习要点。
-4. 未命中入口表时，正常目标为 1 次定向搜索 + 1 次正文抓取，**整个用户回合的总工具预算**硬上限为最多 3 次 `searchfree_search` 和 3 次 `web_fetch`，包括失败、超时、空结果、国际补充、B+ 降级、C 级全网转述、校验后补链和改稿。每层最多一次定向查询：国内 A → 国际 A（仅在用户指定或国内无覆盖时）→ B 级发现/B+ 承载或 C 级全网。不得换旧版文件或猜测 URL 继续试探。找到 1 份能覆盖主题的现行正式主指南后立即停止搜索。
-5. 预算内未取得现行权威原文时，不得生成“原文展开”或声称掌握原文。若 C 级网页明确给出原始权威期刊/机构、完整标题、年份/版本及 DOI/文号信息，可输出单独的“背景转述”失败回执，并按 `source-verify` 的 C 级格式披露；否则答复「未取得可核验的现行权威原文，本次不生成学习要点」。C 级转述不得涉及精确推荐、证据等级或药品高风险信息。
-6. 最终依据默认 1 份、最多 2 份：1 份现行主指南；仅在主指南确实不覆盖问题或用户明确要求比较时补 1 份专项指南。只接受正式指南、共识、规范或质控文件；综述、原始研究、科普、转载、会议材料和搜索摘要不得作最终依据。
-7. 常用国内原始来源域名包括 `.gov.cn`、`.nhc.gov.cn`、`.ndcpa.gov.cn`、`.chinacdc.cn`、`.cma.org.cn`、`.medjournals.cn`、`.cmda.net`、`.cpma.org.cn`、`.pmph.com`、`cs.medjournals.cn`、`bi-dmp-cs.yiigle.com` 和 `rs.yiigle.com`。国际 A 级域名以 `international-guideline-source-routes.yaml` 为准。搜索结果只用于定位原文；起草前先选定原文详情页或正式附件链接。通用列表页只能作候选，不能在无法对应具体文件时当作原文链接。
-8. 未命中入口表时，第 1 次查询必须同时包含主题、「最新/现行」和注册表匹配到的专业分会/学会域名；没有专业路由时才优先 `site:rs.yiigle.com` 与 `site:cs.medjournals.cn`。第 2 次查主管部门或正式期刊平台；第 3 次只用于确认版本替代关系或在原始正文访问受限后定位 B+ 完整正文。必须先确认现行版本，再摘要内容；新版已发布时不得回退到旧版凑答案。
-9. 草稿中所有 URL（包括正文和来源行）必须属于原始来源白名单，或满足“原始元数据 + B+ 正文承载”的成对降级规则；不得先写入 CDN、搜索结果或其他非白名单 URL，再依赖校验器反复修改。
-10. 输出校验因辅助来源域名或文档类型失败时，删除该辅助来源并使用已经核验的主指南重新起草；累计预算已耗尽时不得继续搜索补链。直接按以下字段生成一份完整草稿：【指南章节展开｜主题】、依据、章节、原文定位、原文要点、章节关系、易混淆点、学习提示、边界、来源。不先写半成品，不为猜模板再读其他文件。
+0. By default, choose only 1 current main guideline that can directly cover the question. When the user has not asked for a cross-guideline comparison, do not proactively extend to geriatric specials, primary-care specials, or other parallel documents; add a second one only when the main guideline genuinely lacks the topic. Search, fetching, B+ degradation, draft validation, and rewriting share the same cumulative tool budget, and it must not be re-counted at any stage.
+1. Directly read `../../references/verified-source-entrypoints.yaml` and first match the topic by `aliases`. When it hits, directly `web_fetch` that entry's `canonical_url`; only when both the page title and DOI match may it serve as the final basis; do not use local table entries to replace original-text verification.
+2. When an entry hits and the current date has not passed `recheck_after`, that original-text fetch is the real-time verification and no broad search is done. Only when the user explicitly asks about "latest/current/superseded", or `recheck_after` has passed, add 1 more currency search restricted to official domains.
+   The final source line must use the `canonical_url` of the matched entry; `official_index_url` only assists in checking the volume/issue/DOI and does not replace the original-text link. When a paywall means only the abstract or a public appendix can be checked, the specific clauses that could not be checked must be marked "pending verification", and second-hand content must not be used to fill the gap.
+2.1 When there is no hit in the high-frequency entry list but the topic corresponds to a professional society or specialty branch, directly read `../../references/professional-society-source-routes.yaml` and, by branch name or `aliases`, choose one most relevant official domain for the first restricted search; do not iterate over all branches in parallel. Domains marked `official_discovery_pending_fulltext_acceptance` are only used to find the complete formal original text and cannot directly serve as the final source.
+3. Only when the original body text encounters 412, a CAPTCHA, JS blocking, a timeout, or unavailable body text is a controlled B+ degradation allowed: first verify the title, body, year/version, and DOI/document number using the original publisher's/formal journal's metadata page, then fetch the complete formal body text from the designated B+ platform and check completeness and current status. In the end, list two sources at the same time, "original metadata" and "body-text host"; if only the B+ page or any single field is inconsistent, stop immediately and do not generate learning points.
+4. When there is no hit in the entry table, the normal target is 1 targeted search + 1 body-text fetch, and the **total tool budget for the whole user turn** has a hard cap of at most 3 `searchfree_search` calls and 3 `web_fetch` calls, including failures, timeouts, empty results, international supplementation, B+ degradation, tier-C whole-web paraphrases, post-validation link supplementation, and rewrites. At most one targeted query per tier: domestic A → international A (only when the user specifies it or there is no domestic coverage) → tier-B discovery/B+ hosting or tier-C whole-web. Do not switch to old-version files or guess URLs to keep probing. Stop searching immediately after finding 1 current formal main guideline that covers the topic.
+5. When the current authoritative original text is not obtained within budget, do not generate an "original-text expansion" or claim to have mastered the original text. If a tier-C web page clearly gives the original authoritative journal/body, full title, year/version, and DOI/document-number information, a separate "background paraphrase" failure receipt may be output and disclosed per the tier-C format of `source-verify`; otherwise reply "no verifiable current authoritative original text was obtained, so no learning points are generated this time". A tier-C paraphrase must not involve precise recommendations, evidence grades, or high-risk drug information.
+6. The final basis defaults to 1 document and at most 2: 1 current main guideline; add 1 specialty guideline only when the main guideline genuinely does not cover the question or the user explicitly requests a comparison. Only formal guidelines, consensus statements, standards, or quality-control documents are accepted; review articles, original research, popular-science material, reprints, conference materials, and search snippets must not serve as the final basis.
+7. Commonly used domestic original-source domains include `.gov.cn`, `.nhc.gov.cn`, `.ndcpa.gov.cn`, `.chinacdc.cn`, `.cma.org.cn`, `.medjournals.cn`, `.cmda.net`, `.cpma.org.cn`, `.pmph.com`, `cs.medjournals.cn`, `bi-dmp-cs.yiigle.com`, and `rs.yiigle.com`. Tier-A international domains follow `international-guideline-source-routes.yaml`. Search results are only used to locate the original text; before drafting, first choose the original-text detail page or formal attachment link. A generic list page can only be a candidate and cannot serve as the original-text link when it cannot be matched to a specific document.
+8. When there is no hit in the entry table, the first query must include the topic, "latest/current", and the professional branch/society domain matched from the registry at the same time; only when there is no professional route should `site:rs.yiigle.com` and `site:cs.medjournals.cn` be preferred. The second query checks the competent authority or formal journal platform; the third is used only to confirm a version supersession relationship or to locate the complete B+ body text after the original body text is access-restricted. The current version must be confirmed first and the content summarized afterwards; when a new version has been published, do not fall back to the old version to cobble together an answer.
+9. All URLs in the draft (including those in the body and the source line) must belong to the original-source whitelist, or satisfy the paired degradation rule of "original metadata + B+ body-text host"; do not first write in a CDN, a search result, or another non-whitelisted URL and then rely on the validator to revise it repeatedly.
+10. When output validation fails because of an auxiliary source domain or document type, delete that auxiliary source and redraft using the already verified main guideline; when the cumulative budget is exhausted, do not keep searching to add links. Generate a complete draft directly with the following fields: [Guideline Section Expansion | topic], basis, section, original-text locator, key points of the original text, section relationships, easily confused points, learning tips, boundary, source. Do not write a half-finished draft first, and do not read other files again just to guess the template.
 
-## 学习路径图怎么做
+## How to build a learning pathway map
 
-用 output-templates.md 的「指南学习路径图」模板。要点：
+Use the "Guideline learning pathway map" template in output-templates.md. Key points:
 
-1. 每一步写清：学什么 → 对应原文哪一节 → 预计用时 → 掌握标志（用户能自查）。
-2. 顺序按**认知依赖**排（先定义 → 再框架 → 再细则 → 再随访质控），不按临床时间轴排。
-3. 写明前置知识，并按用户可投入时间调整颗粒度；有学习目标（如备考）时按目标裁剪重点。
-4. 给「可选深入」，让用户自主选择深入方向——这正是反馈里要的「再选择进一步学习的范围」。
-5. 每一步必须能对应到原文章节；对应不上就标注待核验，不要凑数。
+1. State clearly for each step: what to study → which section of the original text it corresponds to → estimated time → mastery marker (the user can self-check).
+2. Order the steps by **cognitive dependency** (definitions first → then framework → then details → then follow-up and quality control), not by clinical timeline.
+3. State the prerequisite knowledge and adjust the granularity to the time the user can invest; when there is a learning objective (such as exam preparation), trim the focus to that objective.
+4. Offer "optional deep dive" so the user can choose the direction of deeper study themselves — this is exactly the "choose the scope of further learning" requested in the feedback.
+5. Each step must map to a section of the original text; when it cannot, mark it as pending verification and do not pad the list.
 
-**硬约束**：不得出现「处置流程」「诊疗流程」「抢救流程」「处理流程」「急诊行动卡」等表述，也不得把学习顺序写成床旁执行顺序。区分标准是——「先学定义再学分层」是学习顺序；「先给氧再开通静脉」是处置流程，属禁止项。
+**Hard constraints**: expressions such as "management process", "diagnosis-and-treatment process", "resuscitation process", "handling process", and "emergency action card" must not appear, and the learning order must not be written as a bedside execution order. The distinguishing criterion is — "learn the definitions before the stratification" is a learning order; "give oxygen first, then establish intravenous access" is a management process and is forbidden.
 
-## 与学习轨道的衔接
+## Connection with learning tracks
 
-路径图确认后，用户可要求把它保存为连续学习轨道。此时转入 guideline-learning skill，把路径图的每一步作为固定学习单元（ordinal + source_anchor + objectives）落库。
+After the pathway map is confirmed, the user may ask to save it as a continuous learning track. At that point switch to the guideline-learning skill and persist each step of the pathway map as a fixed learning unit (ordinal + source_anchor + objectives).
 
-路径图本身是只读产物：不创建投递账本、不推进学习进度。若用户只是看看，正文首行写【格式预览｜不计入学习进度】。
+The pathway map itself is a read-only artifact: it does not create a delivery ledger and does not advance learning progress. If the user is only taking a look, write [Format Preview | Not Counted Toward Progress] as the first line of the body.
 
-## 输出与校验
+## Output and validation
 
-发送或提供正式草稿前，按 `output-format` skill 的约定一次生成完整草稿，并优先通过标准输入在一次工具调用中直接运行校验器，避免写文件与执行环境之间的同步往返：
+Before sending or providing a formal draft, generate the complete draft in one go per the conventions of the `output-format` skill, and preferably run the validator directly through standard input within a single tool call, avoiding a synchronization round trip between writing a file and the execution environment:
 
     python3 ../../scripts/validate_output.py --module guideline_section_expansion
 
-或：
+Or:
 
     python3 ../../scripts/validate_output.py --module guideline_learning_pathway
 
-不得无正文试运行校验器，也不得读取或 `grep` 校验器源码。校验失败时只按返回的 `errors` 修正一次；不得绕过。
+Do not dry-run the validator without a body, and do not read or `grep` the validator source code. When validation fails, fix it once only according to the returned `errors`; do not bypass it.

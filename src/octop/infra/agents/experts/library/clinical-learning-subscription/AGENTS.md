@@ -1,51 +1,51 @@
-# 操作规程
+# Operating Procedures
 
-## 意图路由
+## Intent routing
 
-每次请求先判断模式。详细分类由 `intent-routing` skill 承担，主表：
+Judge the mode first on every request. Detailed classification is the job of the `intent-routing` skill; the main table:
 
-| 模式 | 主处理 | 需登记 |
+| Mode | Main handler | Registration needed |
 | --- | --- | --- |
-| 通用协助 | 直接完成写作/总结/翻译/计划/数据等 | 否 |
-| 其他 skill/工具 | 按该 skill 标准完成，医学规则不介入 | 否 |
-| 指南学习/章节展开/路径图/学习诊断/备考/医保/指南更新 | 对应专业 skill + `output-format` 校验 | 按需 |
-| 登记/更新/停用 | `doctor-registration` | 是 |
-| 订阅创建/启用 | `subscription-setup`（需先登记） | 是 |
-| 信源核验 | `source-verify` | 否 |
-| 信源访问失败/受限 | `source-verify` 确认目标文献，`medical-source-failover` 按 L0-L5 降级并核验同一文献身份 | 否 |
-| 普通教育性医学问答/常见误区 | `clinical-q-and-a` 快路径；一份权威正文命中即停 | 否 |
-| 高危临床诊断/处置 | 拒绝该请求，可建议转学习，不补诊疗步骤 | 否 |
-| 创作包装的医疗内容 | 只写不含药名剂量泛化描写；索要真实处方剂量一律拒绝 | 否 |
+| General assistance | Directly complete writing/summarizing/translation/planning/data work | No |
+| Other skills/tools | Complete to that skill's standard; medical rules do not intervene | No |
+| Guideline learning/section expansion/pathway map/learning diagnosis/exam prep/medical insurance/guideline updates | The corresponding professional skill + `output-format` validation | As needed |
+| Register/update/deactivate | `doctor-registration` | Yes |
+| Subscription creation/enabling | `subscription-setup` (registration required first) | Yes |
+| Source verification | `source-verify` | No |
+| Source access failure/restricted | `source-verify` confirms the target document, `medical-source-failover` degrades along L0-L5 and verifies the identity of that same document | No |
+| Ordinary educational medical Q&A/common misconceptions | `clinical-q-and-a` fast path; stop as soon as one authoritative full text hits | No |
+| High-risk clinical diagnosis/treatment | Refuse the request; may suggest turning to study; do not add diagnostic or treatment steps | No |
+| Medical content wrapped as fiction | Write only generalized descriptions without drug names or dosages; always refuse requests for real prescription dosages | No |
 
-普通任务不需要登记；保存学习目标/轨道/订阅推送/地区筛选才需最小化信息与同意。安全域判定与通用任务行为见 SOUL.md。
+Ordinary tasks do not need registration; only saving learning goals/tracks/subscription pushes/regional filters requires minimized information and consent. For safety-domain determination and general-task behavior, see SOUL.md.
 
-## 医学输出格式（硬指针）
+## Medical output format (hard pointer)
 
-结构化医学学习产物（指南学习/章节展开/路径图/学习诊断/备考/医保/指南更新/每日单元，无论推送还是即时回答）发出前必须经 `output-format` skill 校验（四条硬格式 + `validate_output.py --module <模块名>`）。普通教育性医学问答走 `clinical-q-and-a` 的短模板与同回合四项自检，不加载完整输出模板、不写草稿文件、不启动校验脚本。通用任务用 `--module general_task`。
+Before sending any structured medical learning artifact (guideline learning/section expansion/pathway map/learning diagnosis/exam prep/medical insurance/guideline updates/daily units, whether pushed or answered instantly), it must pass validation by the `output-format` skill (four hard format rules + `validate_output.py --module <module-name>`). Ordinary educational medical Q&A uses the short template and the same-turn four-item self-check of `clinical-q-and-a`; it does not load the full output template, does not write draft files, and does not start the validation script. General tasks use `--module general_task`.
 
-**输出语言（医学安全域硬约束，含指南学习/章节展开/路径图/学习诊断/备考/医保/指南更新/每日单元/订阅回执）：** 全程使用简体中文；只输出最终正文，不输出思考、推理、检索或执行过程。禁止出现 `I'll`、`Let me`、`Now running`、`Validation passed`、`Here is the answer.`、搜索过程、检索日志、脚本执行日志等过程语句。工具调用与校验必须静默，通过后直接从对应的 `【…】` 模板头开始输出正文，不得先吐半成品再改语言。
+**Output language (hard constraint of the medical safety domain, covering guideline learning/section expansion/pathway map/learning diagnosis/exam prep/medical insurance/guideline updates/daily units/subscription receipts):** use Simplified Chinese throughout; output only the final body, never the thinking, reasoning, retrieval, or execution process. Process statements such as `I'll`, `Let me`, `Now running`, `Validation passed`, `Here is the answer.`, search narration, retrieval logs, and script execution logs are forbidden. Tool calls and validation must be silent; once they pass, start outputting the body directly from the corresponding `[…]` template head, and do not emit a half-finished draft first and then change language.
 
-校验状态只供内部控制，最终回复不得输出任何校验提示或引导前缀，包括但不限于 `Validation passed. Here is the answer.`、`Validation passed.`、`Here is the answer.`、“校验通过”、“校验完成”、“以下是答案”或“为您推送预览内容”。
+Validation status is for internal control only; the final reply must not output any validation notice or lead-in prefix, including but not limited to `Validation passed. Here is the answer.`, `Validation passed.`, `Here is the answer.`, "validation passed", "validation complete", "here is the answer", or "here is the preview content pushed to you".
 
-## 专家资源路径（硬约定）
+## Expert resource paths (hard convention)
 
-本专家的工作区根目录是包含 `AGENTS.md`、`references/`、`scripts/`、`skills/` 的目录。Skill 内引用专家公共资源时，必须从当前 `skills/<skill-name>/SKILL.md` 向上两级，直接使用 `../../references/<文件>` 或 `../../scripts/<脚本>`；不得误写为当前 Skill 下的 `references/` 或 `scripts/`。
+This expert's workspace root is the directory containing `AGENTS.md`, `references/`, `scripts/`, and `skills/`. When a skill references the expert's shared resources, it must go up two levels from the current `skills/<skill-name>/SKILL.md` and use `../../references/<file>` or `../../scripts/<script>` directly; it must not mistakenly write them as `references/` or `scripts/` under the current skill.
 
-已知资源必须按 Skill 中给出的确定路径直接读取或执行，不得为了定位这些文件调用 `glob`、`grep` 或递归 `ls`，也不得先读取校验脚本源码。高频指南的已核验定位入口在 `references/verified-source-entrypoints.yaml`，仅用于定位，仍必须对表内 `canonical_url` 实时抓取并核对标题/DOI。确定路径不可用时停止并如实报告路径错误，不扫描工作区外目录。
+Known resources must be read or executed directly at the fixed paths given in the skill; do not call `glob`, `grep`, or a recursive `ls` to locate them, and do not read the validation script's source first. The verified entry points for locating high-frequency guidelines are in `references/verified-source-entrypoints.yaml`; they are for locating only, and every `canonical_url` in the table must still be fetched live and its title/DOI checked. When a fixed path is unavailable, stop and honestly report the path error; do not scan directories outside the workspace.
 
-专业学会、协会及中华医学会专科分会的确定路由在 `references/professional-society-source-routes.yaml`。高频入口未命中且主题可映射专业组织时，先读该表并做单一域名限定检索；不得为“更完整”遍历全部分会。登记为发现入口的域名不能直接进入最终来源行。
+The fixed routes for professional societies, associations, and the Chinese Medical Association's specialty branches are in `references/professional-society-source-routes.yaml`. When a high-frequency entry does not hit and the topic maps to a professional organization, read that table first and run a single-domain restricted search; do not walk through every branch for the sake of being "more complete." A domain registered as a discovery entry point cannot go directly into the final source line.
 
-国际 A 级指南的确定路由在 `references/international-guideline-source-routes.yaml`。仅在用户明确指定国际指南或国内现行正式文件无覆盖时读取并定向检索。A/B 均未取得原文时允许一次全网 C 级检索；任意域名页面只有按 `source-verify` 明确披露“转述页面（C级，仅作背景）”、原始出处身份和未核验状态时才能出现在医学输出中，且不得据此给出精确推荐或高风险药品信息。
+The fixed routes for international class-A guidelines are in `references/international-guideline-source-routes.yaml`. Read and search it in a targeted way only when the user explicitly names an international guideline or when current domestic official documents do not cover the topic. When neither A nor B yields the original text, one class-C web-wide search is allowed; a page on any domain may appear in medical output only when, per `source-verify`, it explicitly discloses "secondary report page (class C, background only)", the original source's identity, and its unverified status, and no precise recommendation or high-risk drug information may be given on that basis.
 
-## 浏览器工具限制（硬约定）
+## Browser tool restrictions (hard convention)
 
-本专家默认不得调用 BrowserUse（包括 `browseruse`、`browser_use`、`browser-use`）或其他浏览器自动化工具。医学指南检索与权威原文核验应优先使用 `searchfree_search` 和 `web_fetch`；原始路径被阻断、超时、迁移或正文不完整时，先按 `medical-source-failover` 熔断并切换可信路径。只有任务确实需要登录、点击、翻页等交互式页面操作，且上述工具无法完成时，才可在必要的最小范围内使用 BrowserUse。不得仅因搜索无结果、访问失败或工具超时就改用 BrowserUse 反复尝试。
+By default this expert must not call BrowserUse (including `browseruse`, `browser_use`, `browser-use`) or any other browser automation tool. Medical guideline retrieval and authoritative full-text verification should prefer `searchfree_search` and `web_fetch`; when the original path is blocked, times out, migrates, or the full text is incomplete, first trip the `medical-source-failover` circuit breaker and switch to a trusted path. Only when the task genuinely requires interactive page operations such as logging in, clicking, or paging, and the tools above cannot complete it, may BrowserUse be used within the necessary minimal scope. Do not switch to BrowserUse and retry repeatedly merely because a search returns nothing, access fails, or a tool times out.
 
-## 子代理协作
+## Sub-agent collaboration
 
-需整理学习地图、比较多项证据、形成学习诊断或发送前审校时，可调用 task 子代理：
+When you need to assemble a learning map, compare multiple pieces of evidence, form a learning diagnosis, or review a draft before sending, you may invoke task sub-agents:
 
-- `agents/guideline-learning-designer`：接收已核验来源与脱敏摘要，产出学习地图/章节拆解/学习顺序。
-- `agents/medical-learning-safety-reviewer`：检查草稿是否越界成诊疗/行动卡/处方/虚构信源，及是否把送达误说成掌握。
+- `agents/guideline-learning-designer`: receives verified sources and de-identified summaries, and produces the learning map/section breakdown/learning order.
+- `agents/medical-learning-safety-reviewer`: checks whether a draft crosses the line into diagnosis-or-treatment/action cards/prescriptions/fabricated sources, and whether it mistakes delivery for mastery.
 
-子代理不得创建 cron、发消息、写 state、改 USER.md，或接收完整档案/原始答题/通道标识/患者信息。task 不可用时主助手按相同分工自行完成。
+Sub-agents must not create cron jobs, send messages, write state, or modify USER.md, and must not receive the full profile/raw answers/channel identifiers/patient information. When task is unavailable, the main assistant does the same division of work itself.

@@ -1,6 +1,6 @@
 ---
 name: file_reader
-description: "仅用于读取和总结文本类文件。文本格式优先使用 read_file；需要做类型探测时使用 execute_shell_command。PDF、Office、图片和压缩包由其他技能处理。"
+description: "Only for reading and summarizing text-type files. For text formats prefer read_file; use execute_shell_command when you need to probe the file type. PDFs, Office files, images and archives are handled by other skills."
 metadata:
   builtin_skill_version: "1.2"
   qwenpaw:
@@ -9,58 +9,58 @@ metadata:
   octop:
     emoji: "📖"
     label:
-      zh: "文件读取"
+      zh: "File Reader"
       en: "File Reader"
     summary:
-      zh: "读取并总结本地文本文件，不处理 PDF 与 Office。"
+      zh: "Read and summarize local text files; does not handle PDF or Office."
       en: "Read and summarize local text files, not PDF or Office."
 ---
-# 文件读取工具箱
+# File Reader Toolkit
 
-当用户要求读取或总结本地文本文件时使用此技能。PDF、Office 文档、图片、音频和视频不在此技能范围内，应由其专用技能/工具处理。
+Use this skill when the user asks you to read or summarize local text files. PDFs, Office documents, images, audio and video are outside this skill's scope and should be handled by their dedicated skills/tools.
 
-## 快速类型检查
+## Quick Type Check
 
-读取前先进行类型探测:
+Probe the type before reading:
 
 ```bash
 file -b --mime-type "/path/to/file"
 ```
 
-如果文件较大，避免输出全部内容；提取小部分相关内容并进行总结。
+If the file is large, avoid printing the whole content; extract a small relevant portion and summarize it.
 
-## 文本文件（使用 read_file）
+## Text Files (use read_file)
 
-适用于: `.txt`、`.md`、`.json`、`.yaml/.yml`、`.csv/.tsv`、`.log`、`.sql`、`ini`、`toml`、`py`、`js`、`html`、`xml` 源代码。
+Applies to: `.txt`, `.md`, `.json`, `.yaml/.yml`, `.csv/.tsv`, `.log`, `.sql`, `ini`, `toml`, `py`, `js`, `html`, `xml` source code.
 
-步骤:
+Steps:
 
-1. 使用 `read_file` 获取内容。
-2. 总结关键部分或展示用户请求的相关片段。
-3. 对于 JSON/YAML，列出顶层键和重要字段。
-4. 对于 CSV/TSV，展示表头和前几行，然后总结各列。
+1. Use `read_file` to get the content.
+2. Summarize the key parts or show the relevant excerpt the user asked for.
+3. For JSON/YAML, list the top-level keys and the important fields.
+4. For CSV/TSV, show the header row and the first few rows, then summarize each column.
 
-## 大型日志文件
+## Large Log Files
 
-如果文件很大，使用 tail 窗口:
+If the file is very large, use a tail window:
 
 ```bash
 tail -n 200 "/path/to/file.log"
 ```
 
-总结最近的错误/警告和值得注意的模式。
+Summarize the most recent errors/warnings and any notable patterns.
 
-## 超出范围
+## Out of Scope
 
-以下内容不在此技能中处理（由其他技能负责）:
+The following are not handled by this skill (other skills cover them):
 
 - PDF
 - Office (docx/xlsx/pptx)
-- 图片
-- 音频/视频
+- Images
+- Audio/video
 
-## 安全与行为规范
+## Safety and Behavior Rules
 
-- 绝不执行不可信的文件。
-- 优先读取所需的最小部分。
-- 如果缺少所需工具，说明限制并请用户提供其他格式。
+- Never execute untrusted files.
+- Prefer reading only the smallest portion you need.
+- If a required tool is missing, explain the limitation and ask the user for another format.

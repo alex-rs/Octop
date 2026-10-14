@@ -47,8 +47,8 @@ def test_memory_is_a_bounded_index_and_raw_is_immutable() -> None:
 
     assert len(memory.splitlines()) <= 200
     assert "knowledge-base/wiki/index.md" in memory
-    assert "不是事实证据" in memory
-    assert "已摄取来源不可改写" in agents
+    assert "not factual evidence" in memory
+    assert "Ingested sources may not be rewritten" in agents
     assert "Ingest" in skill
     assert "Query" in skill
     assert "Lint" in skill

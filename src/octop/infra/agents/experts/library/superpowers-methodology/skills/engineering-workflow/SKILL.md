@@ -1,61 +1,61 @@
 ---
 name: engineering-workflow
-description: 可靠工程工作流的执行细则——探索→计划→TDD→系统化调试→代码审查→完成前验证。供方法论教练在开发任务中逐步引导。
+description: Execution details for a reliable engineering workflow — explore → plan → TDD → systematic debugging → code review → verify before completion. Used by the Methodology Coach to guide step by step through development tasks.
 metadata:
   octop:
     emoji: "🛠️"
     label:
-      zh: "工程工作流"
+      zh: "Engineering Workflow"
       en: "Engineering Workflow"
     summary:
-      zh: "按探索、计划、TDD、调试、审查与验证逐步推进开发。"
+      zh: "Guide development through explore, plan, TDD, debug, review, and verify."
       en: "Guide development through explore, plan, TDD, debug, review, and verify."
 ---
 
-# 可靠工程工作流（执行细则）
+# Reliable Engineering Workflow (Execution Details)
 
-当进入一个开发任务时，按下述顺序推进。每个阶段都要有"可验证的出口"，不要跳步。
+When you take on a development task, proceed in the order below. Every phase needs a "verifiable exit"; do not skip steps.
 
-## 阶段 1 — 探索（Brainstorming）
-- 先回答：要解决什么问题？成功长什么样？边界与约束是什么？
-- 不确定就向用户提问，不要假设。产出清晰的问题定义。
+## Phase 1 — Brainstorming
+- Answer first: what problem are we solving? What does success look like? What are the boundaries and constraints?
+- If unsure, ask the user; do not assume. Produce a clear problem definition.
 
-## 阶段 2 — 计划（Writing Plans）
-多步骤任务先写书面计划：
+## Phase 2 — Writing Plans
+For multi-step tasks, write the plan down first:
 ```
-目标：<一句话>
-步骤：
-  1. <步骤> — 验收点：<如何确认完成>
+Goal: <one sentence>
+Steps:
+  1. <step> — Acceptance: <how to confirm completion>
   2. ...
-风险：<已知坑>
+Risks: <known pitfalls>
 ```
-计划被确认后再写代码。小改动可省显式计划，但验证不能省。
+Write code only after the plan is confirmed. Small changes may skip the explicit plan, but verification may not be skipped.
 
-## 阶段 3 — 测试驱动（TDD）
-1. 写一个**会失败**的测试，定义"完成"的边界。
-2. 写**最小实现**让测试变绿。
-3. 重构，保持测试绿。
-禁止"先写一大堆实现再补测试"——那等于没有验收。
+## Phase 3 — TDD
+1. Write a test that **fails**, defining the boundary of "done".
+2. Write the **minimal implementation** to make the test green.
+3. Refactor, keeping the test green.
+Do not "write a big pile of implementation first and add tests later" — that amounts to having no acceptance.
 
-## 阶段 4 — 系统化调试（Systematic Debugging）
-遇到失败：
-1. 复现：找到稳定复现的最小输入。
-2. 观察：用日志/断点/打印建立信号，定位出错层。
-3. 假设：提出 1–3 个可能根因。
-4. 实验：用最小改动逐一验证假设，排除。
-5. 修复：定位根因后再改，不靠猜。
-禁止：盲目改代码碰运气、同一 prompt 无限重试。
+## Phase 4 — Systematic Debugging
+When something fails:
+1. Reproduce: find the minimal input that reproduces it reliably.
+2. Observe: use logs/breakpoints/prints to establish a signal and locate the failing layer.
+3. Hypothesize: propose 1–3 possible root causes.
+4. Experiment: verify and eliminate the hypotheses one by one with minimal changes.
+5. Fix: change the code only after locating the root cause, never by guessing.
+Forbidden: blindly changing code to try your luck, and retrying the same prompt endlessly.
 
-## 阶段 5 — 代码审查（Requesting / Receiving）
-- 合并前主动请求审查；自查清单：正确性、边界、错误处理、可维护性、测试覆盖。
-- 收到审查意见：逐条理解并回应，不因"小"而忽略；要反驳也得给依据。
+## Phase 5 — Code Review (Requesting / Receiving)
+- Request review proactively before merging; self-check list: correctness, boundaries, error handling, maintainability, test coverage.
+- When review comments arrive: understand and respond to each one; do not ignore it because it is "small"; if you push back, give your reasons.
 
-## 阶段 6 — 完成前验证（Verification Before Completion）
-声称完成前必须有证据：
-- 测试通过（贴输出或明确说明）
-- 命令/脚本实际跑过
-- 关键行为被确认
-没有证据就闭嘴，不要说"应该没问题"。
+## Phase 6 — Verification Before Completion
+Before claiming completion you must have evidence:
+- Tests pass (paste the output or state it explicitly)
+- The command/script actually ran
+- Key behavior was confirmed
+Without evidence, keep quiet; do not say "it should be fine".
 
-## 收尾（Finishing a Development Branch）
-功能完成 → 引导合并 / 提 PR / 清理分支。用约定式提交，中文 commit 清晰说明意图。
+## Finishing (Finishing a Development Branch)
+Feature complete → guide the merge / PR / branch cleanup. Use conventional commits, with clear Chinese commit messages stating the intent.

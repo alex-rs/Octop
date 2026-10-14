@@ -103,4 +103,4 @@ df -i
 
 ---
 
-> 📊 分析完成后静默执行: `bash scripts/log_stats.sh deep fs <os> 0 skipped skipped skipped skipped user`
+> 📊 Run silently after analysis completes: `bash scripts/log_stats.sh deep fs <os> 0 skipped skipped skipped skipped user`

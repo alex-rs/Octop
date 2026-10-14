@@ -1,192 +1,192 @@
-# 云服务器安全检查
+# Cloud Server Security Check
 
-你对腾讯云安全组规则、CAM 权限 API 的参数和限制可能已过时。
-**执行前请先用 `tccli <服务> <操作> help` 确认最新参数。**
+Your knowledge of the parameters and limits of the Tencent Cloud security group rule and CAM permission APIs may be outdated.
+**Before executing, confirm the latest parameters with `tccli <service> <action> help`.**
 
-> 通过 tccli 命令行工具对云服务器进行全面的安全检查。
-
----
-
-## 执行规则
-
-### 全面安全检查（触发词：全面安全检查、安全审计、安全评估、安全巡检、检查安全配置、检查云服务器安全）
-
-当用户请求全面安全检查时，**必须严格遵守以下规则**：
-
-1. **执行全部检查场景**：按顺序执行本文档中的场景一至场景六，**不得遗漏任何一项**
-2. **逐步执行**：每个场景必须严格按照其「执行步骤」逐步完成，不得跳过任何步骤
-3. **空结果也要执行**：即使某个场景查询结果为空（如无公网实例、无子用户），也必须执行查询并在报告中标注"未发现相关资源"
-4. **生成综合报告**：所有场景执行完毕后，必须按本文档末尾的「综合安全评估报告」模板输出完整报告
-5. **风险标注**：对每个检查项明确标注风险等级（高/中/低）和状态（✅ 安全 / ⚠️ 警告 / ❌ 高危）
-
-### 单项安全检查
-
-当用户仅请求某个特定检查（如"检查安全组"、"检查公网暴露"等），只需执行对应的场景即可，无需执行全部场景。
+> Perform a comprehensive security check on cloud servers through the tccli command-line tool.
 
 ---
 
-## 场景一：检查安全组规则是否存在高危放通
+## Execution Rules
 
-### 任务描述
-请帮我检查腾讯云账户下所有安全组规则，找出可能存在安全风险的配置。
+### Comprehensive Security Check (trigger words: comprehensive security check, security audit, security assessment, security inspection, check security configuration, check cloud server security)
 
-### 执行步骤
+When the user requests a comprehensive security check, **the following rules must be strictly followed**:
 
-1. 使用 `tccli vpc DescribeSecurityGroups --region ap-beijing` 查询所有安全组列表
-2. 遍历每个安全组，使用 `tccli vpc DescribeSecurityGroupPolicies --region ap-beijing --SecurityGroupId <sg-id>` 查询其入站和出站规则
-3. 检查入站规则中是否存在以下高危配置：
-   - 源地址为 `0.0.0.0/0`（全网放通）的规则
-   - 放通高危端口的规则（如 22/SSH、3389/RDP、3306/MySQL、6379/Redis、27017/MongoDB）
-   - Action 为 `ACCEPT` 且未限制源 IP 的规则
-4. 对检测到的高危规则，输出安全组 ID、规则方向、端口范围、源地址、Action
-5. 汇总输出安全评估结果，并给出修复建议（如限制源 IP 为办公网段）
+1. **Run every check scenario**: execute scenarios 1 through 6 in this document in order, **omitting nothing**
+2. **Execute step by step**: each scenario must be completed strictly step by step according to its "Execution Steps"; do not skip any step
+3. **Run even on empty results**: even when a scenario's query returns nothing (such as no public-network instances or no sub-users), you must still run the query and note "no related resources found" in the report
+4. **Produce a comprehensive report**: after all scenarios have been executed, you must output a complete report using the "Comprehensive Security Assessment Report" template at the end of this document
+5. **Flag risks**: for every check item, clearly flag the risk level (high/medium/low) and the status (✅ secure / ⚠️ warning / ❌ critical)
 
----
+### Single-Item Security Check
 
-## 场景二：检查云服务器公网暴露情况
-
-### 任务描述
-请帮我检查腾讯云账户下所有云服务器实例的公网暴露情况，找出潜在的攻击面。
-
-### 执行步骤
-
-1. 使用 `tccli cvm DescribeInstances --region ap-beijing` 查询所有实例
-2. 遍历每个实例，关注以下字段：
-   - `PublicIpAddresses`：是否绑定了公网 IP
-   - `SecurityGroupIds`：关联的安全组列表
-3. 对每个有公网 IP 的实例，查询其关联的安全组规则（参见场景一）
-4. 重点检查：
-   - 是否有公网 IP 但未绑定安全组
-   - 是否通过公网暴露了管理端口（22、3389）
-   - 是否通过公网暴露了数据库端口（3306、5432、6379、27017）
-5. 汇总输出每个公网实例的暴露端口列表及风险等级
+When the user requests only one specific check (such as "check the security groups" or "check public exposure"), run only the corresponding scenario; there is no need to run every scenario.
 
 ---
 
-## 场景三：检查密钥对和登录方式安全
+## Scenario 1: Checking Security Group Rules for High-Risk Allowances
 
-### 任务描述
-请帮我检查腾讯云账户下所有云服务器的登录方式是否安全。
+### Task Description
+Please help me check all security group rules under the Tencent Cloud account and find configurations that may pose a security risk.
 
-### 执行步骤
+### Execution Steps
 
-1. 使用 `tccli cvm DescribeInstances --region ap-beijing` 查询所有实例
-2. 遍历每个实例，检查 `LoginSettings` 字段：
-   - 是否使用密钥对（`KeyIds` 不为空）→ 安全
-   - 是否使用密码登录（`KeepImageLogin` 为 false 且无密钥对）→ 风险较高
-3. 使用 `tccli cvm DescribeKeyPairs --region ap-beijing` 查询所有密钥对
-4. 检查是否存在未关联任何实例的孤立密钥对
-5. 汇总输出：
-   - 使用密钥对登录的实例数量
-   - 使用密码登录的实例数量（建议切换为密钥对）
-   - 孤立密钥对列表（建议清理）
+1. Use `tccli vpc DescribeSecurityGroups --region ap-beijing` to query the list of all security groups
+2. Iterate over each security group and use `tccli vpc DescribeSecurityGroupPolicies --region ap-beijing --SecurityGroupId <sg-id>` to query its inbound and outbound rules
+3. Check the inbound rules for the following high-risk configurations:
+   - Rules whose source address is `0.0.0.0/0` (open to the entire internet)
+   - Rules that allow high-risk ports (such as 22/SSH, 3389/RDP, 3306/MySQL, 6379/Redis, 27017/MongoDB)
+   - Rules whose Action is `ACCEPT` with no source IP restriction
+4. For each high-risk rule detected, output the security group ID, rule direction, port range, source address, and Action
+5. Summarize the security assessment result and give remediation advice (such as restricting the source IP to the office network range)
 
 ---
 
-## 场景四：检查云服务器镜像和系统补丁
+## Scenario 2: Checking Cloud Server Public-Network Exposure
 
-### 任务描述
-请帮我检查腾讯云账户下所有云服务器使用的操作系统镜像是否过旧。
+### Task Description
+Please help me check the public-network exposure of all cloud server instances under the Tencent Cloud account and find the potential attack surface.
 
-### 执行步骤
+### Execution Steps
 
-1. 使用 `tccli cvm DescribeInstances --region ap-beijing` 查询所有实例
-2. 遍历每个实例，关注 `ImageId`、`OsName` 字段
-3. 使用 `tccli cvm DescribeImages --region ap-beijing` 查询当前可用的公共镜像列表
-4. 对比实例当前使用的镜像与最新公共镜像版本
-5. 标记使用过旧操作系统的实例（如 CentOS 7 已停止维护、Ubuntu 18.04 等）
-6. 汇总输出各实例的操作系统信息及升级建议
-
----
-
-## 场景五：检查云监控告警策略覆盖情况
-
-### 任务描述
-请帮我检查腾讯云账户下所有云服务器是否配置了必要的监控告警。
-
-### 执行步骤
-
-1. 使用 `tccli cvm DescribeInstances --region ap-beijing` 查询所有实例，记录实例 ID 列表
-2. 使用 `tccli monitor DescribeAlarmPolicies --region ap-beijing --Module monitor --Namespace QCE/CVM` 查询 CVM 相关的告警策略
-3. 检查每个实例是否被至少一个告警策略覆盖
-4. 检查告警策略是否覆盖以下关键指标：
-   - CPU 使用率过高（如 > 90%）
-   - 内存使用率过高（如 > 90%）
-   - 磁盘使用率过高（如 > 85%）
-   - 网络异常出入带宽
-5. 检查告警通知渠道是否配置（短信、邮件、微信等）
-6. 汇总输出：
-   - 未被告警策略覆盖的实例列表
-   - 告警策略缺失关键指标的情况
-   - 未配置通知渠道的告警策略
+1. Use `tccli cvm DescribeInstances --region ap-beijing` to query all instances
+2. Iterate over each instance and look at the following fields:
+   - `PublicIpAddresses`: whether a public IP is bound
+   - `SecurityGroupIds`: the list of associated security groups
+3. For every instance with a public IP, query its associated security group rules (see scenario 1)
+4. Focus on:
+   - Whether an instance has a public IP but no security group bound
+   - Whether management ports (22, 3389) are exposed to the internet
+   - Whether database ports (3306, 5432, 6379, 27017) are exposed to the internet
+5. Summarize the exposed port list and risk level for each public-network instance
 
 ---
 
-## 场景六：检查 CAM 授权和访问控制
+## Scenario 3: Checking Key Pair and Login Method Security
 
-### 任务描述
-请帮我检查腾讯云账户下与云服务器相关的 CAM 权限配置是否安全。
+### Task Description
+Please help me check whether the login methods of all cloud servers under the Tencent Cloud account are secure.
 
-### 执行步骤
+### Execution Steps
 
-1. 使用 `tccli cam ListUsers` 查询所有子用户
-2. 使用 `tccli cam ListAttachedUserAllPolicies --TargetUin <uin> --Rp 200` 查询每个子用户附加的策略
-3. 重点检查：
-   - 是否有子用户拥有 `AdministratorAccess`（超级管理员）权限
-   - 是否有子用户拥有 `QcloudCVMFullAccess`（CVM 完全访问）但业务上不需要
-   - 是否存在长期未使用的子用户（检查 `LastLoginTime`）
-4. 使用 `tccli cam ListAccessKeys --TargetUin <uin>` 检查 API 密钥状态
-5. 检查是否存在未轮换的旧密钥（创建时间超过 90 天）
-6. 汇总输出：
-   - 权限过大的用户列表
-   - 长期未登录的用户列表
-   - 需要轮换的 API 密钥列表
+1. Use `tccli cvm DescribeInstances --region ap-beijing` to query all instances
+2. Iterate over each instance and check the `LoginSettings` field:
+   - Whether a key pair is used (`KeyIds` is not empty) → secure
+   - Whether password login is used (`KeepImageLogin` is false and there is no key pair) → higher risk
+3. Use `tccli cvm DescribeKeyPairs --region ap-beijing` to query all key pairs
+4. Check for orphan key pairs that are not associated with any instance
+5. Summarize and output:
+   - The number of instances that log in with a key pair
+   - The number of instances that log in with a password (switching to a key pair is recommended)
+   - The list of orphan key pairs (cleaning them up is recommended)
 
 ---
 
-## 综合安全评估报告（全面安全检查时必须输出）
+## Scenario 4: Checking Cloud Server Images and System Patches
 
-执行完上述所有场景后，**必须**汇总生成一份安全评估报告，包含以下所有检查项：
+### Task Description
+Please help me check whether the operating system images used by all cloud servers under the Tencent Cloud account are too old.
 
-| 检查项 | 状态 | 风险等级 | 说明 |
+### Execution Steps
+
+1. Use `tccli cvm DescribeInstances --region ap-beijing` to query all instances
+2. Iterate over each instance and look at the `ImageId` and `OsName` fields
+3. Use `tccli cvm DescribeImages --region ap-beijing` to query the list of currently available public images
+4. Compare the image each instance currently uses with the latest public image version
+5. Flag instances running an outdated operating system (such as CentOS 7, which has reached end of maintenance, or Ubuntu 18.04)
+6. Summarize the operating system information and upgrade advice for each instance
+
+---
+
+## Scenario 5: Checking Cloud Monitor Alarm Policy Coverage
+
+### Task Description
+Please help me check whether all cloud servers under the Tencent Cloud account have the necessary monitoring alarms configured.
+
+### Execution Steps
+
+1. Use `tccli cvm DescribeInstances --region ap-beijing` to query all instances and record the list of instance IDs
+2. Use `tccli monitor DescribeAlarmPolicies --region ap-beijing --Module monitor --Namespace QCE/CVM` to query the alarm policies related to CVM
+3. Check whether each instance is covered by at least one alarm policy
+4. Check whether the alarm policies cover the following key metrics:
+   - CPU utilization too high (such as > 90%)
+   - Memory utilization too high (such as > 90%)
+   - Disk utilization too high (such as > 85%)
+   - Abnormal network inbound/outbound bandwidth
+5. Check whether alarm notification channels are configured (SMS, email, WeChat, etc.)
+6. Summarize and output:
+   - The list of instances not covered by any alarm policy
+   - The alarm policies that are missing key metrics
+   - The alarm policies with no notification channel configured
+
+---
+
+## Scenario 6: Checking CAM Authorization and Access Control
+
+### Task Description
+Please help me check whether the CAM permission configuration related to cloud servers under the Tencent Cloud account is secure.
+
+### Execution Steps
+
+1. Use `tccli cam ListUsers` to query all sub-users
+2. Use `tccli cam ListAttachedUserAllPolicies --TargetUin <uin> --Rp 200` to query the policies attached to each sub-user
+3. Focus on:
+   - Whether any sub-user has `AdministratorAccess` (super administrator) permission
+   - Whether any sub-user has `QcloudCVMFullAccess` (full CVM access) without needing it for their work
+   - Whether any sub-user has been unused for a long time (check `LastLoginTime`)
+4. Use `tccli cam ListAccessKeys --TargetUin <uin>` to check the API key status
+5. Check for old keys that have not been rotated (created more than 90 days ago)
+6. Summarize and output:
+   - The list of over-privileged users
+   - The list of users who have not logged in for a long time
+   - The list of API keys that need rotation
+
+---
+
+## Comprehensive Security Assessment Report (mandatory output for a comprehensive security check)
+
+After all the scenarios above have been executed, you **must** compile a security assessment report containing every check item below:
+
+| Check item | Status | Risk level | Description |
 |--------|------|----------|------|
-| 安全组规则 | ✅ / ⚠️ / ❌ | 高/中/低 | 是否存在全网放通高危端口 |
-| 公网暴露 | ✅ / ⚠️ / ❌ | 高/中/低 | 管理端口和数据库端口暴露情况 |
-| 登录方式 | ✅ / ⚠️ / ❌ | 高/中/低 | 密钥对 vs 密码登录 |
-| 系统镜像 | ✅ / ⚠️ / ❌ | 高/中/低 | 是否使用过旧的操作系统 |
-| 监控告警 | ✅ / ⚠️ / ❌ | 高/中/低 | 关键指标告警覆盖情况 |
-| CAM 权限 | ✅ / ⚠️ / ❌ | 高/中/低 | 权限最小化与密钥轮换 |
+| Security group rules | ✅ / ⚠️ / ❌ | High/Medium/Low | Whether high-risk ports are open to the entire internet |
+| Public exposure | ✅ / ⚠️ / ❌ | High/Medium/Low | Exposure of management ports and database ports |
+| Login method | ✅ / ⚠️ / ❌ | High/Medium/Low | Key pair vs password login |
+| System image | ✅ / ⚠️ / ❌ | High/Medium/Low | Whether an outdated operating system is in use |
+| Monitoring alarms | ✅ / ⚠️ / ❌ | High/Medium/Low | Coverage of key metric alarms |
+| CAM permissions | ✅ / ⚠️ / ❌ | High/Medium/Low | Least privilege and key rotation |
 
-报告还应包含：
-- **总体安全评分**：基于各检查项的风险等级给出综合评分（优秀/良好/一般/较差/危险）
-- **高优修复建议**：列出风险等级为"高"的问题及具体修复步骤
-- **中低优改进建议**：列出风险等级为"中/低"的问题及改进方向
+The report should also include:
+- **Overall security score**: a composite score based on the risk level of each check item (excellent/good/fair/poor/dangerous)
+- **High-priority remediation advice**: list the issues with a "high" risk level and the concrete remediation steps
+- **Medium- and low-priority improvement advice**: list the issues with a "medium/low" risk level and the direction for improvement
 
 ---
 
-## API 速查
+## API Quick Reference
 
-| 功能 | 服务 | 接口 |
+| Function | Service | API |
 |------|------|------|
-| 查询安全组 | vpc | `DescribeSecurityGroups` |
-| 查询安全组规则 | vpc | `DescribeSecurityGroupPolicies` |
-| 查询 CVM 实例 | cvm | `DescribeInstances` |
-| 查询密钥对 | cvm | `DescribeKeyPairs` |
-| 查询镜像 | cvm | `DescribeImages` |
-| 查询告警策略 | monitor | `DescribeAlarmPolicies` |
-| 查询子用户 | cam | `ListUsers` |
-| 查询用户策略 | cam | `ListAttachedUserAllPolicies` |
-| 查询 API 密钥 | cam | `ListAccessKeys` |
+| Query security groups | vpc | `DescribeSecurityGroups` |
+| Query security group rules | vpc | `DescribeSecurityGroupPolicies` |
+| Query CVM instances | cvm | `DescribeInstances` |
+| Query key pairs | cvm | `DescribeKeyPairs` |
+| Query images | cvm | `DescribeImages` |
+| Query alarm policies | monitor | `DescribeAlarmPolicies` |
+| Query sub-users | cam | `ListUsers` |
+| Query user policies | cam | `ListAttachedUserAllPolicies` |
+| Query API keys | cam | `ListAccessKeys` |
 
 ---
 
-## 何时使用
+## When to Use
 
-| 场景 | 建议 |
+| Scenario | Recommendation |
 |------|------|
-| 用户要求全面安全检查/安全审计 | 执行场景一至六的完整流程，输出综合报告 |
-| 用户只问某个安全组规则 | 只执行场景一 |
-| 用户只问公网暴露情况 | 只执行场景二 |
-| 用户想查看资源状态（非安全角度） | 不使用本文档，用基础查询命令 |
-| 用户要修改安全组规则 | 本文档只做检查，修改操作参考 `tccli vpc help` |
-| 用户要做资源巡检（域名/证书/实例状态） | 不使用本文档，用 references/auto-check-resource.md |
+| The user asks for a comprehensive security check/security audit | Run the complete flow of scenarios 1 through 6 and output the comprehensive report |
+| The user only asks about a specific security group rule | Run scenario 1 only |
+| The user only asks about public exposure | Run scenario 2 only |
+| The user wants to view resource status (not from a security angle) | Do not use this document; use basic query commands |
+| The user wants to modify security group rules | This document only performs checks; for modification see `tccli vpc help` |
+| The user wants a resource inspection (domain/certificate/instance status) | Do not use this document; use references/auto-check-resource.md |

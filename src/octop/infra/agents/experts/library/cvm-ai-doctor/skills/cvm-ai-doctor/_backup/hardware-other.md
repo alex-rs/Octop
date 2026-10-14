@@ -26,7 +26,7 @@ User Question → Quick Mode (10s) → Analyze → Deep Mode (20-40s, if issues)
 
 | Mode | Duration | Purpose | When to Use |
 |------|----------|---------|-------------|
-| **Quick** | 10s | Check status of all 4 components | Health check, "检查硬件", daily routine |
+| **Quick** | 10s | Check status of all 4 components | Health check, "check hardware", daily routine |
 | **Deep** | 20-40s | Detailed analysis + troubleshooting | Quick shows issues, specific problem |
 
 **Decision Logic**:
@@ -790,7 +790,7 @@ Pattern 2: Normal Wear
 
 ## 💡 Complete Usage Examples
 
-### Example 1: User Reports "风扇很响"
+### Example 1: User Reports "the fan is very loud"
 
 **Step 1: Quick Mode**
 ```
@@ -810,34 +810,34 @@ Fan: 3200 RPM (normal)
 
 **Final Report**:
 ```
-🔴 CPU 严重过热并已降频
+🔴 CPU severely overheated and already throttling
 
-当前状态：
-- 最高温度：102°C（严重超标）
-- 降频事件：156 次
-- 当前频率：仅为最大频率的 45%
-- 风扇转速：3200 RPM（正常运转）
+Current status:
+- Highest temperature: 102°C (far out of range)
+- Throttle events: 156
+- Current frequency: only 45% of maximum frequency
+- Fan speed: 3200 RPM (running normally)
 
-根因：散热系统失效
-- 风扇运转正常，但散热不足
-- 可能原因：散热器堵塞、硅脂老化
+Root cause: cooling system failure
+- The fan is running normally, but cooling is insufficient
+- Likely causes: clogged heatsink, dried-out thermal paste
 
-影响：
-- CPU 性能降低 55%
-- 应用程序运行缓慢
-- 存在系统自动关机风险
+Impact:
+- CPU performance reduced by 55%
+- Applications run slowly
+- Risk of the system shutting down automatically
 
-立即行动：
-1. 🔴 立即关机，清理散热器灰尘
-2. 🔴 重新涂抹 CPU 硅脂
-3. 检查机箱内空气流通
-4. 启动后持续监控：watch -n 5 sensors
-5. 目标：温度降至 80°C 以下
+Immediate action:
+1. 🔴 Shut down immediately and clean dust from the heatsink
+2. 🔴 Reapply CPU thermal paste
+3. Check the airflow inside the chassis
+4. After booting, monitor continuously: watch -n 5 sensors
+5. Goal: bring the temperature below 80°C
 ```
 
 ---
 
-### Example 2: User Asks "RAID 是否正常"
+### Example 2: User Asks "is RAID normal"
 
 **Step 1: Quick Mode**
 ```
@@ -857,27 +857,27 @@ Failed disk: /dev/sdb (replaced)
 
 **Final Report**:
 ```
-⚠️  RAID 正在重建中
+⚠️  RAID is rebuilding
 
-当前状态：
-- 阵列状态：恢复中
-- 完成进度：37%
-- 剩余时间：约 2.5 小时
-- 已更换磁盘：/dev/sdb
+Current status:
+- Array state: recovering
+- Completion progress: 37%
+- Time remaining: about 2.5 hours
+- Disk already replaced: /dev/sdb
 
-根因：磁盘故障后更换，正在重建冗余
+Root cause: a disk failed and was replaced, redundancy is being rebuilt
 
-注意事项：
-- ⚠️  重建期间无冗余保护
-- 如再有磁盘故障，将导致数据丢失
-- 性能会有所下降
+Cautions:
+- ⚠️  There is no redundancy protection during the rebuild
+- Another disk failure would cause data loss
+- Performance will degrade somewhat
 
-建议：
-1. 让重建过程自然完成（请勿关机）
-2. 避免重度 I/O 操作
-3. 预计完成时间：今晚 23:30
-4. 完成后验证：mdadm --detail /dev/md0
-5. 所有磁盘显示 "active sync" 即正常
+Recommendations:
+1. Let the rebuild finish on its own (do not power off)
+2. Avoid heavy I/O operations
+3. Expected completion time: tonight at 23:30
+4. Verify after completion: mdadm --detail /dev/md0
+5. "active sync" on all disks means normal
 ```
 
 ---
@@ -895,21 +895,21 @@ OVERALL: OK
 
 **Final Report**:
 ```
-硬件健康检查 - 一切正常 ✅
+Hardware health check - everything normal ✅
 
-CPU：
-- 温度：45°C（正常）
-- 无降频事件
+CPU:
+- Temperature: 45°C (normal)
+- No throttle events
 
-内存：
-- 可纠正错误：12（正常范围）
-- 无不可纠正错误
+Memory:
+- Correctable errors: 12 (normal range)
+- No uncorrectable errors
 
-RAID：
-- 状态：最佳
-- 所有磁盘正常工作
+RAID:
+- State: optimal
+- All disks working normally
 
-结论：所有硬件健康，无需采取行动
+Conclusion: all hardware is healthy, no action required
 ```
 
 ---

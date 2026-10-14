@@ -16,18 +16,18 @@ component: memory
 
 ---
 
-## ⚡ 脚本优先路径（Script-First Path）
+## ⚡ Script-First Path
 
-若 `scripts/deep_scan.sh` 存在，**优先执行脚本采集**，跳过以下手动步骤：
+If `scripts/deep_scan.sh` exists, **prefer collecting data via the script** and skip the manual steps below:
 
 ```bash
 bash scripts/deep_scan.sh memory --output json
 ```
 
-脚本会自动完成 3 次 × 5 秒内存泄露采样、swap 活动分析、top 消费进程采集，输出结构化 JSON。
-收到 JSON 后，直接跳至 **"根因推断"** 部分，用输出数据填入模板。
+The script automatically performs three 5-second memory leak samples, swap activity analysis and top consumer collection, and outputs structured JSON.
+After receiving the JSON, skip straight to the **"Root Cause Inference"** section and fill the template with the output data.
 
-若脚本不存在，按以下手动步骤采集。
+If the script is unavailable, collect data using the manual steps below.
 
 ---
 
@@ -279,4 +279,4 @@ Get-Counter '\Memory\Pages/sec' -SampleInterval 1 -MaxSamples 5 | ForEach-Object
 
 ---
 
-> 📊 分析完成后静默执行: `bash scripts/log_stats.sh deep memory_low <os> 0 skipped <severity> skipped skipped user`
+> 📊 Silently run after the analysis completes: `bash scripts/log_stats.sh deep memory_low <os> 0 skipped <severity> skipped skipped user`

@@ -1,11 +1,11 @@
-# arXiv 论文查询
+# arXiv Paper Search
 
-无需 API Key，通过 arXiv 官方 API 查询论文元数据。
+No API key required — query paper metadata through the official arXiv API.
 
-在 Dashboard 的「插件市场」安装并启用后，普通 Agent 默认获得 `search_arxiv`
-工具；可以在 Agent 的工具设置中单独关闭。
+After installing and enabling it from the Dashboard "Plugin Market", an ordinary Agent gets the `search_arxiv`
+tool by default; it can be turned off individually in the Agent's tool settings.
 
-调用示例：
+Example calls:
 
 ```text
 search_arxiv(query="retrieval augmented generation", limit=5)
@@ -15,19 +15,19 @@ search_arxiv(query="1706.03762")
 search_arxiv(query="https://arxiv.org/abs/1706.03762")
 ```
 
-支持关键词、标题/作者/分类等查询语法，以及新旧论文编号、版本号和摘要/PDF
-链接。中文提问由 Agent 转换为英文检索词。`limit` 默认为 5，范围 1–20；`start`
-为从 0 开始的分页偏移。`sort_by` 支持 `relevance`、`submittedDate` 和
-`lastUpdatedDate`，`sort_order` 支持 `ascending` 和 `descending`。
+Supports keyword and title/author/category query syntax, as well as new and old paper
+IDs, version numbers, and abstract/PDF links. Chinese questions are converted into English search terms
+by the Agent. `limit` defaults to 5 with a range of 1–20; `start` is a pagination offset starting from 0.
+`sort_by` supports `relevance`, `submittedDate`, and `lastUpdatedDate`, and `sort_order` supports `ascending` and `descending`.
 
-返回标题、作者、完整摘要、分类、发表/更新时间、DOI、期刊引用以及摘要/PDF
-链接。聊天卡片支持中英文和深浅主题；IM 渠道使用包含摘要和链接的纯文本回退。
-网络请求异步执行，同一进程中的请求串行且至少间隔 3 秒。
+Returns the title, authors, the full abstract, categories, publication/update time, DOI, journal
+citation, and abstract/PDF links. The chat card supports Chinese and English plus light and dark themes;
+IM channels use a plain-text fallback containing the abstract and links. Network requests are asynchronous, and requests in the same process are serialized with at least a 3-second gap.
 
-API 文档：[arXiv API User's Manual](https://info.arxiv.org/help/api/user-manual.html)。
-图标使用 [arXiv 官方 Small Logomark SVG](https://cornell.box.com/v/arxiv-logomark-small-svg)，
-保留官方形状与红灰颜色，用于鸣谢论文数据来源。
-使用规范：[arXiv Name and Logo Use](https://info.arxiv.org/brand/brand-guidelines.html)。
+API documentation: [arXiv API User's Manual](https://info.arxiv.org/help/api/user-manual.html).
+The icon uses the [official arXiv Small Logomark SVG](https://cornell.box.com/v/arxiv-logomark-small-svg),
+keeping the official shape and red/grey colors, as an acknowledgement of the paper data source.
+Usage guidelines: [arXiv Name and Logo Use](https://info.arxiv.org/brand/brand-guidelines.html).
 
 Thank you to arXiv for use of its open access interoperability. This service was
 not reviewed or approved by, nor does it necessarily express or reflect the

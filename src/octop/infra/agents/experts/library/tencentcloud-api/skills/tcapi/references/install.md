@@ -1,48 +1,48 @@
-# 安装 TCCLI
+# Installing TCCLI
 
-**首选：装进 Octop 自带的 Python 虚拟环境（venv）**——与 Octop 运行环境一致、版本可控、不污染系统 Python、无需 sudo。Octop 专家的 Agent 命令执行时继承该环境。
+**Preferred: install it into the Python virtual environment (venv) bundled with Octop** — consistent with the Octop runtime, version-controllable, does not pollute the system Python, and needs no sudo. Agent commands run by Octop experts inherit that environment.
 
-**定位 Octop venv**（通过 octop 主进程的工作目录）：
+**Locate the Octop venv** (via the working directory of the octop main process):
 
 ```sh
 OCTOP_PID=$(pgrep -f '\.venv/bin/octop run' | head -1)
 OCTOP_ROOT=$([ -n "$OCTOP_PID" ] && readlink -f /proc/$OCTOP_PID/cwd || echo /workspace/octop)
 ```
 
-**安装方式（按优先级）**：
+**Installation methods (in priority order)**:
 
 ```sh
-# 方式一（推荐）：uv 装进 Octop venv
+# Method one (recommended): install into the Octop venv with uv
 uv pip install --python "$OCTOP_ROOT/.venv/bin/python3" tccli
 
-# 方式二：无 uv 时，用 venv 自带 pip（需先 ensurepip）
+# Method two: without uv, use the venv's own pip (run ensurepip first)
 "$OCTOP_ROOT/.venv/bin/python3" -m ensurepip --upgrade
 "$OCTOP_ROOT/.venv/bin/python3" -m pip install tccli
 
-# 方式三：系统 pip（桌面/CLI 独立使用 tccli 时）
+# Method three: system pip (when using tccli standalone on desktop/CLI)
 pip install tccli
 
-# 若从 3.0.252.3 以下版本升级，需先卸载再装：
+# If upgrading from a version below 3.0.252.3, uninstall first and then install:
 # pip uninstall tccli jmespath && pip install tccli
 ```
 
-升级同理，加 `-U`：`uv pip install --python "$OCTOP_ROOT/.venv/bin/python3" -U tccli`
+Upgrading works the same way, adding `-U`: `uv pip install --python "$OCTOP_ROOT/.venv/bin/python3" -U tccli`
 
-其他系统安装方式：
+Other system installation methods:
 
 ```sh
 # macOS Homebrew
 brew tap tencentcloud/tccli
 brew install tccli
-# 更新：brew upgrade tccli
+# Update: brew upgrade tccli
 
-# 源码安装
+# Install from source
 # git clone https://github.com/TencentCloud/tencentcloud-cli.git && cd tencentcloud-cli && python setup.py install
 ```
 
-验证安装：
+Verify the installation:
 
 ```sh
-"$OCTOP_ROOT/.venv/bin/tccli" --version   # venv 内验证
-tccli --version                            # 系统安装验证
+"$OCTOP_ROOT/.venv/bin/tccli" --version   # verify inside the venv
+tccli --version                            # verify the system installation
 ```

@@ -1,181 +1,181 @@
 ---
 name: source-verify
-description: 医学信源快速或完整核验。普通教育性医学问答用单一权威正文快速核验；最新版本、精确推荐、高风险药品、医保监管或跨版本请求升级为完整核验。只整理学习依据，不生成诊疗、处方、急诊处置、医保报销结论或HIS执行建议。
+description: Fast or full verification of medical sources. Ordinary educational medical Q&A uses fast verification against a single authoritative body of text; requests about the latest version, precise recommendations, high-risk drugs, insurance regulation, or cross-version changes escalate to full verification. It only organizes the learning basis; it does not generate diagnosis or treatment, prescriptions, emergency handling, insurance reimbursement conclusions, or HIS execution advice.
 metadata:
   octop:
     emoji: "🔍"
     label:
-      zh: "信源核验"
+      zh: "Source Verify"
       en: "Source Verify"
     summary:
-      zh: "核验医学权威原文、版本时效与修订替代关系。"
+      zh: "Verify authoritative medical original texts, version currency, and revision/replacement relationships."
       en: "Verify authoritative medical sources, versions, and replacements."
 ---
 
-# 统一信源核验
+# Unified Source Verification
 
-## 路由边界
+## Routing Boundary
 
-纯粹判断文件是否为权威原文、是否最新有效以及修订/替代/废止关系时，只使用本技能及下方【信源核验】模板，不再调用 `output-format` skill 或 `../../scripts/validate_output.py`。如果用户还要求生成指南学习内容，先完成信源核验，再把已核验来源交给对应医学学习 skill，并只对学习内容执行 `output-format` 校验。
+When purely judging whether a file is an authoritative original text, whether it is the latest and in effect, and the revision/replacement/repeal relationships, use only this skill and the [Source Verification] template below, and do not call the `output-format` skill or `../../scripts/validate_output.py`. If the user also asks for guideline learning content, first complete source verification, then hand the verified sources to the corresponding medical learning skill, and run `output-format` validation only on the learning content.
 
-## 先选择核验档位
+## First Choose the Verification Tier
 
-### 快速核验（默认）
+### Fast Verification (default)
 
-适用于普通教育性医学问答、概念解释、常见误区澄清和一般学习摘要，且不涉及下方完整核验触发项。
+Applies to ordinary educational medical Q&A, concept explanations, clarification of common misconceptions, and general learning summaries, when none of the full-verification triggers below apply.
 
-- 目标是取得 **1 份**足以覆盖问题的现行权威规范性正文；不得主动搜集多份文件相互“佐证”。
-- 最小核对项为：权威机构/正式发布域、规范性文档类型、完整标题、发布机构、年份/版本、正文能够支持本次主张。
-- 官方原文页已明确上述身份时，不强制另找第二来源；原文没有 DOI/推荐等级时如实写“未标注”，不为补字段继续搜索。
-- 命中未过 `recheck_after` 的已核验入口时，直接抓取正文并核对身份；用户未问“最新/现行/替代”时不再追加时效搜索。
-- 一份文档满足身份、正文与覆盖范围后立即停止。
+- The goal is to obtain **1** current authoritative normative text sufficient to cover the question; do not actively gather multiple documents to "corroborate" one another.
+- The minimum checks are: authoritative institution/official publication domain, normative document type, full title, issuing institution, year/version, and whether the body of text can support this claim.
+- When the official original-text page already states the above identity, finding a second source is not mandatory; when the original text has no DOI/recommendation grade, write "not stated" truthfully, and do not keep searching just to fill in fields.
+- When a verified entry point that has not passed its `recheck_after` is matched, fetch the body of text directly and check its identity; when the user has not asked about "latest/current/replacement", do not add a currency search.
+- Stop immediately once one document satisfies identity, body of text, and coverage scope.
 
-### 完整核验（按需升级）
+### Full Verification (escalate on demand)
 
-出现以下任一情形时才升级：用户明确询问最新/现行/替代/废止、跨版本变化、精确推荐或证据等级、章表页条目定位；适应症、禁忌症、剂量、孕产妇/儿童、严重不良反应、侵入/急诊内容；药品批准、监管、医保或法律状态。完整核验保留版本状态、唯一标识、精确定位和必要的同文献身份核验要求。
+Escalate only when any of the following occurs: the user explicitly asks about latest/current/replacement/repeal, cross-version changes, precise recommendations or evidence grades, or chapter/table/page/item localization; indications, contraindications, dosage, pregnancy or pediatric use, serious adverse reactions, invasive or emergency content; or drug approval, regulation, insurance, or legal status. Full verification retains version status, unique identifiers, precise localization, and the necessary same-document identity verification requirements.
 
-核验档位只减少不必要的步骤，不改变“不能用二手摘要补精确临床事实”的底线。
+The verification tier only removes unnecessary steps; it does not change the bottom line that "second-hand summaries must not be used to fill in precise clinical facts".
 
-## 按需读取文件
+## Read Files On Demand
 
-快速核验先只读取 `../../references/verified-source-entrypoints.yaml`。命中即可按其直达入口抓取，不预读完整白名单和合规说明。
+Fast verification reads only `../../references/verified-source-entrypoints.yaml` first. If an entry is matched, fetch from its direct entry point; do not pre-read the full allowlist or the compliance notes.
 
-以下情况再读取对应文件：
+Read the corresponding file in these cases:
 
-- 未命中入口、需要判断域名/文档类型/B+ 或 C 级资格：`../../references/source-policy.yaml`
-- 请求接近个体诊疗、处方或其他医学边界：`../../references/compliance-boundary.md`
-- 目标由国内专业学会或分会发布且入口未命中：`../../references/professional-society-source-routes.yaml`
+- Entry point not matched, or a judgment about domain/document type/B+ or C-tier eligibility is needed: `../../references/source-policy.yaml`
+- The request approaches individual diagnosis or treatment, prescriptions, or another medical boundary: `../../references/compliance-boundary.md`
+- The target is issued by a Chinese professional society or subsociety and the entry point is not matched: `../../references/professional-society-source-routes.yaml`
 
-以上是确定路径，直接读取；不得为定位这些文件调用 `glob`、`grep` 或递归 `ls`。
+The above are fixed paths; read them directly. Do not call `glob`, `grep`, or recursive `ls` to locate these files.
 
-用户明确指定国际指南，或国内现行正式文件没有覆盖目标主题时，再读取
-`../../references/international-guideline-source-routes.yaml`；普通国内主题不预读该表。
+When the user explicitly specifies an international guideline, or current Chinese formal documents do not cover the target topic, then read
+`../../references/international-guideline-source-routes.yaml`; do not pre-read that table for ordinary Chinese topics.
 
-## 已核验入口的使用顺序
+## Order of Using Verified Entry Points
 
-1. 先用用户主题匹配 `verified-source-entrypoints.yaml` 的 `aliases`。未命中才进入常规联网检索。
-2. 命中时直接 `web_fetch` 该条目的 `canonical_url`，快速核验至少核对标题、发布机构、年份/版本和正文覆盖范围；表项提供 DOI 时再核对 DOI。完整核验中唯一标识冲突则不得使用。
-3. 当前日期超过 `recheck_after`，或用户明确询问「最新/现行/替代」时，再加 1 次限定官方域名的时效检索；没有新版正式原文证据时，不得仅凭搜索摘要改写表内版本状态。
-4. `version_relation` 是已核验的表述边界。它写「未取得废止/替代声明」时，必须如实输出「未证实正式废止或替代」，不得自行推断。
-5. 命中条目的最终原文链接必须使用该条目的 `canonical_url`；`official_index_url` 只用于辅助核对卷期/DOI，不得取代原文链接。全文受订阅限制时可以说明可核对范围受限，但仍要给出 `canonical_url`。
+1. First match the user topic against the `aliases` of `verified-source-entrypoints.yaml`. Only move to regular online search when there is no match.
+2. On a match, `web_fetch` the entry's `canonical_url` directly; fast verification checks at least the title, issuing institution, year/version, and coverage of the body of text; when the entry provides a DOI, check the DOI too. In full verification, a conflicting unique identifier means the entry must not be used.
+3. When the current date has passed `recheck_after`, or the user explicitly asks about "latest/current/replacement", add 1 currency search restricted to official domains; without evidence of a new formal original text, do not rewrite the entry's version status based only on a search snippet.
+4. `version_relation` is the verified expression boundary. When it says "no repeal/replacement statement obtained", you must truthfully output "no formal repeal or replacement has been confirmed"; do not infer on your own.
+5. The final original-text link of a matched entry must use that entry's `canonical_url`; `official_index_url` is only for auxiliary checks of volume/issue/DOI and must not replace the original-text link. When the full text is restricted by subscription, you may explain that the verifiable scope is limited, but you must still give the `canonical_url`.
 
-## 专业学会快速路由
+## Fast Routing for Professional Societies
 
-高频入口未命中，且目标文件由专业学会、协会或专科分会制定/发布时，直接读取
-`../../references/professional-society-source-routes.yaml`，先按分会名称和 `aliases`
-匹配，再进行限定域名检索；不得先做无域名的广泛搜索。
+When a high-frequency entry point is not matched and the target file is formulated/published by a professional society, association, or specialty subsociety, read
+`../../references/professional-society-source-routes.yaml` directly, first match by subsociety name and `aliases`,
+and then run a domain-restricted search; do not start with a broad search without a domain.
 
-- 中华医学会分会先匹配已登记的专属 `*.cma.org.cn` 子域；没有专属子域时，使用官方专科分会目录确认身份，再限定 `cma.org.cn`、`medjournals.cn` 或 `rs.yiigle.com` 检索。
-- `conditional_final` 路由仍须通过正式文档类型、完整性和版本核验，域名命中本身不构成最终证据。
-- `official_discovery_pending_fulltext_acceptance` 路由只能定位发布信息和正式原文，不得直接进入最终来源行；必须继续取得 S/A 正式原文或完成该站点的完整文档身份验收。
-- 找到一份足以覆盖问题的完整现行正式文件后立即停止，不再遍历其他学会网站。
+- For Chinese Medical Association subsocieties, first match the registered dedicated `*.cma.org.cn` subdomain; when there is no dedicated subdomain, use the official specialty subsociety directory to confirm identity, then search restricted to `cma.org.cn`, `medjournals.cn`, or `rs.yiigle.com`.
+- A `conditional_final` route must still pass formal document type, completeness, and version verification; a domain match alone does not constitute final evidence.
+- An `official_discovery_pending_fulltext_acceptance` route can only locate publication information and the formal original text, and must not go directly into the final source line; you must continue to obtain the S/A formal original text or complete that site's full document identity acceptance.
+- Stop immediately after finding one complete current formal document sufficient to cover the question; do not traverse other society websites.
 
-## 信源分级
+## Source Tiering
 
-- S/A 级权威域名中的规范性原文：通过文档类型与版本核验后，可作为最终学习依据。
-- 国际 A 级来源全部保留证据资格，但默认池固定为 WHO、NICE、ESC、ADA、KDIGO。普通国际补充只调用最匹配的 1 个网站，首站确实不覆盖时最多再增加 1 个。若问题明确属于 GINA、GOLD、ACG、AGA、ASGE、ESGE、EASL、AASLD、ECCO 等特定体系，直接定向访问该官方来源，不先遍历默认池，也不得静默覆盖国内现行规范。
-- 指定 B+ 专业平台：默认仍只作线索；仅在 S/A 原始正文出现 412、验证码、JS 阻断、超时或正文不可获取时，才可作为正式全文承载渠道。必须同时取得 S/A 原始发布方或正式期刊元数据链接，完成标题、制定机构、年份/版本、DOI/文号、全文完整性和现行版本六项核验。
-- B 级线索来源：只用于发现候选文件，必须回溯 S/A 原文，不适用 B+ 降级。
-- C 级全网转述：A 与 B 均未取得可用原文或完整身份链时，允许全网检索并输出明确归因的背景转述，但不是最终证据。必须同时写明“转述页面（C级，仅作背景）”、原始期刊/机构、原始文献或指南完整标题、年份/版本、DOI/文号（页面未给则如实写未提供）以及“未取得可核验原文”。不得据此提取精确推荐、证据等级、适应症、禁忌症、用法用量、严重不良反应、孕产妇/儿童用药或急救/侵入性处置。
+- Normative original text on S/A-tier authoritative domains: after passing document type and version verification, it can serve as the final learning basis.
+- All international A-tier sources retain evidence eligibility, but the default pool is fixed at WHO, NICE, ESC, ADA, and KDIGO. An ordinary international supplement calls only the 1 best-matching website, and when the first site truly does not cover the topic, at most 1 more may be added. When the question clearly belongs to a specific system such as GINA, GOLD, ACG, AGA, ASGE, ESGE, EASL, AASLD, or ECCO, go directly to that official source; do not traverse the default pool first, and do not silently override current Chinese regulations.
+- Designated B+ professional platforms: by default they still only serve as leads; only when the S/A original text shows 412, a CAPTCHA, JS blocking, a timeout, or an unobtainable body of text may they serve as the formal full-text hosting channel. You must also obtain the S/A original publisher or formal journal metadata link, and complete six checks: title, formulating institution, year/version, DOI/document number, full-text completeness, and current version.
+- B-tier lead sources: used only to find candidate documents; they must be traced back to the S/A original text, and the B+ downgrade does not apply to them.
+- C-tier web-wide relay: when neither A nor B yields a usable original text or a complete identity chain, a web-wide search is allowed and a clearly attributed background relay may be output, but it is not final evidence. You must also state "relay page (C-tier, background only)", the original journal/institution, the full title of the original article or guideline, the year/version, the DOI/document number (if the page does not give one, truthfully write that it is not provided), and "no verifiable original text was obtained". No precise recommendations, evidence grades, indications, contraindications, dosage, serious adverse reactions, pregnancy/pediatric medication, or emergency/invasive handling may be extracted from it.
 
-具体域名和禁止模式以 `../../references/source-policy.yaml` 为准。
+Specific domains and prohibited patterns follow `../../references/source-policy.yaml`.
 
-## 国内场景与受控降级顺序
+## Chinese Context and Controlled Downgrade Order
 
-面向中国大陆基层医生的一般学习请求，默认先找国内现行正式指南/共识/规范；用户明确指定国际文件或国内没有覆盖时，再按请求范围使用国际正式文件。不得用国际建议静默覆盖国内现行文件。
+For general learning requests from primary-care doctors in mainland China, look first by default for current Chinese formal guidelines/consensus/standards; when the user explicitly specifies an international document or China has no coverage, then use international formal documents within the requested scope. Do not silently override current Chinese documents with international recommendations.
 
-原始页面或附件出现 `401`、`403`、`412`、`429`、验证码、付费墙、超时、迁移、空壳页面或正文/PDF不完整时，读取 `../medical-source-failover/SKILL.md`，并按其中要求读取相应的国内信源登记、熔断和文献身份核验文件。该技能只负责寻找同一目标文献的可信访问路径，不改变本技能对文档类型、版本和最终证据资格的判断。若两套规则的要求不同，采用更严格的一项；只能取得 L5 元数据、摘要、解读、截图或不完整正文时，必须停止精确提取。
+When the original page or attachment shows `401`, `403`, `412`, `429`, a CAPTCHA, a paywall, a timeout, a relocation, an empty-shell page, or an incomplete body/PDF, read `../medical-source-failover/SKILL.md` and, as it requires, read the corresponding Chinese source registry, circuit-breaker, and document identity verification files. That skill is only responsible for finding a trusted access path to the same target document; it does not change this skill's judgment on document type, version, and final evidence eligibility. If the two rule sets differ, apply the stricter one; when only L5 metadata, abstracts, interpretations, screenshots, or an incomplete body of text can be obtained, precise extraction must stop.
 
-检索严格按以下顺序，命中即可停止：
+Search strictly in the following order, and stop as soon as one succeeds:
 
-1. 已核验入口中的 S/A 原始正文；
-2. 常规检索定位到的国内 S/A 原始正文；
-3. 用户指定国际指南或国内无覆盖时，检索国际 A 级官方正式指南；
-4. 使用 B 级平台发现原始出处；原始正文明确访问受限后，可使用 S/A 正式元数据页 + 指定 B+ 完整正文双重核验；
-5. 仍未取得原文时才进行一次全网 C 级检索。可以输出明确披露的背景转述，不得称为“权威原文”“原文要点”“正式依据”或“正文承载”。
+1. The S/A original text in verified entry points;
+2. The Chinese S/A original text located by regular search;
+3. When the user specifies an international guideline or China has no coverage, search official international A-tier formal guidelines;
+4. Use B-tier platforms to discover the original source; after the original text is clearly access-restricted, dual verification with the S/A formal metadata page + the designated B+ complete body of text may be used;
+5. Only when the original text is still unobtainable, run one web-wide C-tier search. A clearly disclosed background relay may be output, but it must not be called "authoritative original text", "original-text key points", "formal basis", or "body-of-text host".
 
-### 工具预算与停止条件
+### Tool Budget and Stop Conditions
 
-- 正常目标：1 次定向 `searchfree_search` + 1 次 `web_fetch`；已核验入口命中时通常只需 1 次 `web_fetch`。
-- 整个用户回合硬上限：最多 3 次搜索 + 3 次抓取，失败、超时、B+ 降级、C 级转述、补链和改稿全部计入，不能重置。
-- 同一阶段只访问一个最匹配域名，顺序执行；不得默认并行搜索多个国内分会或国际机构。
-- 国际通常 1 站、绝对最多 2 站。特定指南体系直达对应官网，不先跑默认五站。
-- 找到一份最新、身份确定、正文可核验且覆盖问题的权威规范性文件后立即停止。
+- Normal target: 1 targeted `searchfree_search` + 1 `web_fetch`; when a verified entry point is matched, usually only 1 `web_fetch` is needed.
+- Hard cap for the whole user turn: at most 3 searches + 3 fetches, counting failures, timeouts, B+ downgrades, C-tier relays, link patching, and draft rewrites alike, and it cannot be reset.
+- At the same stage, access only one best-matching domain, executed in order; do not search multiple Chinese subsocieties or international institutions in parallel by default.
+- Internationally, usually 1 site and absolutely at most 2. For a specific guideline system, go directly to the corresponding official website rather than running the default five sites first.
+- Stop immediately after finding one authoritative normative document that is current, has a confirmed identity, has a verifiable body of text, and covers the question.
 
-A 级权威性与访问优先级必须分开。`nhc.gov.cn`、`gov.cn`、`nmpa.gov.cn`、`cmde.org.cn`、`rs.yiigle.com`、`csco.org.cn` 等即使访问不稳定仍保留 A 级资格，但不得作为未命中主题时的第一个宽泛搜索目标。优先使用已核验的具体直达页、`cs.medjournals.cn`、`bi-dmp-cs.yiigle.com`、`cjournal.hep.com.cn`、同源附件、官方转载或正式期刊版本。只有入口表已有精确 `canonical_url`，或药监/医保/法规事实必须回到该主管机构时，才直接访问这些低优先级主站；遇到明确阻断后按熔断规则切换，不重复等待同一地址。
+A-tier authority and access priority must be kept separate. `nhc.gov.cn`, `gov.cn`, `nmpa.gov.cn`, `cmde.org.cn`, `rs.yiigle.com`, `csco.org.cn`, and similar sites retain A-tier eligibility even when access is unstable, but must not be the first broad search target for an unmatched topic. Prefer verified specific direct pages, `cs.medjournals.cn`, `bi-dmp-cs.yiigle.com`, `cjournal.hep.com.cn`, same-origin attachments, official reprints, or formal journal versions. Access these low-priority main sites directly only when the entry table already has an exact `canonical_url`, or when drug regulation/insurance/legal facts must go back to that competent authority; after a clear block, switch according to the circuit-breaker rules instead of waiting on the same address repeatedly.
 
-### C 级转述输出格式
+### C-tier Relay Output Format
 
 ```text
-来源：转述页面（C级，仅作背景）：[链接]({任意合法公开网页 URL})
-原始出处：{原始期刊或机构}｜{原始文献/指南完整标题}｜{年份或版本}｜{DOI/文号；未提供则明确写未提供}
-核验状态：未取得可核验原文，以下仅为该页面对原始出处的转述，不作为权威依据。
+Source: relay page (C-tier, background only): [Link]({any legal public web URL})
+Original source: {original journal or institution} | {full title of the original article/guideline} | {year or version} | {DOI/document number; if not provided, explicitly write not provided}
+Verification status: no verifiable original text was obtained; the following is only this page's relay of the original source and is not an authoritative basis.
 ```
 
-页面只写“来自权威期刊”但未给出可识别的期刊/机构、标题、年份/版本时，不满足转述披露要求。不得把多个转载页面计作多份独立证据。
+When a page only says "from an authoritative journal" without giving an identifiable journal/institution, title, or year/version, it does not meet the relay disclosure requirement. Multiple reprinted pages must not be counted as multiple independent pieces of evidence.
 
-## 药品信息专层
+## Dedicated Layer for Drug Information
 
-药物适应症、禁忌症、用法用量、不良反应优先查国家药监局、CDE、国家药品监督管理局药品评价中心/国家药品不良反应监测中心及官方批准说明书。必须匹配通用名、剂型、规格、给药途径、批准文号、上市许可持有人/生产企业和说明书版本；CDE 技术指导原则、医保支付限制、指南转述或 C 级页面均不能替代具体产品的批准说明书。
+For drug indications, contraindications, dosage, and adverse reactions, check the National Medical Products Administration, CDE, the Center for Drug Reevaluation/National Center for ADR Monitoring of the NMPA, and official approved package inserts first. The generic name, dosage form, strength, route of administration, approval number, marketing authorization holder/manufacturer, and package insert version must match; CDE technical guidelines, insurance payment restrictions, guideline relays, and C-tier pages cannot replace the approved package insert of a specific product.
 
-B+ 降级时不得绕过验证码或反自动化限制，不得为同一失败地址无限重试。最终核验结果必须同时列出两行：
+During a B+ downgrade, do not bypass CAPTCHAs or anti-automation limits, and do not retry the same failed address indefinitely. The final verification result must list two lines at the same time:
 
 ```text
-来源：原始元数据（{正式机构/期刊}）：[链接]({S/A URL})
-来源：正文承载（原始正文访问受限）：[链接]({B+ URL})
+Source: original metadata ({formal institution/journal}): [Link]({S/A URL})
+Source: body-of-text host (original text access restricted): [Link]({B+ URL})
 ```
 
-只有 B+ 页面、没有独立 S/A 元数据链接，或者标题/机构/版本/DOI 任一不一致时，结论只能是“仅可作为线索”。“指南解读”“共识解读”、编辑摘要、新闻、访谈、会议报道、病例讨论和科普即使位于 B+ 域名也不得作为最终依据。
+When there is only a B+ page without an independent S/A metadata link, or when any of title/institution/version/DOI is inconsistent, the only possible conclusion is "usable as a lead only". "Guideline interpretations", "consensus interpretations", editorial summaries, news, interviews, conference reports, case discussions, and popular science must not serve as the final basis even when they sit on a B+ domain.
 
-所有检索与抓取预算按整个用户回合累计，B+ 降级、校验失败和改稿都不得重置预算。已有一份现行正式指南足以覆盖用户问题时立即停止，不为“更完整”主动扩展第二、第三份指南；只有用户明确要求跨指南比较，或主指南确实不覆盖问题时才补充第二份。输出校验因链接域名失败时，优先删除未通过的辅助来源并保留已核验主指南；不得借改稿继续开启新一轮检索。
+All search and fetch budgets accumulate over the whole user turn, and B+ downgrades, validation failures, and draft rewrites must not reset the budget. Stop immediately when one current formal guideline is enough to cover the user's question; do not proactively expand to a second or third guideline for the sake of being "more complete"; add a second one only when the user explicitly asks for a cross-guideline comparison or when the main guideline truly does not cover the question. When output validation fails because of a link domain, prefer deleting the auxiliary source that failed and keeping the verified main guideline; do not use the draft rewrite as an excuse to start a new round of searching.
 
-## 文档类型硬门槛
+## Hard Document Type Threshold
 
-权威网站不等于该网站的每个页面都是权威依据。域名合格后，还必须判断文档类型。
+An authoritative website does not mean every page on it is an authoritative basis. Once the domain qualifies, the document type must also be judged.
 
-- 最终依据只接受正式指南/共识、规范/临床路径/质控标准、正式政策或监管文件及附件。正式期刊发表的指南/共识可以按其规范性文档类型纳入，但不能因“发表在期刊”自动成为最终依据。
-- 系统综述、Meta 分析、叙述性综述、范围综述、伞状综述、快速综述、专家综述和其他文献综述，不得出现在最终“来源”、下一阶段指南候选或正式学习轨道来源中；最多用于内部发现正式指南，并继续回溯规范性原文。
-- 随机对照试验、观察性研究、病例报告/系列、述评/来信、会议摘要和预印本等研究或学术讨论，也不得替代本产品所要求的规范性原文。
-- 科普、转载/摘编、访谈/媒体报道、面向公众的体检知识或体检解读、会议/培训/活动报道、营销或机构宣传，即使在白名单网站也不得作为最终依据。
-- 新闻、访谈或政策解读页若链接正式原文，该页只作发现线索，必须继续回溯并引用正式原文或附件。
-- 不得仅凭标题关键词判断；例如正式《健康体检管理办法》不应因含“体检”被误排除。
+- The final basis accepts only formal guidelines/consensus, standards/clinical pathways/quality control standards, and formal policy or regulatory documents and attachments. Guidelines/consensus published in formal journals may be included according to their normative document type, but they do not automatically become the final basis just because they were "published in a journal".
+- Systematic reviews, meta-analyses, narrative reviews, scoping reviews, umbrella reviews, rapid reviews, expert reviews, and other literature reviews must not appear in the final "source", the next-stage guideline candidates, or the sources of a formal learning track; at most they may be used internally to find formal guidelines, while continuing to trace back to the normative original text.
+- Research or academic discussion such as randomized controlled trials, observational studies, case reports/series, editorials/letters, conference abstracts, and preprints must not replace the normative original text required by this product.
+- Popular science, reprints/excerpts, interviews/media reports, public-facing physical examination knowledge or examination interpretations, conference/training/event reports, and marketing or institutional publicity must not serve as the final basis even on allowlisted websites.
+- When a news, interview, or policy interpretation page links to the formal original text, that page only serves as a discovery lead; you must continue to trace back to and cite the formal original text or attachment.
+- Do not judge by title keywords alone; for example, the formal "Health Examination Management Measures" should not be wrongly excluded because it contains "examination".
 
-## 时效性规则
+## Currency Rules
 
-- 同一主题优先选择最新且当前有效的正式版本，而不是单纯选择网页年份最大的结果。
-- 年份以文件的正式发布日期、修订日期或版本标识为准，不把网页更新时间当作文件版本。
-- 必须核对是否有更新、修订、替代或废止信息。旧版只能在仍有效、无新版或用于历史对比时使用，并明确说明原因。
+- For the same topic, prefer the latest and currently effective formal version rather than simply choosing the result with the largest web page year.
+- The year is based on the document's formal publication date, revision date, or version identifier; do not treat a web page update time as the document version.
+- You must check whether there is update, revision, replacement, or repeal information. An older version may be used only when it is still effective, when there is no new version, or for historical comparison, and the reason must be stated clearly.
 
-## 完整核验流程
+## Full Verification Flow
 
-1. 发现候选文件。
-2. 回溯官方页面、学会官网、正式期刊中的指南/共识原文或正式附件；先尝试原始正文，不得直接跳到 B+。
-3. 先核对文档类型，排除综述、原始研究、科普、转载、访谈、体检解读等非规范性原文。
-4. 核对完整名称、发布机构、发布日期/年份、版本和适用范围。
-5. 判断是否有后续更新、修订、替代文件或废止通知，优先最新有效版本。
-6. 涉及新旧变化时，必须同时取得新版和旧版原文。
-7. 医保内容必须回到正式目录、政策附件或地方医保局正式文件。
-8. 输出时只列与学习结论直接相关的规范性核心来源；使用 B+ 降级时同时列原始元数据与正文承载链接，并明确原始正文访问受限；周期末推荐下一阶段时可列 2-3 个已核验的正式指南候选。
+1. Discover candidate documents.
+2. Trace back to the original text or formal attachment of the guideline/consensus on official pages, society websites, or formal journals; try the original body of text first and do not jump straight to B+.
+3. Check the document type first, excluding reviews, primary research, popular science, reprints, interviews, physical examination interpretations, and other non-normative texts.
+4. Check the full name, issuing institution, publication date/year, version, and scope of application.
+5. Determine whether there is a subsequent update, revision, replacement document, or repeal notice, and prefer the latest effective version.
+6. When changes between old and new are involved, you must obtain both the new and the old original texts.
+7. Insurance content must go back to the formal catalog, policy attachment, or formal document of the local medical insurance bureau.
+8. In the output, list only the normative core sources directly related to the learning conclusion; when a B+ downgrade is used, list both the original metadata and the body-of-text host link, and state clearly that the original text is access-restricted; at the end of a cycle, 2-3 verified formal guideline candidates may be listed when recommending the next stage.
 
-快速核验不机械执行上述 8 步：完成“权威机构/正式域 + 规范性文档类型 + 标题/机构/年份版本 + 正文覆盖”后即可输出。只有命中完整核验触发项，或发现身份冲突、版本疑点、正文不完整时，才进入完整流程。
+Fast verification does not mechanically execute the 8 steps above: output is allowed after "authoritative institution/official domain + normative document type + title/institution/year-version + body-of-text coverage" is complete. Enter the full flow only when a full-verification trigger is hit, or when an identity conflict, a version doubt, or an incomplete body of text is found.
 
-## 禁止项
+## Prohibitions
 
-不得编造文件名、文号、机构、年份、链接、版本关系、医保支付条件、药物剂量或本院能力。
+Do not fabricate file names, document numbers, institutions, years, links, version relationships, insurance payment conditions, drug dosages, or your own hospital's capabilities.
 
-未实际检索时只能写“未取得可核验权威来源”或“需人工核验”。已经执行 A/B/C 顺序检索但无法访问原文时，可以按上方格式披露 C 级背景转述；不得把它伪装成已确认更新、权威原文或正式依据。
+When no actual search has been performed, you may only write "no verifiable authoritative source was obtained" or "manual verification is required". When the A/B/C ordered search has been performed but the original text is inaccessible, a C-tier background relay may be disclosed in the format above; do not disguise it as a confirmed update, an authoritative original text, or a formal basis.
 
-检索到的只有综述或研究论文时，也应按“未取得可核验正式指南”处理，不能用它们补齐最终来源或下一阶段候选。
+When the search yields only reviews or research papers, treat it as "no verifiable formal guideline was obtained" as well, and do not use them to fill in the final source or the next-stage candidates.
 
-## 输出要求
+## Output Requirements
 
-医生端只输出简洁核验结论：
+The doctor-facing side outputs only a concise verification conclusion:
 
 ```text
-【信源核验】
-核验对象：{文件或主题}
-结论：{可作为学习依据 / 仅可作为线索 / 不建议使用}
-原因：{文档类型、机构、年份、原文可达性、是否为最新有效版本}
-来源：{文件名称}：[链接]({URL})
-边界：本核验仅用于学习依据判断，不提供诊疗、处方、医保报销或院内执行建议。
+[Source Verification]
+Verification target: {file or topic}
+Conclusion: {usable as a learning basis / usable as a lead only / not recommended for use}
+Reason: {document type, institution, year, original-text accessibility, whether it is the latest effective version}
+Source: {file name}: [Link]({URL})
+Boundary: this verification is only for judging the learning basis; it does not provide diagnosis or treatment, prescriptions, insurance reimbursement, or in-hospital execution advice.
 ```

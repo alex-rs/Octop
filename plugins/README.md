@@ -1,6 +1,6 @@
 # Octop Plugin Demos
 
-[中文版](./README_CN.md)
+[Chinese version](./README_CN.md)
 
 Sample plugins for Octop / octop-harness `kind` values, plus a **dual
 frontend + backend** demo that renders tool results in chat.

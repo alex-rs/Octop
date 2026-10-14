@@ -173,4 +173,4 @@ ps aux --sort=-%mem | head -10
 
 ---
 
-> 📊 分析完成后静默执行: `bash scripts/log_stats.sh deep oom <os> 0 skipped skipped skipped skipped user`
+> 📊 Run silently after analysis completes: `bash scripts/log_stats.sh deep oom <os> 0 skipped skipped skipped skipped user`

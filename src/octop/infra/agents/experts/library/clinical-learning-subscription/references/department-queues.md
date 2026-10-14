@@ -1,22 +1,22 @@
-# 科室学习队列参考
+# Department Learning Queue Reference
 
-本文件用于学习订阅选题，不用于生成疾病诊治或 SOP。
+This file is used to select topics for learning subscriptions and is not used to generate disease diagnosis and treatment or SOPs.
 
-| 科室 | 优先学习方向 |
+| Department | Priority learning directions |
 | --- | --- |
-| 消化内科 | 上消化道出血指南学习、急性胰腺炎指南学习、幽门螺杆菌共识学习、肝硬化并发症学习、消化内镜质控学习 |
-| 心血管内科 | 高血压基层诊疗学习、胸痛中心相关规范学习、心力衰竭指南学习、房颤抗凝学习、血脂管理学习 |
-| 呼吸内科 | 慢阻肺指南学习、哮喘管理学习、社区获得性肺炎学习、氧疗规范学习、肺栓塞识别学习 |
-| 神经内科 | 卒中识别与转诊学习、TIA学习、癫痫管理学习、眩晕诊疗规范学习、卒中二级预防学习 |
-| 内分泌科 | 2型糖尿病指南学习、低血糖识别学习、甲状腺疾病学习、骨质疏松学习、门慢门特政策学习 |
-| 全科/普通内科 | 高血压、糖尿病、慢阻肺、冠心病、卒中二级预防、老年多病共存、基层首诊转诊学习 |
-| 急诊科 | 胸痛、腹痛、中毒、创伤、休克、意识障碍等指南学习；不得生成急诊行动卡 |
-| 妇产科 | 妊娠期高血压、产后出血、高危妊娠管理、妊娠期糖尿病、围产期感染学习 |
-| 儿科 | 儿童发热、腹泻脱水、热性惊厥、儿童用药安全、急症识别与转诊学习 |
-| 检验科 | 危急值、标本采集保存、感染指标、凝血、生化、报告规范和质控学习 |
-| 放射/CT/MRI | 急腹症影像、卒中影像、造影剂安全、报告规范、检查适应证和医保政策学习 |
-| 超声医学科 | 腹部急症、胆道疾病、DVT、甲状腺结节、乳腺结节、床旁超声学习 |
-| 药剂/临床药学 | 基本药物、药品说明书修订、抗菌药物分级、集采、医保目录和用药安全学习 |
-| 医务/质控 | 核心制度、临床路径、单病种质控、医疗质量安全、转诊流程学习 |
-| 医保办 | 医保目录、DRG/DIP、门慢门特、转诊备案、药品耗材支付、医保审核学习 |
-| 病案室 | 病案首页、ICD编码、手术操作编码、主要诊断、DRG/DIP分组和病历质控学习 |
+| Gastroenterology | Upper gastrointestinal bleeding guideline learning, acute pancreatitis guideline learning, Helicobacter pylori consensus learning, cirrhosis complications learning, digestive endoscopy quality-control learning |
+| Cardiology | Primary-care diagnosis and treatment of hypertension learning, chest pain center standards learning, heart failure guideline learning, atrial fibrillation anticoagulation learning, lipid management learning |
+| Respiratory Medicine | COPD guideline learning, asthma management learning, community-acquired pneumonia learning, oxygen therapy standards learning, pulmonary embolism recognition learning |
+| Neurology | Stroke recognition and referral learning, TIA learning, epilepsy management learning, vertigo diagnosis and treatment standards learning, secondary stroke prevention learning |
+| Endocrinology | Type 2 diabetes guideline learning, hypoglycemia recognition learning, thyroid disease learning, osteoporosis learning, outpatient chronic and special disease policy learning |
+| General Practice/General Internal Medicine | Hypertension, diabetes, COPD, coronary heart disease, secondary stroke prevention, multimorbidity in the elderly, primary-care first-contact and referral learning |
+| Emergency Medicine | Guideline learning on chest pain, abdominal pain, poisoning, trauma, shock, impaired consciousness, and similar topics; emergency action cards must not be generated |
+| Obstetrics and Gynecology | Hypertensive disorders of pregnancy, postpartum hemorrhage, high-risk pregnancy management, gestational diabetes, perinatal infection learning |
+| Pediatrics | Pediatric fever, diarrheal dehydration, febrile seizures, pediatric medication safety, emergency recognition and referral learning |
+| Laboratory Medicine | Critical values, specimen collection and storage, infection markers, coagulation, biochemistry, reporting standards, and quality-control learning |
+| Radiology/CT/MRI | Acute abdomen imaging, stroke imaging, contrast agent safety, reporting standards, examination indications, and medical-insurance policy learning |
+| Ultrasound Medicine | Abdominal emergencies, biliary disease, DVT, thyroid nodules, breast nodules, point-of-care ultrasound learning |
+| Pharmacy/Clinical Pharmacy | Essential medicines, drug label revisions, antimicrobial stewardship tiers, centralized procurement, medical-insurance formulary, and medication safety learning |
+| Medical Administration/Quality Control | Core systems, clinical pathways, single-disease quality control, medical quality and safety, referral process learning |
+| Medical Insurance Office | Medical-insurance formulary, DRG/DIP, outpatient chronic and special disease programs, referral filing, drug and consumable payment, and insurance review learning |
+| Medical Records Room | Medical record front pages, ICD coding, surgical procedure coding, principal diagnosis, DRG/DIP grouping, and medical record quality-control learning |

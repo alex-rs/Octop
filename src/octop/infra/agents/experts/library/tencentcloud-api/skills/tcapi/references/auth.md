@@ -1,41 +1,41 @@
-# 配置 TCCLI（凭证）
+# Configuring TCCLI (credentials)
 
-> **重要**：`tccli auth login`（浏览器 OAuth 授权登录）是**较新版本**才提供的子命令。**旧版 tccli 没有 `auth` 子命令**，凭证只能通过 `tccli configure` 写入。因此配置凭证前**必须先探测当前版本是否支持 `auth login`**，再决定走哪条路径，切勿假设 `auth login` 一定存在。
+> **Important**: `tccli auth login` (browser OAuth authorization login) is a subcommand provided only by **newer versions**. **Older tccli has no `auth` subcommand**, and credentials can only be written through `tccli configure`. Therefore, before configuring credentials you **must first probe whether the current version supports `auth login`** and only then decide which path to take; never assume `auth login` definitely exists.
 
-## Step 0：探测 auth login 能力（必做）
+## Step 0: Probe the auth login capability (mandatory)
 
 ```sh
 tccli auth login --help >/dev/null 2>&1 && echo "AUTH_LOGIN_OK" || echo "AUTH_LOGIN_UNSUPPORTED"
 ```
 
-- 输出 `AUTH_LOGIN_OK` → 当前版本支持浏览器授权登录，走**路径 A**。
-- 输出 `AUTH_LOGIN_UNSUPPORTED`（报 `invalid choice`、`no such` 之类）→ 版本过旧，走**路径 B**。
+- Outputs `AUTH_LOGIN_OK` → the current version supports browser authorization login; take **path A**.
+- Outputs `AUTH_LOGIN_UNSUPPORTED` (reporting `invalid choice`, `no such`, or the like) → the version is too old; take **path B**.
 
 ---
 
-## 路径 A：浏览器授权登录（新版，推荐）
+## Path A: Browser authorization login (newer version, recommended)
 
-无需手填 SecretId/SecretKey，登录成功后凭证会自动写入本地。
+No need to fill in SecretId/SecretKey by hand; after a successful login the credentials are written locally automatically.
 
 ```sh
 tccli auth login
 ```
 
-执行后 TCCLI 会在本机起一个临时端口，并打印 OAuth 授权链接；通常也会自动用默认浏览器打开该链接。用户在浏览器中完成登录与授权后，腾讯云会回调到该本地端口，TCCLI 收到回调即写入凭证并退出。若浏览器未自动打开，请将终端里打印的链接复制到浏览器中打开。成功后会提示「登录成功, 密钥凭证已被写入: ...」，可用 `tccli cvm DescribeRegions` 验证。
+After running it, TCCLI starts a temporary port on the local machine and prints the OAuth authorization link; it usually also opens that link automatically in the default browser. After the user completes the login and authorization in the browser, Tencent Cloud calls back to that local port, and TCCLI writes the credentials and exits upon receiving the callback. If the browser does not open automatically, copy the link printed in the terminal and open it in the browser. On success it reports "login succeeded, key credentials have been written: ...", which can be verified with `tccli cvm DescribeRegions`.
 
-**Agent 场景**：当 Agent 通过工具执行 `tccli auth login` 时，该命令会**一直阻塞**直到用户完成浏览器登录（或超时）。Agent 应明确告知用户：「请打开终端/工具输出中显示的授权链接，在浏览器中完成登录；完成后该命令会自动结束。」
+**Agent scenario**: when the Agent executes `tccli auth login` through a tool, that command **blocks indefinitely** until the user completes the browser login (or it times out). The Agent should clearly tell the user: "please open the authorization link shown in the terminal/tool output and complete the login in the browser; the command will end automatically once you are done."
 
-### Agent 场景的自动化与防误判（实测关键结论）
+### Automation and false-positive prevention in the Agent scenario (key conclusions from real testing)
 
-把 `tccli auth login` 交给 Agent 工具执行时，有五个必守规则：
+When `tccli auth login` is handed to an Agent tool to execute, there are five rules that must be followed:
 
-1. **必须 `BROWSER=echo` + 后台运行**：无头/服务器环境下 `webbrowser.open` 会失败并让 tccli 直接 `sys.exit(1)`。写法：`BROWSER=echo nohup tccli auth login > /tmp/tccli_auth.log 2>&1 &`
-2. **监听要用有界窗口，禁止无限阻塞**：等待授权的正确姿势是「有界监听凭证文件」——每窗循环最多 60 秒（必须低于工具单次执行超时），每 3 秒比对一次 `~/.tccli/<profile>.credential` 与 `/tmp/tccli_auth.log` 的 mtime。凭证比日志新 → 授权落盘，立即验证。单窗到时未果就再开一窗（连开 3~5 窗），始终不重发链接、不判失败。
-3. **成功判据 = 凭证文件 mtime > 登录日志 mtime**，并最终以 `tccli sts GetCallerIdentity` 实测身份为准。日志出现「登录成功, 密钥凭证已被写入」同义。**凭证已落盘就绝不再跑 `auth login`**——重复登录会作废旧链接，逼用户再点一次。
-4. **工具执行超时 ≠ 登录失败**：监听窗命令若被工具超时杀掉，紧接着单独跑一次验证（比较 mtime + GetCallerIdentity），结论以凭证文件为准，绝不据此重发链接。这是最常见的误判来源。
-5. **先查凭证再决定重登**：任何「Token 失效/未授权/上次超时」的表象，先比对 mtime + `GetCallerIdentity` 实测；确认凭证真无效后才重新发起登录。
+1. **`BROWSER=echo` + background execution is mandatory**: in a headless/server environment `webbrowser.open` fails and makes tccli call `sys.exit(1)` outright. The form: `BROWSER=echo nohup tccli auth login > /tmp/tccli_auth.log 2>&1 &`
+2. **Listening must use bounded windows; unbounded blocking is forbidden**: the correct way to wait for authorization is "bounded listening on the credential file" — each window loops for at most 60 seconds (must be below the tool's single-execution timeout), comparing the mtimes of `~/.tccli/<profile>.credential` and `/tmp/tccli_auth.log` once every 3 seconds. Credential newer than the log → the authorization has landed on disk, so verify immediately. If a window times out with no result, open another one (3~5 windows in a row), and always neither resend the link nor declare failure.
+3. **Success criterion = credential file mtime > login log mtime**, with the identity finally confirmed by actually running `tccli sts GetCallerIdentity`. The log line "login succeeded, key credentials have been written" is synonymous. **Once the credential has landed on disk, never run `auth login` again** — repeating the login invalidates the old link and forces the user to click again.
+4. **A tool execution timeout ≠ login failure**: if the listening-window command is killed by a tool timeout, immediately run the verification once on its own (compare mtime + GetCallerIdentity); the credential file is the source of truth, and the link is never resent on this basis. This is the most common source of misjudgement.
+5. **Check the credential before deciding to log in again**: for any symptom of "token expired / unauthorized / last attempt timed out", first compare mtime + actually run `GetCallerIdentity`; only after confirming the credential is truly invalid should a new login be initiated.
 
-验证脚本（所有场景最终统一走这一步）：
+Verification script (every scenario eventually goes through this step):
 
 ```sh
 CRED="$HOME/.tccli/default.credential"; LOG=/tmp/tccli_auth.log
@@ -44,74 +44,74 @@ LOG_TS=$(stat -c %Y "$LOG" 2>/dev/null || echo 0)
 if [ "$CRED_TS" -gt "$LOG_TS" ]; then tccli sts GetCallerIdentity; else tail -5 "$LOG"; fi
 ```
 
-> 远程/容器部署注意：OAuth 回调发往 tccli 进程监听的 `localhost:9000-9100`。若用户浏览器与 tccli 不在同一台机器（如 Octop 部署在服务器、用户在本地电脑点链接），回调到不了 tccli，凭证永远不会写入。此时改用：用户在**自己电脑**上装 tccli 并 `tccli auth login`，再把生成的 `~/.tccli/default.credential`（OAuth 类型，含 refreshToken 可自动续期）复制到 Octop 服务器的同路径；或退回子账号密钥方式（`tccli configure` 由用户自行填写）。
+> Note for remote/container deployments: the OAuth callback goes to `localhost:9000-9100`, where the tccli process listens. If the user's browser and tccli are not on the same machine (e.g. Octop is deployed on a server while the user clicks the link on a local computer), the callback cannot reach tccli and the credentials will never be written. In that case switch to: the user installs tccli on **their own computer** and runs `tccli auth login`, then copies the generated `~/.tccli/default.credential` (OAuth type, containing a refreshToken that renews automatically) to the same path on the Octop server; or fall back to the sub-account key approach (`tccli configure`, filled in by the user).
 
-**多账户与登出**
+**Multiple accounts and logout**
 
-- 默认账户凭证保存在 `default.credential`。指定账户名：`tccli auth login --profile user1`，凭证写入 `user1.credential`。
-- 登出默认账户：`tccli auth logout`；登出指定账户：`tccli auth logout --profile user1`。
+- The default account credential is stored in `default.credential`. To name an account: `tccli auth login --profile user1`, and the credential is written to `user1.credential`.
+- Log out of the default account: `tccli auth logout`; log out of a named account: `tccli auth logout --profile user1`.
 
 ---
 
-## 路径 B：旧版兜底（无 auth 子命令）
+## Path B: Fallback for older versions (no auth subcommand)
 
-旧版 tccli 不支持浏览器授权，只能通过 `tccli configure` 写入凭证。给用户两个选择：
+Older tccli does not support browser authorization and can only write credentials through `tccli configure`. Two options for the user:
 
-### B-1（推荐）：升级 tccli，之后即可用路径 A
+### B-1 (recommended): upgrade tccli, after which path A works
 
 ```sh
 pip install -U tccli
-# 若从 3.0.252.3 以下版本升级，需先卸载再装：
+# If upgrading from a version below 3.0.252.3, uninstall first and then install:
 # pip uninstall tccli jmespath && pip install tccli
 ```
 
-升级后重新执行 Step 0，一般即可支持 `tccli auth login`。
+After upgrading, run Step 0 again and `tccli auth login` will generally be supported.
 
-### B-2：直接用 configure 配置（不升级也能用）
+### B-2: Configure directly with configure (works without upgrading)
 
-**由用户在自己的终端执行**（Agent 严禁代填、严禁索要或打印密钥）：
+**Executed by the user in their own terminal** (the Agent must never fill it in, never ask for the keys, and never print them):
 
 ```sh
-# 交互式（推荐，密钥不进 shell 历史）
+# Interactive (recommended; keys stay out of the shell history)
 tccli configure
-# 按提示依次填：SecretId、SecretKey、默认地域（如 ap-guangzhou）、输出格式（json）
+# Fill in as prompted: SecretId, SecretKey, default region (such as ap-guangzhou), output format (json)
 ```
 
-密钥来源：腾讯云控制台 → 访问管理 CAM → API 密钥管理，创建/查看主账号或子账号密钥。**子账号**需挂计费查询权限（如 `QcloudFinanceFullAccess` 或只读账单策略），否则查询余额会报权限错误。配置后凭证存在本地 `~/.tccli/`。
+Where keys come from: Tencent Cloud console → Access Management CAM → API Key Management, to create/view the primary account or sub-account keys. A **sub-account** needs a billing query permission attached (such as `QcloudFinanceFullAccess` or a read-only bill policy), otherwise querying the balance reports a permission error. After configuration the credentials live locally in `~/.tccli/`.
 
 ---
 
-## 安全红线（两条路径都适用）
+## Security red lines (applicable to both paths)
 
-- 严禁向用户索要 SecretId/SecretKey，严禁 Agent 代替用户执行 `tccli configure` 明文写入密钥。
-- 拒绝任何可能打印凭证的操作，尤其是 `tccli configure list`（会回显 secretId/secretKey）。
-- 密钥属敏感信息，只应存在本地 `~/.tccli/`，不要贴到聊天里。
+- It is strictly forbidden to ask the user for SecretId/SecretKey, and strictly forbidden for the Agent to run `tccli configure` on the user's behalf to write keys in plaintext.
+- Refuse any operation that might print credentials, especially `tccli configure list` (which echoes secretId/secretKey).
+- Keys are sensitive information and should exist only locally in `~/.tccli/`; do not paste them into chat.
 
 ---
 
-## 凭证优先级与账号切换排查（实测关键结论）
+## Credential precedence and account-switch troubleshooting (key conclusions from real testing)
 
-> 以下结论来自真实环境实测，已推翻"环境变量 > 配置文件"的通用 SDK 链直觉，必须作为排查账号切换问题的标准认知。
+> The conclusions below come from tests in a real environment and overturn the common SDK-chain intuition of "environment variables > configuration file"; they must serve as the standard understanding for troubleshooting account-switch problems.
 
-### 1. 凭证优先级：显式 `--profile` 实际高于环境变量（反直觉）
+### 1. Credential precedence: an explicit `--profile` is actually higher than environment variables (counter-intuitive)
 
-- 通用认知认为凭证链为 `参数 > 环境变量 > 配置文件`，profile 只是换文件、仍会被环境变量压过。
-- **实测（tccli 3.1.x）相反**：一旦显式指定 `--profile`，tccli 会从对应 `.credential` 文件读出 secretId/secretKey 并**显式传给 SDK**，从而**绕开环境变量的读取分支**。
-- 因此遇到"切换账号不生效/切不动"时，优先建议用户用 `--profile` + `auth login --profile <name>` 隔离目标账号，而非只让用户去改环境变量。
+- The common understanding holds that the credential chain is `argument > environment variable > configuration file`, and that a profile merely switches files while still being overridden by environment variables.
+- **Real testing (tccli 3.1.x) shows the opposite**: once `--profile` is explicitly specified, tccli reads secretId/secretKey from the corresponding `.credential` file and **passes them explicitly to the SDK**, thereby **bypassing the environment-variable reading branch**.
+- Therefore, when "switching accounts does not take effect / cannot be switched", first suggest the user isolate the target account with `--profile` + `auth login --profile <name>`, rather than only telling the user to change environment variables.
 
-### 2. 排查"账号切不动"的标准动作（按顺序）
+### 2. Standard actions for troubleshooting "the account cannot be switched" (in order)
 
-1. `tccli sts GetCallerIdentity` 看当前身份（确认实际生效的是哪个 UIN）。
-2. `env | grep -i TENCENTCLOUD` 看是否有 `TENCENTCLOUD_SECRET_ID` / `TENCENTCLOUD_SECRET_KEY` 环境变量覆盖。
-3. 检查 `~/.tccli/` 下有哪些 profile 及 `.credential`（`ls ~/.tccli/`）。
-4. 若"带环境变量时不带 --profile 返回旧账号、带 --profile 返回新账号" → 确诊"环境变量干扰"，给出方案：统一用 `--profile <name>` 隔离（推荐），或当前 shell `unset TENCENTCLOUD_SECRET_ID TENCENTCLOUD_SECRET_KEY`，或单条命令 `env -u TENCENTCLOUD_SECRET_ID -u TENCENTCLOUD_SECRET_KEY tccli ...`。
+1. `tccli sts GetCallerIdentity` to see the current identity (confirm which UIN is actually in effect).
+2. `env | grep -i TENCENTCLOUD` to see whether `TENCENTCLOUD_SECRET_ID` / `TENCENTCLOUD_SECRET_KEY` environment variables are overriding it.
+3. Check which profiles and `.credential` files exist under `~/.tccli/` (`ls ~/.tccli/`).
+4. If "without --profile and with the environment variable it returns the old account, while with --profile it returns the new account" → this confirms "environment variable interference"; provide the options: isolate consistently with `--profile <name>` (recommended), or `unset TENCENTCLOUD_SECRET_ID TENCENTCLOUD_SECRET_KEY` in the current shell, or a single command `env -u TENCENTCLOUD_SECRET_ID -u TENCENTCLOUD_SECRET_KEY tccli ...`.
 
-### 3. 识别"父进程注入的环境变量"
+### 3. Recognizing "environment variables injected by a parent process"
 
-- 当环境变量出现在进程 env 中、却搜遍 `~/.zshrc` / `.zprofile` / `.zshenv` / `launchctl` / `~/Library/LaunchAgents` 都找不到来源时，**应判断为启动当前工具/IDE 进程的父进程注入**，并沿进程树继承给所有子进程。
-- 此类变量不落盘于任何文件，改 shell 配置无法清除；不要引导用户去改永远改不掉的地方，直接给"用 --profile 隔离"或"在该工具/IDE 的启动环境里清除"的建议。
+- When an environment variable appears in a process's env but searching all of `~/.zshrc` / `.zprofile` / `.zshenv` / `launchctl` / `~/Library/LaunchAgents` cannot find its source, **it should be judged as injected by the parent process that started the current tool/IDE process**, and inherited down the process tree to all child processes.
+- Such variables are not written to any file, so changing the shell configuration cannot clear them; do not send the user to change something that can never be changed, and instead advise "isolate with --profile" or "clear it in the startup environment of that tool/IDE".
 
-### 4. 避免假阳性排查
+### 4. Avoiding false-positive troubleshooting
 
-- 用 `launchctl getenv X && echo "存在"` 这类写法，空字符串也会让退出码为 0，从而**误报"存在"**。应显示变量实际取值再判断。
-- 递归 `grep ~` 遍历家目录易超时中断（退出码 137），应限定目录或加超时处理。
+- With a pattern like `launchctl getenv X && echo "exists"`, an empty string still gives exit code 0, producing a **false report of "exists"**. Display the variable's actual value before judging.
+- A recursive `grep ~` over the home directory easily times out and is interrupted (exit code 137); restrict the directory or add timeout handling.

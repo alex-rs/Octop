@@ -1,107 +1,107 @@
 ---
 name: insurance-policy-learning
-description: 为基层医生学习小助手生成地区医保政策学习内容。支持每周二、周五或按需的最新变化摘要，也支持近一年／指定区间的重点政策回顾学习。只输出政策原文摘要、待本地确认事项和权威信源，不输出报销结论、支付比例、HIS提醒、病历要求或医院执行承诺。
+description: Generate regional medical insurance policy learning content for the primary-care doctor learning assistant. Supports a summary of the latest changes every Tuesday and Friday or on demand, and also a review of key policies over the past year or a specified interval. Outputs only summaries of the policy original text, items pending local confirmation, and authoritative sources; does not output reimbursement conclusions, payment ratios, HIS reminders, medical record requirements, or hospital execution commitments.
 metadata:
   octop:
     emoji: "🏥"
     label:
-      zh: "医保政策学习"
+      zh: "Insurance Policy Learning"
       en: "Insurance Policy Learning"
     summary:
-      zh: "摘要地区医保正式文件变化，并标明待本地确认事项。"
+      zh: "Summarize changes in regional insurance formal documents and flag items pending local confirmation."
       en: "Summarize local insurance policy changes for learning, not claims."
 ---
 
-# 地区医保政策学习
+# Regional Medical Insurance Policy Learning
 
-本 skill 有两种模式：
+This skill has two modes:
 
-| 模式 | 覆盖范围 | 使用模板 | 校验模块 |
+| Mode | Coverage | Template used | Validation module |
 | --- | --- | --- | --- |
-| 最新变化 | 最近一周／自上次推送以来 | 地区医保政策变化学习 | `insurance_policy_learning` |
-| 长周期回顾 | 近一年、本年度、去年至今或用户指定区间 | 医保政策回顾学习（长周期） | `insurance_policy_retrospective` |
+| Latest changes | The past week / since the last push | Regional Insurance Policy Change Learning | `insurance_policy_learning` |
+| Long-cycle review | The past year, this year, last year to date, or a user-specified interval | Insurance Policy Review Learning (Long Cycle) | `insurance_policy_retrospective` |
 
-用户说「只看本周变化」用前者；说「近一年重点政策」「今年有哪些新政策」「回顾一下」用后者。定时推送默认用最新变化模式；用户可另外按需请求回顾。
+If the user says "only this week's changes", use the former; if they say "key policies of the past year", "what new policies are there this year", or "review it for me", use the latter. Scheduled pushes use the latest-changes mode by default; the user may additionally request a review on demand.
 
-## 必读文件
+## Required Files
 
-起草前必须先读取：
+Before drafting, you must read:
 
-- `../../USER.md`（脚本生成的只读摘要）
+- `../../USER.md` (script-generated read-only summary)
 - `../../references/compliance-boundary.md`
 - `../../references/source-policy.yaml`
 - `../../references/output-templates.md`
 
-## 使用档案
+## Using the Profile
 
-优先调用 `../../scripts/clinical_profile.py get` 获取结构化档案；`USER.md` 只作为脚本生成的只读摘要。不得直接编辑 `USER.md`。
+Prefer calling `../../scripts/clinical_profile.py get` to obtain the structured profile; `USER.md` serves only as the script-generated read-only summary. Do not edit `USER.md` directly.
 
-从档案获取：
+Obtain from the profile:
 
-- 省、市、区县
-- 医院
-- 科室和科室系统
-- 医院能力边界
+- Province, city, district or county
+- Hospital
+- Department and department system
+- Hospital capability boundaries
 
-如果地区登记不完整，先提示补全地区，不生成正式医保政策学习内容。
+If the regional registration is incomplete, first prompt the user to complete the region; do not generate formal insurance policy learning content.
 
-## 地区匹配
+## Region Matching
 
-只使用医生登记地区相关政策：
+Use only policies related to the doctor's registered region:
 
-1. 优先区县正式文件。
-2. 区县无正式文件时，回溯到市级正式文件。
-3. 市级无正式文件时，回溯到省级正式文件。
-4. 必须明确本地执行口径需以医保办确认为准。
+1. Prefer formal district/county documents.
+2. When there is no formal district/county document, fall back to formal city-level documents.
+3. When there is no formal city-level document, fall back to formal provincial documents.
+4. You must state clearly that the local application standard must be confirmed with the medical insurance office.
 
-## 信源要求
+## Source Requirements
 
-最终依据只能使用医保局、政府部门、卫健委或其他正式机构发布的原文页面或正式附件。公众号、新闻、商业网站和转载材料只能作为线索，不得作为最终依据。
+The final basis may only use original pages or formal attachments published by the medical insurance bureau, government departments, health commissions, or other formal institutions. WeChat official accounts, news, commercial websites, and reprint material may only serve as leads and must not serve as the final basis.
 
-涉及“新增、调出、扩大、缩小、调整”时，必须同时取得新旧正式文件并可对照；否则只能写“版本差异需人工核验”。
+When "added, removed, expanded, narrowed, or adjusted" is involved, you must obtain both the old and the new formal documents and be able to compare them; otherwise you may only write "version differences require manual verification".
 
-## 输出边界
+## Output Boundaries
 
-只输出：
+Output only:
 
-- 政策文件名称、发布机构、生效日期
-- 政策原文摘要
-- 需要本地医保办确认的事项
-- 权威信源链接
-- 不作为报销依据的提示
-- 来源行必须写成 `来源：{文件或页面名称}：[链接]({URL})`。链接文字固定为“链接”，不得裸露长 URL。
+- Policy document title, issuing body, effective date
+- Summary of the policy original text
+- Items that need confirmation by the local medical insurance office
+- Authoritative source link
+- A note that this is not grounds for reimbursement
+- The source line must be written as `Source: {document or page name}: [Link]({URL})`. The link text is fixed as "Link", and long URLs must not be exposed.
 
-不得输出：
+Do not output:
 
-- 临床行动建议
-- HIS 提醒或系统规则
-- 病历书写要求
-- 报销结论、支付比例或支付条件承诺
-- 某项目在用户所在医院一定可报销的判断
+- Clinical action recommendations
+- HIS reminders or system rules
+- Medical record writing requirements
+- Reimbursement conclusions, payment ratios, or payment condition commitments
+- Judgments that a certain item can definitely be reimbursed at the user's hospital
 
-## 长周期回顾模式
+## Long-Cycle Review Mode
 
-用户要求回顾近一年或指定区间时：
+When the user asks for a review of the past year or a specified interval:
 
-1. **先确认回顾区间**并在输出中写明（如 2025-08-01 至 2026-07-31）。用户说「近一年」按当前日期往前推 12 个月；说「今年」按本年度 1 月 1 日起算。
-2. **检索范围**同样遵守区县 → 市 → 省的地区匹配规则，并可纳入国家级重点政策；在输出中说明覆盖了哪些层级。
-3. **按发布时间排序**，便于用户看到政策演进脉络。
-4. **必须标注每份文件的状态**：现行有效 / 已废止 / 已被替代。这是长周期回顾特有的风险点——不得把失效政策当作现行有效呈现。发现被替代关系时，写明由哪份新文件替代。
-5. **按主题归纳学习提示**（如价格调整、慢特病管理、支付方式改革），而不是简单罗列文件。
-6. 每份文件独立给出来源行；区间内未检索到可回溯权威原文时如实说明，不用二手平台补齐，也不用旧文件凑数。
-7. 数量控制：优先选择对基层医生影响最大的重点政策，避免一次列出过多文件；用户可要求继续展开。
+1. **First confirm the review interval** and state it in the output (e.g. 2025-08-01 to 2026-07-31). If the user says "the past year", count back 12 months from the current date; if they say "this year", count from January 1 of the current year.
+2. **Search scope** likewise follows the district/county → city → province region matching rule and may include national key policies; state in the output which levels were covered.
+3. **Sort by publication date** so the user can see the policy evolution.
+4. **You must mark the status of each document**: currently in force / repealed / superseded. This is a risk point specific to long-cycle review — do not present an invalid policy as currently in force. When a supersession relationship is found, state which new document supersedes it.
+5. **Summarize learning tips by topic** (such as price adjustments, chronic and special disease management, payment method reform), rather than simply listing documents.
+6. Give each document its own source line; if no traceable authoritative original text can be found within the interval, say so honestly rather than padding with second-hand platforms or padding with old documents.
+7. Quantity control: prefer the key policies with the greatest impact on primary-care doctors and avoid listing too many documents at once; the user may ask to continue expanding.
 
-长周期回顾的输出边界与最新变化模式完全一致——仍然只做原文摘要与学习提示，**不给报销结论、支付比例或院内结算口径**，结尾保留本地确认提示。
+The output boundaries of the long-cycle review are exactly the same as the latest-changes mode — still only original-text summaries and learning tips, **no reimbursement conclusions, payment ratios, or in-hospital settlement standards**, and the local confirmation note is kept at the end.
 
-## 输出要求
+## Output Requirements
 
-**输出语言与格式**：全程使用简体中文；只输出最终正文，不输出思考、推理、检索或执行过程（禁止出现 I'll、Let me、搜索过程、检索日志等过程语句）；执行检索时静默，只在正文生成后输出。
+**Output language and format**: use Simplified Chinese throughout; output only the final body text, not your thinking, reasoning, search, or execution process (process statements such as I'll, Let me, search process, or retrieval logs are prohibited); stay silent while searching, and output only after the body text is generated.
 
-最新变化模式使用 `../../references/output-templates.md` 中的“地区医保政策变化学习”模板；长周期回顾使用“医保政策回顾学习（长周期）”模板。
+The latest-changes mode uses the "Regional Insurance Policy Change Learning" template in `../../references/output-templates.md`; the long-cycle review uses the "Insurance Policy Review Learning (Long Cycle)" template.
 
-发送前必须运行或按同等规则检查：
+Before sending, you must run or check by equivalent rules:
 
 - `../../scripts/validate_output.py --module insurance_policy_learning`
-- 长周期回顾用 `../../scripts/validate_output.py --module insurance_policy_retrospective`
+- For the long-cycle review use `../../scripts/validate_output.py --module insurance_policy_retrospective`
 
-无可靠更新时可以使用 `--allow-no-source`，但必须明确说明未发现可回溯权威原文的更新。
+When there are no reliable updates you may use `--allow-no-source`, but you must state clearly that no update with a traceable authoritative original text was found.

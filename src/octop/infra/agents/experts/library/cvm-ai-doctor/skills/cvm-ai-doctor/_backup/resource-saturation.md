@@ -736,7 +736,7 @@ Scenario 4: TCP Retransmits
    Step 3: vmstat swap activity
    
 5. Apply Root Cause Inference:
-   - MySQL占用8.2GB (82%)
+   - MySQL is using 8.2GB (82%)
    - RSS growing 100MB/15s
    - Swap in > 100 KB/s
    → Scenario 1: Memory Leak

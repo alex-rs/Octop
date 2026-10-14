@@ -11,11 +11,11 @@ sources: []
 
 ## Scope
 
-尚未设定。首次使用时由用户确认知识主题、长期问题和排除范围。
+Not set yet. On first use, the user confirms the knowledge topic, the long-term questions, and the exclusion scope.
 
 ## Current Synthesis
 
-暂无。没有原始来源时不得生成事实性综合。
+None yet. No factual synthesis may be produced without raw sources.
 
 ## Knowledge Map
 
@@ -24,4 +24,4 @@ sources: []
 
 ## Open Gaps
 
-- 等待首批来源。
+- Awaiting the first batch of sources.

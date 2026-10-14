@@ -1,93 +1,93 @@
 ---
 name: pptx
-description: "当涉及到 .pptx 文件的任何操作时使用此技能——无论是作为输入、输出还是两者兼有。包括：创建幻灯片、演示文稿或路演材料；读取、解析或提取任何 .pptx 文件中的文本（即使提取的内容将用于其他地方，如邮件或摘要）；编辑、修改或更新现有演示文稿；合并或拆分幻灯片文件；处理模板、布局、演讲者备注或批注。当用户提到“演示文稿”、”幻灯片“、”PPT“或引用 .pptx 文件名时触发，无论他们之后打算如何使用内容。如果需要打开、创建或操作 .pptx 文件，就使用此技能。"
+description: "Use this skill for any operation involving .pptx files - whether as input, output or both. This includes: creating slides, presentations or pitch decks; reading, parsing or extracting text from any .pptx file (even when the extracted content will be used elsewhere, such as in an email or a summary); editing, modifying or updating an existing presentation; merging or splitting slide files; and working with templates, layouts, speaker notes or comments. It triggers when the user mentions “presentation”, “slides” or “PPT”, or refers to a .pptx filename, regardless of how they intend to use the content afterwards. If you need to open, create or manipulate a .pptx file, use this skill."
 license: Proprietary. LICENSE.txt has complete terms
 metadata:
   builtin_skill_version: "1.1"
   octop:
     emoji: "📽️"
     label:
-      zh: "PPT 演示"
+      zh: "PPT Presentations"
       en: "Presentations"
     summary:
-      zh: "创建、读取、编辑或拆分 .pptx 演示文稿。"
+      zh: "Create, read, edit or split .pptx presentations."
       en: "Create, read, edit, or split .pptx presentations."
 ---
 
-> **重要：** 所有 `scripts/` 路径都相对于此技能目录。
-> 运行方式：`cd {this_skill_dir} && python scripts/...`
-> 或使用 `execute_shell_command` 的 `cwd` 参数。
+> **Important:** All `scripts/` paths are relative to this skill directory.
+> How to run: `cd {this_skill_dir} && python scripts/...`
+> Or use the `cwd` parameter of `execute_shell_command`.
 
-# PPTX 技能
+# PPTX Skill
 
-## 前置依赖
+## Prerequisites
 
-- **markitdown[pptx]**：从演示文稿中提取文本
-- **Pillow**：生成缩略图网格
-- **pptxgenjs**（`npm install -g pptxgenjs`）：从零开始创建演示文稿
-- **LibreOffice**（`soffice`）：演示文稿转 PDF
-- **pdftoppm**（poppler-utils）：PDF 转图片，用于缩略图/视觉工作流
-- 如果 `pdftoppm` 不可用，可使用 Python 备选方案 `pdf2image`。
-- 在 Windows 上，依赖项必须已安装并在 `PATH` 中可用；如果缺失，报告依赖问题并停止（不要反复重试）。
+- **markitdown[pptx]**: extract text from presentations
+- **Pillow**: generate thumbnail grids
+- **pptxgenjs** (`npm install -g pptxgenjs`): create presentations from scratch
+- **LibreOffice** (`soffice`): presentation to PDF
+- **pdftoppm** (poppler-utils): PDF to images, for thumbnail/visual workflows
+- If `pdftoppm` is unavailable, the Python fallback `pdf2image` can be used.
+- On Windows the dependencies must already be installed and available on `PATH`; if they are missing, report the dependency problem and stop (do not retry repeatedly).
 
-## 快速参考
+## Quick Reference
 
-| 任务 | 指南 |
+| Task | Guide |
 |------|------|
-| 读取/分析内容 | `python -m markitdown presentation.pptx` |
-| 编辑或基于模板创建 | 阅读 [editing.md](editing.md) |
-| 从零开始创建 | 阅读 [pptxgenjs.md](pptxgenjs.md) |
+| Read/analyze content | `python -m markitdown presentation.pptx` |
+| Edit or build from a template | Read [editing.md](editing.md) |
+| Create from scratch | Read [pptxgenjs.md](pptxgenjs.md) |
 
 ---
 
-## 读取内容
+## Reading Content
 
 ```bash
-# 文本提取
+# Text extraction
 python -m markitdown presentation.pptx
 
-# 视觉概览
+# Visual overview
 python scripts/thumbnail.py presentation.pptx
 
-# 原始 XML
+# Raw XML
 python scripts/office/unpack.py presentation.pptx unpacked/
 ```
 
 ---
 
-## 编辑工作流
+## Editing Workflow
 
-**阅读 [editing.md](editing.md) 了解完整细节。**
+**Read [editing.md](editing.md) for the full details.**
 
-1. 使用 `thumbnail.py` 分析模板
-2. 解包 → 操作幻灯片 → 编辑内容 → 清理 → 打包
-
----
-
-## 从零开始创建
-
-**阅读 [pptxgenjs.md](pptxgenjs.md) 了解完整细节。**
-
-当没有模板或参考演示文稿可用时使用。
+1. Use `thumbnail.py` to analyze the template
+2. Unpack → manipulate the slides → edit the content → clean up → pack
 
 ---
 
-## 设计思路
+## Creating from Scratch
 
-**不要创建无聊的幻灯片。** 白底加纯文本要点无法打动任何人。为每张幻灯片考虑以下设计思路。
+**Read [pptxgenjs.md](pptxgenjs.md) for the full details.**
 
-### 开始之前
+Use this when no template or reference presentation is available.
 
-- **选择大胆的、与内容相关的配色方案**：配色应该让人觉得是专门为这个主题设计的。如果把你的颜色换到一个完全不同的演示文稿中依然"适用"，说明你的选择还不够有针对性。
-- **主次分明**：一种颜色应占主导（60-70% 视觉权重），搭配 1-2 种辅助色调和一种鲜明的点缀色。切勿让所有颜色等量分配。
-- **明暗对比**：标题页和结尾页用深色背景，内容页用浅色（"三明治"结构）。或者全程使用深色背景营造高端感。
-- **坚持一个视觉主题**：选择一个独特元素并反复使用——圆角图片框、彩色圆圈中的图标、粗单边边框。将其贯穿每张幻灯片。
+---
 
-### 配色方案
+## Design Ideas
 
-选择与主题匹配的颜色——不要默认使用通用蓝色。以下配色方案供参考：
+**Do not create boring slides.** A white background with plain text bullets impresses no one. Consider the following design ideas for every slide.
 
-| 主题 | 主色 | 辅助色 | 点缀色 |
+### Before You Start
+
+- **Choose a bold, content-relevant color scheme**: the colors should feel designed specifically for this topic. If your colors would still "work" in a completely different presentation, your choice is not targeted enough.
+- **Establish clear hierarchy**: one color should dominate (60-70% of the visual weight), paired with 1-2 secondary tones and one sharp accent color. Never distribute all colors equally.
+- **Light and dark contrast**: use dark backgrounds for the title and closing slides and light backgrounds for content slides (a "sandwich" structure). Or use dark backgrounds throughout to create a premium feel.
+- **Commit to one visual theme**: choose one distinctive element and use it repeatedly - rounded image frames, icons in colored circles, thick single-sided borders. Carry it through every slide.
+
+### Color Schemes
+
+Choose colors that match the topic - do not default to generic blue. The following palettes are for reference:
+
+| Theme | Primary | Secondary | Accent |
 |------|------|--------|--------|
 | **Midnight Executive** | `1E2761` (navy) | `CADCFC` (ice blue) | `FFFFFF` (white) |
 | **Forest & Moss** | `2C5F2D` (forest) | `97BC62` (moss) | `F5F5F5` (cream) |
@@ -100,30 +100,30 @@ python scripts/office/unpack.py presentation.pptx unpacked/
 | **Sage Calm** | `84B59F` (sage) | `69A297` (eucalyptus) | `50808E` (slate) |
 | **Cherry Bold** | `990011` (cherry) | `FCF6F5` (off-white) | `2F3C7E` (navy) |
 
-### 每张幻灯片
+### Every Slide
 
-**每张幻灯片都需要视觉元素**——图片、图表、图标或形状。纯文本幻灯片令人印象淡薄。
+**Every slide needs a visual element** - an image, a chart, an icon or a shape. Text-only slides make a weak impression.
 
-**布局选项：**
-- 两栏布局（左侧文字，右侧插图）
-- 图标 + 文字行（彩色圆圈中的图标、粗体标题、下方描述）
-- 2x2 或 2x3 网格（一侧图片，另一侧内容块网格）
-- 半出血图片（铺满左侧或右侧）加内容叠加
+**Layout options:**
+- Two-column layout (text on the left, illustration on the right)
+- Icon + text rows (icon in a colored circle, bold heading, description below)
+- 2x2 or 2x3 grid (image on one side, a grid of content blocks on the other)
+- Half-bleed image (filling the left or right side) plus a content overlay
 
-**数据展示：**
-- 大数字突出显示（60-72pt 大数字搭配下方小标签）
-- 对比列（前后对比、优缺点、并排选项）
-- 时间线或流程图（编号步骤、箭头）
+**Presenting data:**
+- Large numbers called out (a 60-72pt number with a small label below it)
+- Comparison columns (before/after, pros and cons, side-by-side options)
+- Timeline or process flow (numbered steps, arrows)
 
-**视觉润色：**
-- 章节标题旁放置小彩色圆圈中的图标
-- 关键数据或标语使用斜体点缀文字
+**Visual polish:**
+- Place icons in small colored circles next to section headings
+- Use italic accent text for key figures or taglines
 
-### 字体排版
+### Typography
 
-**选择有趣的字体搭配**——不要默认使用 Arial。选择一个有个性的标题字体，搭配一个简洁的正文字体。
+**Choose an interesting font pairing** - do not default to Arial. Pick a heading font with personality and pair it with a clean body font.
 
-| 标题字体 | 正文字体 |
+| Heading font | Body font |
 |----------|----------|
 | Georgia | Calibri |
 | Arial Black | Arial |
@@ -134,112 +134,112 @@ python scripts/office/unpack.py presentation.pptx unpacked/
 | Palatino | Garamond |
 | Consolas | Calibri |
 
-| 元素 | 尺寸 |
+| Element | Size |
 |------|------|
-| 幻灯片标题 | 36-44pt 粗体 |
-| 章节标题 | 20-24pt 粗体 |
-| 正文 | 14-16pt |
-| 说明文字 | 10-12pt 柔和色 |
+| Slide title | 36-44pt bold |
+| Section heading | 20-24pt bold |
+| Body | 14-16pt |
+| Captions | 10-12pt muted color |
 
-### 间距
+### Spacing
 
-- 最小边距 0.5"
-- 内容块之间 0.3-0.5"
-- 留出呼吸空间——不要填满每一寸
+- Minimum margin of 0.5"
+- 0.3-0.5" between content blocks
+- Leave breathing room - do not fill every inch
 
-### 避免（常见错误）
+### Avoid (Common Mistakes)
 
-- **不要重复相同的布局**——在不同幻灯片之间变换列、卡片和标注样式
-- **不要居中正文文本**——段落和列表左对齐；仅标题居中
-- **不要忽视大小对比**——标题需要 36pt+ 才能与 14-16pt 正文区分开
-- **不要默认使用蓝色**——选择能反映特定主题的颜色
-- **不要随意混用间距**——选择 0.3" 或 0.5" 的间距并保持一致
-- **不要只设计一张幻灯片而其余留白**——要么全部精心设计，要么全程保持简约
-- **不要创建纯文本幻灯片**——添加图片、图标、图表或视觉元素；避免纯标题加要点
-- **不要忘记文本框内边距**——当将线条或形状与文本边缘对齐时，设置文本框的 `margin: 0` 或偏移形状以补偿内边距
-- **不要使用低对比度元素**——图标和文字都需要与背景有强烈对比；避免浅色背景上的浅色文字或深色背景上的深色文字
-- **绝对不要在标题下使用强调线**——这是 AI 生成幻灯片的典型标志；改用留白或背景色
+- **Do not repeat the same layout** - vary the columns, cards and callout styles between slides
+- **Do not center body text** - left-align paragraphs and lists; center only the titles
+- **Do not neglect size contrast** - titles need 36pt+ to stand apart from 14-16pt body text
+- **Do not default to blue** - choose colors that reflect the specific topic
+- **Do not mix spacing arbitrarily** - pick 0.3" or 0.5" spacing and keep it consistent
+- **Do not design one slide carefully and leave the rest blank** - either design everything carefully or keep it minimal throughout
+- **Do not create text-only slides** - add images, icons, charts or visual elements; avoid a plain title with bullets
+- **Do not forget text box padding** - when aligning lines or shapes with the text edge, set the text box `margin: 0` or offset the shape to compensate for the padding
+- **Do not use low-contrast elements** - icons and text both need strong contrast against the background; avoid light text on light backgrounds or dark text on dark backgrounds
+- **Never use an underline beneath a title** - it is the hallmark of AI-generated slides; use whitespace or a background color instead
 
 ---
 
-## 质量检查（必须执行）
+## Quality Check (Mandatory)
 
-**假设存在问题，你的任务就是找到它们。**
+**Assume that problems exist, and that your job is to find them.**
 
-你的首次渲染几乎不会完全正确。将质量检查视为找 Bug 的过程，而非确认步骤。如果第一次检查就零问题，说明你检查得不够仔细。
+Your first render will almost never be fully correct. Treat the quality check as a bug hunt rather than a confirmation step. If the first check turns up zero issues, you did not look carefully enough.
 
-### 内容检查
+### Content Check
 
 ```bash
 python -m markitdown output.pptx
 ```
 
-检查是否有遗漏内容、错别字、顺序错误。
+Check for missing content, typos and ordering mistakes.
 
-**使用模板时，检查是否有残留的占位符文本：**
+**When using a template, check for leftover placeholder text:**
 
 ```bash
 python -m markitdown output.pptx | grep -iE "xxxx|lorem|ipsum|this.*(page|slide).*layout"
 ```
 
-如果 grep 返回结果，修复后再宣布完成。
+If grep returns results, fix them before declaring the work done.
 
-### 视觉检查
+### Visual Check
 
-**⚠️ 使用子代理**——即使只有 2-3 张幻灯片。你一直盯着代码看，会看到你期望看到的而非实际的内容。子代理有全新的视角。
+**⚠️ Use a subagent** - even when there are only 2-3 slides. When you stare at the code you see what you expect to see rather than what is actually there. A subagent brings a fresh perspective.
 
-将幻灯片转换为图片（参见[转换为图片](#转换为图片)），然后使用以下提示：
+Convert the slides to images (see [Converting to Images](#converting-to-images)), then use the following prompt:
 
 ```
-视觉检查这些幻灯片。假设存在问题——找到它们。
+Visually inspect these slides. Assume that problems exist - find them.
 
-检查以下方面：
-- 元素重叠（文字穿过形状、线条穿过文字、元素堆叠）
-- 文本溢出或在边缘/框边界处被截断
-- 为单行文本定位的装饰线，但标题换成了两行
-- 来源引用或页脚与上方内容冲突
-- 元素间距过小（< 0.3" 间隙）或卡片/区域几乎相接
-- 间距不均（某处大面积留白，另一处过于紧凑）
-- 距幻灯片边缘的边距不足（< 0.5"）
-- 列或类似元素未一致对齐
-- 低对比度文字（如浅灰色文字在奶油色背景上）
-- 低对比度图标（如深色图标在深色背景上且没有对比色圆圈）
-- 文本框过窄导致过度换行
-- 残留的占位符内容
+Check the following aspects:
+- Elements overlapping (text crossing a shape, a line crossing text, elements stacked)
+- Text overflowing or cut off at edges/box boundaries
+- A decorative rule positioned for a single line of text while the heading wrapped to two lines
+- A source citation or footer conflicting with the content above it
+- Elements spaced too tightly (< 0.3" gap) or cards/areas almost touching
+- Uneven spacing (a large empty area in one place, cramped elsewhere)
+- Insufficient margin from the slide edge (< 0.5")
+- Columns or similar elements not aligned consistently
+- Low-contrast text (such as light gray text on a cream background)
+- Low-contrast icons (such as a dark icon on a dark background without a contrasting circle)
+- Text boxes too narrow, causing excessive wrapping
+- Leftover placeholder content
 
-对每张幻灯片列出问题或关注点，即使是小问题也要列出。
+List the problems or concerns for every slide, even minor ones.
 
-读取并分析这些图片：
-1. /path/to/slide-01.jpg（预期：[简要描述]）
-2. /path/to/slide-02.jpg（预期：[简要描述]）
+Read and analyze these images:
+1. /path/to/slide-01.jpg (expected: [brief description])
+2. /path/to/slide-02.jpg (expected: [brief description])
 
-报告发现的所有问题，包括轻微问题。
+Report every problem found, including minor ones.
 ```
 
-### 验证循环
+### Verification Loop
 
-1. 生成幻灯片 → 转换为图片 → 检查
-2. **列出发现的问题**（如果没发现问题，用更严格的标准再检查一遍）
-3. 修复问题
-4. **重新验证受影响的幻灯片**——一个修复往往会引发另一个问题
-5. 重复直到完整检查一遍不再发现新问题
+1. Generate the slides → convert to images → check
+2. **List the problems found** (if you find none, check again against stricter criteria)
+3. Fix the problems
+4. **Re-verify the affected slides** - one fix often introduces another problem
+5. Repeat until a full pass turns up no new problems
 
-**在完成至少一个修复-验证循环之前，不要宣布成功。**
+**Do not declare success before completing at least one fix-verify loop.**
 
 ---
 
-## 转换为图片
+## Converting to Images
 
-将演示文稿转换为单独的幻灯片图片以进行视觉检查：
+Convert the presentation into individual slide images for visual inspection:
 
 ```bash
 python scripts/office/soffice.py --headless --convert-to pdf output.pptx
 pdftoppm -jpeg -r 150 output.pdf slide
 ```
 
-这将创建 `slide-01.jpg`、`slide-02.jpg` 等文件。
+This creates `slide-01.jpg`, `slide-02.jpg` and other files.
 
-修复后重新渲染特定幻灯片：
+Re-render specific slides after fixing them:
 
 ```bash
 pdftoppm -jpeg -r 150 -f N -l N output.pdf slide-fixed

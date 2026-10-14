@@ -17,11 +17,11 @@ metadata: {"openclaw": {"requires": {"bins": ["bash", "ps"]}, "os": ["linux", "d
 ### ✅ Use When User Mentions
 
 **Performance issues**:
-- "慢" / "卡" / "slow" / "lag" / "sluggish" / "响应慢"
-- "CPU 高" / "cpu 100%" / "high CPU"
-- "内存不足" / "memory" / "OOM" / "swap"
-- "磁盘满" / "disk full" / "磁盘慢" / "I/O slow"
-- "检查系统" / "健康检查" / "health check"
+- "slow" / "laggy" / "slow" / "lag" / "sluggish" / "slow response"
+- "high CPU" / "cpu 100%" / "high CPU"
+- "out of memory" / "memory" / "OOM" / "swap"
+- "disk full" / "disk full" / "slow disk" / "I/O slow"
+- "check the system" / "health check" / "health check"
 
 **Device types** (all supported):
 - 🖥️ Servers: local server, bare metal
@@ -56,7 +56,7 @@ Step 2: Deep Mode (20-60s, conditional)
 ### How It Works
 
 ```yaml
-Example: User says "服务器慢"
+Example: User says "the server is slow"
 
 Stage 1 - Quick Triage:
   Read: references/resource-saturation-quick.md
@@ -80,44 +80,44 @@ Efficiency: Only loaded 2 files instead of 5
 Match these first - handle most common issues:
 
 ```yaml
-系统慢/卡 (System Slow):
-  keywords: [慢, 卡, slow, lag, 响应慢]
+Slow/laggy system (System Slow):
+  keywords: [slow, laggy, slow, lag, slow response]
   workflow: Quick scan → Deep on flagged components
   
-CPU 高 (High CPU):
-  keywords: [CPU, cpu高, cpu 100%, CPU满]
+High CPU usage (High CPU):
+  keywords: [CPU, high cpu, cpu 100%, CPU maxed]
   workflow: Skip Quick → Direct to resource-saturation-deep-cpu.md
   
-内存不足 (Low Memory):
-  keywords: [内存, memory, OOM, swap, 内存不足]
+Insufficient memory (Low Memory):
+  keywords: [memory, memory, OOM, swap, low memory]
   workflow: Skip Quick → Direct to resource-saturation-deep-memory.md
   
-磁盘问题 (Disk Issues):
-  keywords: [磁盘, disk, I/O, io慢, 磁盘满]
+Disk problems (Disk Issues):
+  keywords: [disk, disk, I/O, slow io, disk full]
   workflow: Skip Quick → Direct to resource-saturation-deep-disk.md
   
-网络问题 (Network Issues):
-  keywords: [网络, network, 网卡, 丢包]
+Network problems (Network Issues):
+  keywords: [network, network, NIC, packet loss]
   workflow: Skip Quick → Direct to resource-saturation-deep-network.md
   
-健康检查 (Health Check):
-  keywords: [检查, 健康, health, check, 诊断]
+Health inspection (Health Check):
+  keywords: [check, health, health, check, diagnosis]
   workflow: Quick scan only (stop if all OK)
   
-系统崩溃/错误 (System Crash):
-  keywords: [崩溃, crash, 错误, error, 重启, reboot]
+System crash/errors (System Crash):
+  keywords: [crash, crash, error, error, reboot, reboot]
   workflow: Quick log scan → Deep on error categories
   
-磁盘健康 (Disk Health):
-  keywords: [磁盘健康, SMART, 坏道, 硬盘故障]
+Disk health status (Disk Health):
+  keywords: [disk health, SMART, bad sectors, hard disk failure]
   workflow: disk-smart-quick.md → disk-smart-deep.md if FAILED
   
-硬件问题 (Hardware Issues):
-  keywords: [硬件, hardware, 温度, RAID, ECC, 风扇]
+Hardware problems (Hardware Issues):
+  keywords: [hardware, hardware, temperature, RAID, ECC, fan]
   workflow: hardware-health-quick.md → hardware-health-deep.md
   
-时间问题 (Time Issues):
-  keywords: [时间, NTP, 时钟, 时间不对, Kerberos]
+Time problems (Time Issues):
+  keywords: [time, NTP, clock, clock is wrong, Kerberos]
   workflow: time-sync.md Quick → Deep if not synced
 ```
 
@@ -132,9 +132,9 @@ Step 1: Read Extended Scenario Index
   
 Step 2: Match keywords in index
   examples:
-    - "Docker容器慢" → Category: Container Issues
-    - "Python环境坏了" → Category: Environment Issues  
-    - "Bluetooth不工作" → Category: Hardware Peripherals
+    - "slow Docker container" → Category: Container Issues
+    - "Python environment broken" → Category: Environment Issues  
+    - "Bluetooth not working" → Category: Hardware Peripherals
     
 Step 3: Execute matched workflow
   if found:
@@ -145,10 +145,10 @@ Step 3: Execute matched workflow
 
 **Example Fallback Execution**:
 ```text
-User: "RAID阵列显示degraded"
+User: "RAID array shows degraded"
 
 Step 1: Check Tier 1 scenarios
-  → Match "硬件问题" (keyword: RAID) ✅
+  → Match "hardware problems" (keyword: RAID) ✅
   → Workflow: hardware-health-quick.md → hardware-health-deep.md
   
 Step 2: Execute
@@ -160,8 +160,8 @@ Step 2: Execute
 ### Decision Rules
 
 **Rule 1: Determine mode from user intent**
-- General issue ("慢", "卡") → Quick first
-- Specific component ("CPU高", "内存不足") → Skip to Deep
+- General issue ("slow", "laggy") → Quick first
+- Specific component ("high CPU", "low memory") → Skip to Deep
 - Health check → Quick only
 - **No match** → Fallback to 00-scenario-index.md
 
@@ -228,12 +228,12 @@ Hardware Deep:
 
 | User Problem | Quick File | Conditional Deep Files |
 |-------------|-----------|----------------------|
-| 服务器慢 | resource-saturation-quick.md | Based on Quick results |
-| CPU 高 | (skip) | resource-saturation-deep-cpu.md |
-| 内存不足 | (skip) | resource-saturation-deep-memory.md |
-| 健康检查 | resource-saturation-quick.md + system-logs-quick.md | None (if all OK) |
-| 系统崩溃 | system-logs-quick.md | Based on error categories |
-| 磁盘故障 | (skip) | disk-smart-deep.md |
+| Server is slow | resource-saturation-quick.md | Based on Quick results |
+| High CPU | (skip) | resource-saturation-deep-cpu.md |
+| Low memory | (skip) | resource-saturation-deep-memory.md |
+| Health check | resource-saturation-quick.md + system-logs-quick.md | None (if all OK) |
+| System crash | system-logs-quick.md | Based on error categories |
+| Disk failure | (skip) | disk-smart-deep.md |
 
 ---
 
@@ -243,8 +243,8 @@ Hardware Deep:
 
 Extract keywords and intent:
 ```python
-user_query = "服务器很慢,不知道什么原因"
-keywords = ["慢"]
+user_query = "the server is very slow, not sure why"
+keywords = ["slow"]
 intent = "troubleshoot"
 component = None  # General issue
 ```
@@ -347,23 +347,23 @@ Strategy:
 ### Output Format
 
 ```yaml
-诊断结果报告
+Diagnosis Result Report
 
-问题: 系统响应慢
+Problem: the system responds slowly
 
-快速检查 (10s):
-  - CPU: 🔴 CRITICAL (95% 使用率)
-  - 内存: ✅ OK (40% 使用率)
-  - 磁盘: ✅ OK (I/O 正常)
-  - 网络: ✅ OK (带宽正常)
+Quick check (10s):
+  - CPU: 🔴 CRITICAL (95% usage)
+  - Memory: ✅ OK (40% usage)
+  - Disk: ✅ OK (I/O normal)
+  - Network: ✅ OK (bandwidth normal)
 
-深度分析 - CPU:
-  根因: 进程 java (PID 1234) 占用 90% CPU
-  持续时间: 超过 2 小时
-  建议:
-    1. 检查应用日志: journalctl -u app-service
-    2. 分析线程: jstack 1234
-    3. 如果正常,考虑扩容
+Deep analysis - CPU:
+  Root cause: process java (PID 1234) is using 90% CPU
+  Duration: more than 2 hours
+  Recommendations:
+    1. Check the application logs: journalctl -u app-service
+    2. Analyze the threads: jstack 1234
+    3. If everything is normal, consider scaling up
 ```
 
 ---
@@ -392,13 +392,13 @@ _cross_platform_adapters.sh:
 
 **Fallback Example**:
 ```text
-User: "MySQL主从同步延迟"
+User: "MySQL primary-replica replication lag"
 
 Tier 1 Match: None (specialized database issue)
   ↓
 Read: references/00-scenario-index.md
   ↓
-Search: "MySQL", "主从", "同步"
+Search: "MySQL", "primary-replica", "replication"
   ↓
 Found: Category "Database Issues" → MySQL replication diagnostics
   ↓

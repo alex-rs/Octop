@@ -1,90 +1,90 @@
-# 对腾讯云资源进行自动化巡检和监控
+# Automated Inspection and Monitoring of Tencent Cloud Resources
 
-你对腾讯云域名、SSL 证书、实例状态相关 API 的参数可能已过时。
-**执行前请先用 `tccli <服务> <操作> help` 确认最新参数。**
+Your knowledge of the parameters of the Tencent Cloud domain, SSL certificate, and instance status APIs may be outdated.
+**Before executing, confirm the latest parameters with `tccli <service> <action> help`.**
 
-> 利用「腾讯云资源管理工具」Skill 对云上资源进行巡检和监控。
-
----
-
-## 场景一：监控域名是否到期
-
-### 任务描述
-请帮我检查腾讯云账户下所有域名的到期情况。
-
-### 执行步骤
-
-1. 使用 `tccli domain DescribeDomainNameList` 查询账户下所有域名列表
-2. 遍历每个域名，检查其到期时间（`ExpirationDate` 字段）
-3. 计算距离到期的剩余天数
-4. 如果剩余天数不足 **30 天**，标记为告警，输出域名和到期日
-5. 汇总输出所有域名的状态（正常 / 即将到期）
+> Use the "Tencent Cloud Resource Management Tool" Skill to inspect and monitor cloud resources.
 
 ---
 
-## 场景二：监控 SSL 证书到期
+## Scenario 1: Monitoring Domain Expiry
 
-### 任务描述
-请帮我检查腾讯云账户下所有 SSL 证书的到期情况。
+### Task Description
+Please help me check the expiry status of all domains under the Tencent Cloud account.
 
-### 执行步骤
+### Execution Steps
 
-1. 使用 `tccli ssl DescribeCertificates` 查询所有证书列表
-2. 遍历每个证书，关注 `CertificateId`、`Domain`、`CertEndTime` 字段
-3. 计算距离到期的剩余天数
-4. 如果剩余天数不足 **30 天**，标记为告警
-5. 汇总输出所有证书的状态
-
----
-
-## 场景三：监控云服务器实例状态
-
-### 任务描述
-请帮我检查腾讯云账户下所有云服务器实例的运行状态。
-
-### 执行步骤
-
-1. 使用 `tccli cvm DescribeInstances --region ap-beijing` 查询所有实例
-2. 遍历每个实例，关注 `InstanceId`、`InstanceName`、`InstanceState` 字段
-3. 如果实例状态不是 `RUNNING`，标记为异常并告警
-4. 可选：对运行中的实例，使用 `tccli monitor GetMonitorData` 查询 CPU 使用率等监控指标，发现资源使用率异常时告警
-5. 汇总输出所有实例的状态
+1. Use `tccli domain DescribeDomainNameList` to query the list of all domains under the account
+2. Iterate over each domain and check its expiry time (the `ExpirationDate` field)
+3. Compute the number of days remaining until expiry
+4. If fewer than **30 days** remain, flag it as an alert and output the domain and the expiry date
+5. Summarize and output the status of all domains (normal / expiring soon)
 
 ---
 
-## 场景四：监控云硬盘状态
+## Scenario 2: Monitoring SSL Certificate Expiry
 
-### 任务描述
-请帮我检查腾讯云账户下所有云硬盘的状态。
+### Task Description
+Please help me check the expiry status of all SSL certificates under the Tencent Cloud account.
 
-### 执行步骤
+### Execution Steps
 
-1. 使用 `tccli cbs DescribeDisks --region ap-beijing` 查询所有云硬盘
-2. 遍历每个云硬盘，关注 `DiskId`、`DiskName`、`DiskState`、`DiskUsage` 字段
-3. 如果状态不是 `ATTACHED` 或 `UNATTACHED`，标记为异常并告警
-4. 汇总输出所有云硬盘的状态
+1. Use `tccli ssl DescribeCertificates` to query the list of all certificates
+2. Iterate over each certificate and look at the `CertificateId`, `Domain`, and `CertEndTime` fields
+3. Compute the number of days remaining until expiry
+4. If fewer than **30 days** remain, flag it as an alert
+5. Summarize and output the status of all certificates
 
 ---
 
-## API 速查
+## Scenario 3: Monitoring Cloud Server Instance Status
 
-| 功能 | 服务 | 接口 |
+### Task Description
+Please help me check the running status of all cloud server instances under the Tencent Cloud account.
+
+### Execution Steps
+
+1. Use `tccli cvm DescribeInstances --region ap-beijing` to query all instances
+2. Iterate over each instance and look at the `InstanceId`, `InstanceName`, and `InstanceState` fields
+3. If the instance state is not `RUNNING`, flag it as abnormal and raise an alert
+4. Optional: for running instances, use `tccli monitor GetMonitorData` to query monitoring metrics such as CPU utilization, and raise an alert when resource utilization is abnormal
+5. Summarize and output the status of all instances
+
+---
+
+## Scenario 4: Monitoring Cloud Disk Status
+
+### Task Description
+Please help me check the status of all cloud disks under the Tencent Cloud account.
+
+### Execution Steps
+
+1. Use `tccli cbs DescribeDisks --region ap-beijing` to query all cloud disks
+2. Iterate over each cloud disk and look at the `DiskId`, `DiskName`, `DiskState`, and `DiskUsage` fields
+3. If the state is neither `ATTACHED` nor `UNATTACHED`, flag it as abnormal and raise an alert
+4. Summarize and output the status of all cloud disks
+
+---
+
+## API Quick Reference
+
+| Function | Service | API |
 |------|------|------|
-| 查询域名列表 | domain | `DescribeDomainNameList` |
-| 查询 SSL 证书 | ssl | `DescribeCertificates` |
-| 查询 CVM 实例 | cvm | `DescribeInstances` |
-| 查询云硬盘 | cbs | `DescribeDisks` |
-| 查询监控数据 | monitor | `GetMonitorData` |
+| Query the domain list | domain | `DescribeDomainNameList` |
+| Query SSL certificates | ssl | `DescribeCertificates` |
+| Query CVM instances | cvm | `DescribeInstances` |
+| Query cloud disks | cbs | `DescribeDisks` |
+| Query monitoring data | monitor | `GetMonitorData` |
 
 ---
 
-## 何时使用
+## When to Use
 
-| 场景 | 建议 |
+| Scenario | Recommendation |
 |------|------|
-| 用户要求资源巡检/批量检查 | 执行场景一至四的完整流程 |
-| 用户只问域名到期情况 | 只执行场景一 |
-| 用户只问证书到期情况 | 只执行场景二 |
-| 用户要做安全检查/安全审计 | 不使用本文档，用 references/cvm-security-check.md |
-| 用户要查看单个实例状态 | 不使用本文档，用基础查询命令 |
-| 用户要部署应用或建站 | 不使用本文档，用对应的部署/建站 reference |
+| The user asks for resource inspection/batch checks | Run the complete flow of scenarios 1 through 4 |
+| The user only asks about domain expiry | Run scenario 1 only |
+| The user only asks about certificate expiry | Run scenario 2 only |
+| The user wants a security check/security audit | Do not use this document; use references/cvm-security-check.md |
+| The user wants to view the status of a single instance | Do not use this document; use basic query commands |
+| The user wants to deploy an application or set up a website | Do not use this document; use the corresponding deployment/website-setup reference |

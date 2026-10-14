@@ -1,75 +1,75 @@
-# Octop 插件示例
+# Octop Plugin Examples
 
 [English](./README.md)
 
-本目录提供插件 demo，对应 Octop / octop-harness 支持的 `kind`，以及**前后端一体**的 UI 渲染示例。
-结构参考 [octop-toolkit](https://github.com/veenyi/octop-plugins/tree/main/octop-toolkit)。
+This directory provides plugin demos covering the `kind` values supported by Octop / octop-harness, plus a **frontend + backend** UI rendering example.
+The layout is inspired by [octop-toolkit](https://github.com/veenyi/octop-plugins/tree/main/octop-toolkit).
 
-随 Octop 安装包一并分发的产品插件在 `src/octop/infra/agents/plugins/bundled/`。
-`octop init` 与 `octop run` 启动时会把缺失的插件复制到 `~/.octop/plugins/`，并在 `config.json` 里写成 **全局关闭**；管理员在 Dashboard 插件页打开后再给 Agent 用。卸载过的 id 不会自动装回。
+Product plugins shipped with the Octop installation package live in `src/octop/infra/agents/plugins/bundled/`.
+When `octop init` and `octop run` start up, they copy missing plugins into `~/.octop/plugins/` and write them as **globally off** in `config.json`; an administrator turns them on in the Dashboard plugins page before agents can use them. Uninstalled ids are not installed back automatically.
 
-## 示例一览
+## Demo Overview
 
-| 目录 | `kind` | 作用 |
+| Directory | `kind` | Purpose |
 |------|--------|------|
-| [`demo-toolkit`](./demo-toolkit/) | `tool` | 注册可调用工具（时间、文本统计、可配置前缀回显） |
-| [`demo-greeting-skill`](./demo-greeting-skill/) | `skill` | 向 Agent 工作区同步一份示例 Skill |
-| [`demo-turn-logger`](./demo-turn-logger/) | `hook` | 注册 `AgentMiddleware`，在模型调用前后打日志 |
-| [`demo-ui-card`](./demo-ui-card/) | `tool` + `ui/` | 后端返回 `octop_ui` JSON；前端在聊天页渲染可交互卡片 |
+| [`demo-toolkit`](./demo-toolkit/) | `tool` | Register callable tools (time, text stats, configurable prefix echo) |
+| [`demo-greeting-skill`](./demo-greeting-skill/) | `skill` | Sync a sample Skill into the agent workspace |
+| [`demo-turn-logger`](./demo-turn-logger/) | `hook` | Register `AgentMiddleware` that logs before/after model calls |
+| [`demo-ui-card`](./demo-ui-card/) | `tool` + `ui/` | The backend returns `octop_ui` JSON; the frontend renders an interactive card in chat |
 
-## 目录约定
+## Directory conventions
 
-每个插件是一个文件夹，至少包含：
+Each plugin is a folder containing at least:
 
 ```text
 my-plugin/
-├── plugin.yaml    # id、version、name、kind、entry；可选 icon / ui
-├── main.py        # 必须定义 setup(ctx)
-├── skills/        # 仅 skill 插件：<name>/SKILL.md
-└── ui/            # 可选：预构建前端（安装时不跑 npm）
+├── plugin.yaml    # id, version, name, kind, entry; optional icon / ui
+├── main.py        # must define setup(ctx)
+├── skills/        # skill plugins only: <name>/SKILL.md
+└── ui/            # optional: prebuilt frontend (no npm run at install time)
     └── dist/
-        ├── index.js       # ESM，导出 setup(host)
-        └── manifest.json  # 声明 renderer ↔ tool
+        ├── index.js       # ESM, exports setup(host)
+        └── manifest.json  # declares renderer ↔ tool
 ```
 
-在 `setup(ctx)` 中按 `kind` 调用对应 API：
+In `setup(ctx)`, call the API that matches `kind`:
 
 | `kind` | API |
 |--------|-----|
 | `tool` | `ctx.tool(name, fn, description=..., config_fields=...)` |
-| `skill` | `ctx.skills("skills")` — 相对插件根目录 |
+| `skill` | `ctx.skills("skills")` — relative to the plugin root |
 | `hook` | `ctx.middleware(instance, priority=...)` |
 
-### 带 UI 的 tool 插件
+### Tool plugins with a UI
 
-`plugin.yaml` 可选字段：
+Optional `plugin.yaml` fields:
 
 ```yaml
-icon: "🧩"   # 或 https://… 图片 URL，Dashboard 卡片展示
+icon: "🧩"   # or an https://… image URL, shown on Dashboard cards
 ui:
   entry: ui/dist/index.js
   manifest: ui/dist/manifest.json
 ```
 
-工具返回 JSON 字符串（推荐）：
+Tools return a JSON string (recommended):
 
 ```json
 {
   "octop_ui": { "renderer": "demo_card", "version": 1 },
   "data": { "title": "…", "count": 1 },
-  "text": "纯文本回退"
+  "text": "plain text fallback"
 }
 ```
 
-Dashboard 通过 `GET /api/plugins/{id}/ui/…` 加载 `index.js`，调用 `setup(host)` 注册渲染器。
-`host.patchResult(callId, data)` 可在不重跑 LLM 的情况下刷新气泡（L2）；流式仍走 SSE 整段替换 `output`（L1）。
+The Dashboard loads `index.js` through `GET /api/plugins/{id}/ui/…` and calls `setup(host)` to register renderers.
+`host.patchResult(callId, data)` can refresh the bubble without re-running the LLM (L2); streaming still replaces the whole `output` over SSE (L1).
 
-插件 ESM 为自包含文件；React 由 Dashboard 注入 `window.__OCTOP_REACT__` / `__OCTOP_JSX__`。
+The plugin ESM is a self-contained file; React is injected by the Dashboard as `window.__OCTOP_REACT__` / `__OCTOP_JSX__`.
 
-## 本地安装
+## Install locally
 
 ```bash
-# 从目录安装（开发时常用）
+# Install from a directory (common during development)
 octop plugin install ./plugins/demo-toolkit --force
 octop plugin install ./plugins/demo-greeting-skill --force
 octop plugin install ./plugins/demo-turn-logger --force
@@ -77,7 +77,7 @@ octop plugin install ./plugins/demo-ui-card --force
 octop plugin list
 ```
 
-或先打包再安装：
+Or pack it first and then install:
 
 ```bash
 cd plugins
@@ -85,28 +85,28 @@ zip -r demo-ui-card.zip demo-ui-card/
 octop plugin install ./demo-ui-card.zip --force
 ```
 
-**Dashboard：** Admin → Plugins → 安装。请粘贴 ZIP 的 **直接下载地址**
-（GitHub 请用 `raw.githubusercontent.com` 或 Download / raw 链接，不要用 `/blob/` 页面）。
+**Dashboard:** Admin → Plugins → Install. Paste the ZIP's **direct download URL**
+(for GitHub use `raw.githubusercontent.com` or a Download / raw link, not the `/blob/` page).
 
-- **tool**：安装后到「工具管理」为具体 Agent 启用工具  
-- **skill**：Agent 启动时同步到工作区 `skills/`  
-- **hook**：全局启用的插件会挂上对应 middleware  
-- **ui**：随插件安装；打开聊天页后自动加载渲染器  
+- **tool**: after installing, go to "Tool management" and enable the tools for the specific agent  
+- **skill**: synced into the workspace `skills/` when the agent starts  
+- **hook**: globally enabled plugins get the corresponding middleware attached  
+- **ui**: installed together with the plugin; the renderer loads automatically once you open the chat page  
 
-## 打包注意
+## Packaging notes
 
-ZIP 内应只有**一个**带 `plugin.yaml` 的插件根目录；若含 UI，请一并打入预构建的 `ui/dist/`（**不要**依赖服务器执行 `npm install`）。
+The ZIP should contain **exactly one** plugin root directory with a `plugin.yaml`; if it includes a UI, pack the prebuilt `ui/dist/` as well (**do not** rely on the server running `npm install`).
 
 ```bash
-# 正确：一层插件目录
+# Correct: a single plugin directory
 zip -r demo-toolkit.zip demo-toolkit/
 
-# 错误：多个插件塞进同一 ZIP，或只有散落文件没有插件根目录
+# Wrong: several plugins crammed into one ZIP, or loose files with no plugin root directory
 ```
 
-## 快速校验
+## Quick validity check
 
-在仓库根目录执行（无需启动服务）：
+Run this from the repository root (no service startup needed):
 
 ```bash
 uv run python - <<'PY'
@@ -126,9 +126,9 @@ for name in ("demo-toolkit", "demo-greeting-skill", "demo-turn-logger", "demo-ui
 PY
 ```
 
-期望结果：
+Expected result:
 
-- `demo-toolkit` → `tool`，3 个工具  
-- `demo-greeting-skill` → `skill`，存在 `skills/`  
-- `demo-turn-logger` → `hook`，1 个 middleware  
-- `demo-ui-card` → `tool`，1 个工具  
+- `demo-toolkit` → `tool`, 3 tools  
+- `demo-greeting-skill` → `skill`, `skills/` exists  
+- `demo-turn-logger` → `hook`, 1 middleware  
+- `demo-ui-card` → `tool`, 1 tool  

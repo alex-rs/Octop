@@ -1,66 +1,66 @@
-# 集群快速检查
+# Cluster Quick Check
 
-> **目标：30 秒内完成对整个集群的 3 层快照，输出每个节点的健康状态。**
-> 所有 API 操作通过 tencentcloud-infra 技能执行，
-> 详见 references/skill-collaboration-tencentcloud.md。
-
----
-
-## 执行前提
-
-1. MEMORY.md 存在 `cluster_config.known_nodes`（已发现节点列表）
-2. OAuth 凭据有效（执行方式见 references/skill-collaboration-tencentcloud.md — "OAuth 凭据检查"协议）
-3. 若不满足，先执行 references/cluster-discovery.md
+> **Goal: complete a 3-layer snapshot of the whole cluster within 30 seconds and report each node's health state.**
+> All API operations are performed through the tencentcloud-infra skill;
+> see references/skill-collaboration-tencentcloud.md for details.
 
 ---
 
-## 3 层快照执行顺序
+## Prerequisites
+
+1. MEMORY.md contains `cluster_config.known_nodes` (the discovered node list)
+2. OAuth credentials are valid (for how to check, see references/skill-collaboration-tencentcloud.md — the "OAuth Credential Check" protocol)
+3. If these are not met, run references/cluster-discovery.md first
+
+---
+
+## 3-Layer Snapshot Execution Order
 
 ```
-Step 0 (~1s)  : OAuth 凭据检查
-Step 1 (~2s)  : Layer 1 — 实例状态（DescribeInstances）
-Step 2 (~3s)  : Layer 2A — 云端监控指标（GetMonitorData，并行拉所有节点）
-Step 3 (~15s) : Layer 2B — TAT OS 快照（RunCommand，一次 API 覆盖所有节点）
-Step 3b (~5s) : 轮询 TAT 结果（DescribeInvocationTasks）
-Step 4 (~2s)  : 汇总 → 评分 → 生成报告
+Step 0 (~1s)  : OAuth credential check
+Step 1 (~2s)  : Layer 1 — instance state (DescribeInstances)
+Step 2 (~3s)  : Layer 2A — cloud monitoring metrics (GetMonitorData, pulled in parallel for all nodes)
+Step 3 (~15s) : Layer 2B — TAT OS snapshot (RunCommand, one API call covers all nodes)
+Step 3b (~5s) : Poll TAT results (DescribeInvocationTasks)
+Step 4 (~2s)  : Summarize → score → generate the report
 ─────────────────────────────────────────────────
-总耗时：约 25-30 秒
+Total time: about 25-30 seconds
 ```
 
 ---
 
-## Step 1：Layer 1 — 实例状态
+## Step 1: Layer 1 — Instance State
 
-**执行指令（让 tencentcloud-infra 执行）：**
+**Command to run (have tencentcloud-infra execute it):**
 ```bash
 tccli cvm DescribeInstances \
   --region <cluster_config.region> \
-  --InstanceIds '<known_nodes InstanceId 数组>'
+  --InstanceIds '<known_nodes InstanceId array>'
 ```
 
-**收集字段：**
+**Fields to collect:**
 - `InstanceId`
 - `InstanceName`
-- `InstanceState`：RUNNING / STOPPED / SHUTDOWN / TERMINATING / REBOOTING
+- `InstanceState`: RUNNING / STOPPED / SHUTDOWN / TERMINATING / REBOOTING
 
-**立即标记：**
-- `STOPPED` / `SHUTDOWN` / `TERMINATING` → 节点分 = **0**，不执行后续 Layer 2B
-- `REBOOTING` → 等待，本次跳过（标注"重启中，跳过快照"）
-- `RUNNING` → 继续 Layer 2A 和 2B
+**Mark immediately:**
+- `STOPPED` / `SHUTDOWN` / `TERMINATING` → node score = **0**; do not run Layer 2B afterwards
+- `REBOOTING` → wait and skip this round (mark it as "rebooting, snapshot skipped")
+- `RUNNING` → continue to Layer 2A and 2B
 
 ---
 
-## Step 2：Layer 2A — 云端监控指标（5分钟均值）
+## Step 2: Layer 2A — Cloud Monitoring Metrics (5-minute average)
 
-**对所有 RUNNING 节点，并行执行（让 tencentcloud-infra 执行）：**
+**For all RUNNING nodes, run in parallel (have tencentcloud-infra execute it):**
 
 ```bash
-# 设置时间窗口（最近 15 分钟）
+# Set the time window (last 15 minutes)
 END_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 START_TIME=$(date -u -d "15 minutes ago" +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || \
-             date -u -v-15M +"%Y-%m-%dT%H:%M:%SZ")   # macOS 兼容
+             date -u -v-15M +"%Y-%m-%dT%H:%M:%SZ")   # macOS compatible
 
-# 对每个 RUNNING 节点拉取 CPU 使用率
+# Pull CPU usage for each RUNNING node
 tccli monitor GetMonitorData \
   --Namespace QCE/CVM \
   --MetricName CpuUsage \
@@ -69,7 +69,7 @@ tccli monitor GetMonitorData \
   --EndTime "$END_TIME" \
   --Instances '[{"Dimensions":[{"Name":"InstanceId","Value":"ins-xxx"}]}]'
 
-# 对每个 RUNNING 节点拉取内存使用率
+# Pull memory usage for each RUNNING node
 tccli monitor GetMonitorData \
   --Namespace QCE/CVM \
   --MetricName MemUsage \
@@ -79,41 +79,41 @@ tccli monitor GetMonitorData \
   --Instances '[{"Dimensions":[{"Name":"InstanceId","Value":"ins-xxx"}]}]'
 ```
 
-**计算方法：**
-取 `DataPoints[*].Values` 数组的均值（忽略 null）。
-若无数据点，标记该节点 CPU/内存指标为 `N/A`。
+**How to compute:**
+Take the mean of the `DataPoints[*].Values` array (ignoring nulls).
+If there are no data points, mark that node's CPU/memory metrics as `N/A`.
 
 ---
 
-## Step 3：Layer 2B — TAT OS 实时快照
+## Step 3: Layer 2B — TAT OS Live Snapshot
 
-## ⚡ 脚本优先路径：用 cluster_os_snapshot.sh 执行 TAT（Script-First Path）
+## ⚡ Script-First Path: Run TAT with cluster_os_snapshot.sh
 
-若 `scripts/cluster_os_snapshot.sh` 存在，**直接 base64 编码脚本文件内容传给 TAT**，
-无需展开内联命令。
+If `scripts/cluster_os_snapshot.sh` exists, **base64-encode the script file contents and pass them to TAT directly**,
+with no need to expand inline commands.
 
-**执行分工**：
-- **Agent（本地）**：读取脚本文件并做 base64 编码（见下方命令）
-- **tencentcloud-infra**：执行 `tccli tat RunCommand`，将编码内容发送到远端 CVM
-- **远端 CVM**：TAT 自动解码并运行脚本，返回 KEY=VALUE 结果
+**Division of work**:
+- **Agent (local)**: read the script file and base64-encode it (see the commands below)
+- **tencentcloud-infra**: run `tccli tat RunCommand` to send the encoded content to the remote CVM
+- **Remote CVM**: TAT decodes and runs the script automatically, returning KEY=VALUE results
 
-**Step A — Agent 在本地编码（根据 LightClaw 所在操作系统选择）：**
+**Step A — The Agent encodes locally (choose based on the OS LightClaw runs on):**
 
 ```bash
-# Linux / macOS（-w 0 强制单行输出，无需 tr 管道）
-SKILL_DIR="<cvm-ai-doctor 技能目录>"
+# Linux / macOS (-w 0 forces single-line output, no tr pipe needed)
+SKILL_DIR="<cvm-ai-doctor skill directory>"
 CONTENT=$(base64 -w 0 < "$SKILL_DIR/scripts/cluster_os_snapshot.sh")
-echo "$CONTENT"   # 复制此输出作为 TAT --Content 的值
+echo "$CONTENT"   # copy this output as the value of TAT --Content
 ```
 
 ```powershell
-# Windows PowerShell（LightClaw 运行在 Windows 时使用此版本）
-$SKILL_DIR = "<cvm-ai-doctor 技能目录>"
+# Windows PowerShell (use this version when LightClaw runs on Windows)
+$SKILL_DIR = "<cvm-ai-doctor skill directory>"
 $CONTENT = [Convert]::ToBase64String([IO.File]::ReadAllBytes("$SKILL_DIR\scripts\cluster_os_snapshot.sh"))
-Write-Output $CONTENT   # 复制此输出作为 TAT --Content 的值
+Write-Output $CONTENT   # copy this output as the value of TAT --Content
 ```
 
-**Step B — 让 tencentcloud-infra 执行（一次 API 调用，覆盖所有节点）：**
+**Step B — Have tencentcloud-infra execute it (one API call covering all nodes):**
 
 ```bash
 tccli tat RunCommand \
@@ -121,17 +121,17 @@ tccli tat RunCommand \
   --InstanceIds '["ins-xxx","ins-yyy","ins-zzz"]' \
   --CommandType SHELL \
   --Timeout 30 \
-  --Content "<Step A 输出的 base64 字符串>"
+  --Content "<base64 string output by Step A>"
 ```
 
-> `scripts/` 路径相对于 cvm-ai-doctor 技能目录。Agent 应将其展开为绝对路径。
-> 若脚本文件不存在，回退到下方内联命令。
+> The `scripts/` path is relative to the cvm-ai-doctor skill directory. The Agent should expand it to an absolute path.
+> If the script file does not exist, fall back to the inline command below.
 
 ---
 
-**回退：内联命令（脚本不存在时使用）**
+**Fallback: inline command (use when the script does not exist)**
 
-**TAT 快照一行命令（向所有 RUNNING 且 TAT=Online 的节点批量执行）：**
+**TAT snapshot one-liner (run it against all RUNNING nodes with TAT=Online):**
 
 ```bash
 h=$(hostname -s 2>/dev/null||echo unknown); \
@@ -143,7 +143,7 @@ s=$(systemctl is-active sshd 2>/dev/null||echo unknown); \
 echo "HOST=$h LOAD=$l NCPU=$c MEM_MB=$m DISK_ROOT_PCT=$d SSH=$s"
 ```
 
-**让 tencentcloud-infra 执行（一次 API 调用）：**
+**Have tencentcloud-infra execute it (one API call):**
 ```bash
 COMMAND_CONTENT=$(cat <<'EOF'
 h=$(hostname -s 2>/dev/null||echo unknown); l=$(awk '{print $1}' /proc/loadavg 2>/dev/null||echo -1); c=$(nproc 2>/dev/null||echo 1); m=$(free -m 2>/dev/null|awk '/Mem:/{printf "%.0f/%d",$3,$2}'); d=$(df / 2>/dev/null|awk 'NR==2{print $5}'|tr -d '%'); s=$(systemctl is-active sshd 2>/dev/null||echo unknown); echo "HOST=$h LOAD=$l NCPU=$c MEM_MB=$m DISK_ROOT_PCT=$d SSH=$s"
@@ -158,73 +158,73 @@ tccli tat RunCommand \
   --Content "$(printf '%s' "$COMMAND_CONTENT" | base64 -w 0)"
 ```
 
-**轮询结果（最多 12 次，每次间隔 5 秒）：**
+**Poll the results (up to 12 times, 5 seconds apart):**
 ```bash
 tccli tat DescribeInvocationTasks --InvocationId <inv-id>
 ```
 
-终止条件：所有 `TaskStatus` = `SUCCESS` 或 `FAILED` 或 `TIMEOUT`
+Termination condition: all `TaskStatus` = `SUCCESS` or `FAILED` or `TIMEOUT`
 
-**解码 TAT 输出：**
+**Decode the TAT output:**
 ```bash
 echo "<base64_output>" | base64 -d
-# 得到格式：HOST=xxx LOAD=0.85 NCPU=4 MEM_MB=2048/8192 DISK_ROOT_PCT=55 SSH=active
+# resulting format: HOST=xxx LOAD=0.85 NCPU=4 MEM_MB=2048/8192 DISK_ROOT_PCT=55 SSH=active
 ```
 
-**解析内存百分比：**
+**Parse the memory percentage:**
 ```
 MEM_MB=2048/8192  →  MEM_PCT = round(2048/8192 * 100) = 25%
 ```
 
 ---
 
-## Step 4：汇总数据结构（传入评分模块）
+## Step 4: Summary Data Structure (passed to the scoring module)
 
-对每个节点，整理以下字段后，交给 references/cluster-health-score.md 计算评分：
+For each node, assemble the following fields and hand them to references/cluster-health-score.md to compute the score:
 
 ```
-节点 ins-xxx 数据：
+Data for node ins-xxx:
   instance_state: RUNNING
-  cpu_cloud_avg_pct: 42.3          # Layer 2A，若 N/A 则留空
-  mem_cloud_avg_pct: 68.1          # Layer 2A，若 N/A 则留空
+  cpu_cloud_avg_pct: 42.3          # Layer 2A; leave blank if N/A
+  mem_cloud_avg_pct: 68.1          # Layer 2A; leave blank if N/A
   load: 0.85                       # Layer 2B TAT
   ncpu: 4                          # Layer 2B TAT
   load_ratio: 0.21                 # load / ncpu
   mem_used_mb: 2048                # Layer 2B TAT
   mem_total_mb: 8192               # Layer 2B TAT
-  mem_pct: 25.0                    # Layer 2B TAT 计算
+  mem_pct: 25.0                    # Layer 2B TAT computed
   disk_root_pct: 55                # Layer 2B TAT
   sshd_active: true                # Layer 2B TAT
-  tat_available: true              # 是否有 OS 快照
+  tat_available: true              # whether an OS snapshot is available
   tat_status: SUCCESS              # SUCCESS / FAILED / TIMEOUT
 ```
 
-## ⚡ 脚本优先路径：用 cluster_score.sh 替代手算（Script-First Path）
+## ⚡ Script-First Path: Use cluster_score.sh Instead of Manual Calculation
 
-汇总完每个节点数据后，若 `scripts/cluster_score.sh` 存在，**直接调用脚本评分**，跳过手动计算：
+After summarizing each node's data, if `scripts/cluster_score.sh` exists, **call the script to score directly** and skip manual calculation:
 
 ```bash
-# 每行代表一个节点，KV 格式：
+# Each line represents one node, in KV format:
 {
   echo "node=ins-aaa name=api-1 instance_state=RUNNING load_ratio=0.21 mem_pct=25 disk_root_pct=55 sshd_active=true cpu_cloud_avg_pct=42 mem_cloud_avg_pct=68 tat_available=true"
   echo "node=ins-bbb name=api-2 instance_state=RUNNING load_ratio=1.8  mem_pct=82 disk_root_pct=79 sshd_active=true cpu_cloud_avg_pct=88 mem_cloud_avg_pct=84 tat_available=true"
-  # ... 每个节点一行
+  # ... one line per node
 } | bash scripts/cluster_score.sh
 ```
 
-脚本输出包含每个节点的评分、扣分明细和集群最低分（木桶原则），交给 LLM 直接生成报告叙述。
+The script output contains each node's score, the deduction details, and the cluster's lowest score (bucket principle); hand it to the LLM to write the report narrative directly.
 
-若脚本不存在，按 `references/cluster-health-score.md` 手动计算。
+If the script does not exist, compute manually per `references/cluster-health-score.md`.
 
 ---
 
-## 特殊情况处理
+## Special Cases
 
-| 情况 | 处理方式 |
+| Case | Handling |
 |------|---------|
-| TAT Timeout（实例 IO 过高） | 该节点标记 `tat_status: TIMEOUT`，仅用云端指标评分 |
-| TAT FAILED（命令执行失败） | 记录错误信息，仅用云端指标评分 |
-| 所有 TAT 均超时 | 报告"无法获取 OS 快照，仅云端指标" |
-| 云端监控无数据 | 标注 `N/A`，跳过云端指标扣分 |
-| 实例 REBOOTING | 跳过本次快照，下次巡检时重试 |
-| 跨区域集群 | 对每个区域分别调用 TAT RunCommand，合并结果 |
+| TAT Timeout (instance IO too high) | Mark that node `tat_status: TIMEOUT`; score using cloud metrics only |
+| TAT FAILED (command execution failed) | Record the error message; score using cloud metrics only |
+| All TAT runs timed out | Report "unable to obtain an OS snapshot; cloud metrics only" |
+| No cloud monitoring data | Mark `N/A` and skip the cloud-metric deductions |
+| Instance REBOOTING | Skip this snapshot and retry on the next inspection |
+| Cross-region cluster | Call TAT RunCommand separately for each region and merge the results |

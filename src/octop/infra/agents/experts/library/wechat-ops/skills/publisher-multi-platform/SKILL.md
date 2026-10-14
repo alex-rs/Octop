@@ -1,6 +1,6 @@
 ---
 name: wechat-publisher-personal
-description: Personal Multi-Platform Publisher — 一文多发工具，将 Markdown 文章同时发布到内容运营平台和社交内容平台。微信端通过 wenyan-cli + 自建服务器代理，社交内容平台端通过浏览器自动化。
+description: Personal Multi-Platform Publisher — a multi-platform publishing tool that posts a Markdown article to content operation platforms and social content platforms at the same time. The WeChat side uses wenyan-cli + a self-hosted server proxy; the social content platform side uses browser automation.
 metadata:
   {
     "openclaw":
@@ -12,144 +12,144 @@ metadata:
     "octop":
       {
         "emoji": "✍️",
-        "label": { "zh": "一文多发", "en": "Multi-Platform Publisher" },
+        "label": { "zh": "Multi-Platform Publisher", "en": "Multi-Platform Publisher" },
         "summary":
           {
-            "zh": "把一篇 Markdown 同步发布到内容运营平台与社交平台。",
+            "zh": "Publish one Markdown article to content and social platforms.",
             "en": "Publish one Markdown article to content and social platforms.",
           },
       },
   }
 ---
 
-# 个人版一文多发工具 — 内容运营平台 + 社交内容平台
+# Personal Multi-Platform Publishing Tool — Content Operation Platforms + Social Content Platforms
 
-写一篇 Markdown，同时发布到**内容运营平台**和**社交内容平台**。微信端通过 wenyan-cli 渲染精美排版，社交内容平台端自动适配短文案 + 图片格式。无需依赖第三方 SaaS 平台，数据完全自主可控。
+Write one Markdown article and publish it to **content operation platforms** and **social content platforms** at the same time. The WeChat side renders beautiful typography through wenyan-cli, while the social content platform side automatically adapts the content into a short post + image format. No third-party SaaS platform is required, and your data stays fully under your control.
 
-> 集成 [ClawHub hi-yu/xhs](https://clawhub.ai/hi-yu/xhs) v1.2.5 社交内容平台 Skill 能力
+> Integrates the [ClawHub hi-yu/xhs](https://clawhub.ai/hi-yu/xhs) v1.2.5 social content platform Skill capability
 
-## 支持平台
+## Supported Platforms
 
-| 平台 | 发布方式 | 内容格式 |
+| Platform | Publishing method | Content format |
 |------|----------|----------|
-| 📱 **内容运营平台** | wenyan-cli + 微信 API → 草稿箱 | 长文章 + 精美排版 |
-| 📕 **社交内容平台 (RedNote)** | Playwright 浏览器自动化 → 直接发布 | 短笔记 + 图片 + 话题标签 |
+| 📱 **Content operation platforms** | wenyan-cli + WeChat API → draft box | Long article + beautiful typography |
+| 📕 **Social content platforms (RedNote)** | Playwright browser automation → publish directly | Short note + images + topic hashtags |
 
-## Agent 人格标识
+## Agent Persona Identity
 
-本 Skill 遵循 [SoulHub](https://github.com/Yourdaylight/soulhub) Agent 规范，包含完整的人格身份定义：
+This Skill follows the [SoulHub](https://github.com/Yourdaylight/soulhub) Agent specification and includes a complete persona identity definition:
 
-| 文件 | 说明 |
+| File | Description |
 |------|------|
-| [`manifest.yaml`](./manifest.yaml) | Agent 元数据（名称、分类、标签、版本） |
-| [`IDENTITY.md`](./IDENTITY.md) | 身份定义 — 我是谁、我的专长、工作方式 |
-| [`SOUL.md`](./SOUL.md) | 灵魂规范 — 核心原则、行为边界、语气风格 |
+| [`manifest.yaml`](./manifest.yaml) | Agent metadata (name, category, tags, version) |
+| [`IDENTITY.md`](./IDENTITY.md) | Identity definition — who I am, my expertise, how I work |
+| [`SOUL.md`](./SOUL.md) | Soul specification — core principles, behavioral boundaries, tone and style |
 
-> **核心人格**: ✍️ 一文多发助手 — 独立自主的内容发行人，一篇 Markdown 同时覆盖微信和社交内容平台。极简高效、数据自主、一键搞定。
+> **Core persona**: ✍️ Multi-Platform Publishing Assistant — an independent content publisher that covers WeChat and social content platforms with a single Markdown article. Minimal and efficient, data autonomy, done in one step.
 
-## 与 agent-publisher 的区别
+## Differences from agent-publisher
 
-| 特性 | agent-publisher (SaaS版) | wechat-publisher-personal (个人版) |
+| Feature | agent-publisher (SaaS edition) | wechat-publisher-personal (personal edition) |
 |------|--------------------------|----------------------------------|
-| 部署方式 | 使用共享后端服务 | 用户自己的服务器 |
-| 数据存储 | 存在后端数据库 | 本地文件 + 微信平台 |
-| 用户管理 | 多用户、邮箱注册 | 单用户、直接使用 |
-| AI 生成 | 内置 AI Agent 生成内容 | 用户自己写内容或由 AI 辅助编写 |
-| 依赖 | Python + 后端 API | Node.js (wenyan-cli) + Python 辅助脚本 |
-| IP 白名单 | 使用共享服务器 IP | 用户自己服务器的公网 IP |
+| Deployment | Uses a shared backend service | The user's own server |
+| Data storage | Stored in the backend database | Local files + the WeChat platform |
+| User management | Multi-user, email registration | Single user, used directly |
+| AI generation | Built-in AI Agent generates content | The user writes the content, or AI assists in writing it |
+| Dependencies | Python + backend API | Node.js (wenyan-cli) + Python helper scripts |
+| IP whitelist | Uses the shared server IP | The public IP of the user's own server |
 
 ## Prerequisites
 
-### 内容运营平台（必需）
+### Content operation platforms (required)
 
-1. **Node.js** >= 18（用于运行 wenyan-cli）
-2. **Python** >= 3.10（用于辅助脚本）
-3. **一台有固定公网 IP 的服务器**（用作微信 API IP 白名单代理）
-4. **内容运营平台** 的 AppID 和 AppSecret
+1. **Node.js** >= 18 (used to run wenyan-cli)
+2. **Python** >= 3.10 (used for helper scripts)
+3. **A server with a fixed public IP** (used as the WeChat API IP whitelist proxy)
+4. The **content operation platform** AppID and AppSecret
 
-### 社交内容平台（可选，启用一文多发）
+### Social content platforms (optional, enables multi-platform publishing)
 
 5. **Python playwright** — `pip install playwright && playwright install chromium`
-6. **社交内容平台账号** — 通过扫码登录
-7. **AI 封面生成（可选）** — 配置 `GEMINI_API_KEY` / `IMG_API_KEY` / `HUNYUAN_API_KEY` 之一
+6. **A social content platform account** — log in by scanning a QR code
+7. **AI cover generation (optional)** — configure one of `GEMINI_API_KEY` / `IMG_API_KEY` / `HUNYUAN_API_KEY`
 
-## 快速开始
+## Quick Start
 
-### Step 1: 安装 wenyan-cli
+### Step 1: Install wenyan-cli
 
 ```bash
 npm install -g @wenyan-md/cli
 ```
 
-验证安装：
+Verify the installation:
 ```bash
 wenyan --help
 ```
 
-### Step 2: 配置内容运营平台凭证
+### Step 2: Configure content operation platform credentials
 
-设置环境变量（推荐写入 `~/.bashrc` 或 `~/.zshrc`）：
+Set the environment variables (recommended: write them into `~/.bashrc` or `~/.zshrc`):
 
 ```bash
 export WECHAT_APP_ID="your_wechat_app_id"
 export WECHAT_APP_SECRET="your_wechat_app_secret"
 ```
 
-### Step 3: 获取 AppID 和 AppSecret
+### Step 3: Obtain the AppID and AppSecret
 
-如果用户还没有内容运营平台凭证：
+If the user does not have content operation platform credentials yet:
 
-1. 登录 [微信开发者平台](https://developers.weixin.qq.com/console/product/mp)
-2. 进入 "我的业务与服务" → "公众号" → "基础信息"
-3. 复制 **AppID**
-4. 点击 AppSecret 旁的 "重置" 生成新密钥（⚠️ 仅显示一次，立即保存！）
+1. Log in to the [WeChat Developer Platform](https://developers.weixin.qq.com/console/product/mp)
+2. Go to "My Business and Services" → "Official Accounts" → "Basic Information"
+3. Copy the **AppID**
+4. Click "Reset" next to the AppSecret to generate a new key (⚠️ it is shown only once — save it immediately!)
 
-### Step 4: 配置 IP 白名单
+### Step 4: Configure the IP whitelist
 
-有两种模式，根据用户情况选择：
+There are two modes; choose based on the user's situation:
 
-#### 模式 A: 本地模式（有固定公网 IP）
+#### Mode A: Local mode (fixed public IP available)
 
-如果你的本地网络有固定公网 IP：
-1. 获取你的公网 IP：`curl ifconfig.me`
-2. 在微信开发者平台 → "API IP白名单" → 点击 "编辑" → 添加你的 IP
+If your local network has a fixed public IP:
+1. Get your public IP: `curl ifconfig.me`
+2. On the WeChat Developer Platform → "API IP whitelist" → click "Edit" → add your IP
 
-#### 模式 B: Server 模式（推荐，无固定 IP 时使用）
+#### Mode B: Server mode (recommended when there is no fixed IP)
 
-在你的云服务器上部署 wenyan server 作为代理：
+Deploy a wenyan server on your cloud server as a proxy:
 
 ```bash
 python3 {baseDir}/scripts/wechat_publish.py setup-server --host your_server_ip
 ```
 
-这会指导你：
-1. 在服务器上安装 wenyan-cli 并启动 `wenyan serve`
-2. 将服务器公网 IP 加入微信白名单
-3. 配置本地 CLI 连接服务器
+This will guide you to:
+1. Install wenyan-cli on the server and start `wenyan serve`
+2. Add the server's public IP to the WeChat whitelist
+3. Configure the local CLI to connect to the server
 
-然后设置 server 环境变量：
+Then set the server environment variables:
 ```bash
 export WENYAN_SERVER="http://your_server_ip:7788"
 export WENYAN_API_KEY="your_api_key"
 ```
 
-### Step 5: 发布第一篇文章
+### Step 5: Publish your first article
 
-准备一个 Markdown 文件，顶部包含 frontmatter：
+Prepare a Markdown file with frontmatter at the top:
 
 ```markdown
 ---
-title: 我的第一篇文章
+title: My First Article
 cover: ./cover.jpg
-author: 你的名字
+author: Your Name
 ---
 
-# 正文内容
+# Article Body
 
-这是正文...
+This is the body text...
 ```
 
-然后发布：
+Then publish:
 
 ```bash
 python3 {baseDir}/scripts/wechat_publish.py publish article.md
@@ -159,21 +159,21 @@ python3 {baseDir}/scripts/wechat_publish.py publish article.md
 
 ## All Commands
 
-### 📦 一文多发（推荐）
+### 📦 Multi-platform publishing (recommended)
 
-**一条命令同时发布到微信 + 社交内容平台：**
+**Publish to WeChat + social content platforms with a single command:**
 
 ```bash
 python3 {baseDir}/scripts/wechat_publish.py multi-publish article.md
 ```
 
-**社交内容平台使用草稿模式（推荐首次使用）：**
+**Use draft mode for social content platforms (recommended for first use):**
 
 ```bash
 python3 {baseDir}/scripts/wechat_publish.py multi-publish article.md --xhs-draft
 ```
 
-**批量一文多发：**
+**Batch multi-platform publishing:**
 
 ```bash
 python3 {baseDir}/scripts/wechat_publish.py multi-publish article1.md article2.md
@@ -181,131 +181,131 @@ python3 {baseDir}/scripts/wechat_publish.py multi-publish article1.md article2.m
 
 ---
 
-### 📱 内容运营平台
+### 📱 Content operation platforms
 
-#### 发布文章
+#### Publish an article
 
-**直接发布 Markdown 到内容运营平台草稿箱：**
+**Publish Markdown directly to the content operation platform draft box:**
 
 ```bash
 python3 {baseDir}/scripts/wechat_publish.py publish article.md
 ```
 
-**指定主题发布：**
+**Publish with a specified theme:**
 
 ```bash
 python3 {baseDir}/scripts/wechat_publish.py publish article.md --theme github
 ```
 
-**通过 Server 模式发布（本地无固定 IP 时）：**
+**Publish through Server mode (when there is no fixed local IP):**
 
 ```bash
 python3 {baseDir}/scripts/wechat_publish.py publish article.md --server http://your_server:7788 --api-key your_key
 ```
 
-**批量发布多篇文章：**
+**Publish multiple articles in a batch:**
 
 ```bash
 python3 {baseDir}/scripts/wechat_publish.py publish article1.md article2.md article3.md
 ```
 
-### 渲染预览
+### Render preview
 
-**渲染 Markdown 为 HTML（不发布，仅预览）：**
+**Render Markdown to HTML (preview only, no publishing):**
 
 ```bash
 python3 {baseDir}/scripts/wechat_publish.py render article.md
 ```
 
-**渲染并保存到文件：**
+**Render and save to a file:**
 
 ```bash
 python3 {baseDir}/scripts/wechat_publish.py render article.md --output article.html
 ```
 
-### 主题管理
+### Theme management
 
-**列出所有可用主题：**
+**List all available themes:**
 
 ```bash
 python3 {baseDir}/scripts/wechat_publish.py themes
 ```
 
-**预览某个主题效果：**
+**Preview the effect of a theme:**
 
 ```bash
 python3 {baseDir}/scripts/wechat_publish.py render article.md --theme elegant --output preview.html
 ```
 
-### Server 管理
+### Server management
 
-**检查 server 连接状态：**
+**Check the server connection status:**
 
 ```bash
 python3 {baseDir}/scripts/wechat_publish.py server-status
 ```
 
-**部署/配置 wenyan server（交互式引导）：**
+**Deploy/configure wenyan server (interactive guidance):**
 
 ```bash
 python3 {baseDir}/scripts/wechat_publish.py setup-server --host your_server_ip
 ```
 
-### 配置检查
+### Configuration check
 
-**检查当前环境配置是否正确：**
+**Check whether the current environment configuration is correct:**
 
 ```bash
 python3 {baseDir}/scripts/wechat_publish.py check
 ```
 
-输出：wenyan-cli 安装状态、环境变量、IP 白名单建议、server 连接等。
+Output: wenyan-cli installation status, environment variables, IP whitelist suggestions, server connection, etc.
 
 ---
 
-## 社交内容平台命令
+## Social Content Platform Commands
 
-### 登录社交内容平台
+### Log in to the social content platform
 
-**首次使用需要扫码登录：**
+**First use requires QR-code login:**
 
 ```bash
 python3 {baseDir}/scripts/xhs_publish.py login
 ```
 
-浏览器会自动打开，使用社交内容平台 APP 扫描二维码即可。Cookie 会自动保存，后续无需重复登录。
+The browser opens automatically; just scan the QR code with the social content platform app. The cookie is saved automatically, so there is no need to log in again later.
 
-### 发布到社交内容平台
+### Publish to the social content platform
 
-**将 Markdown 文件发布为社交内容平台笔记：**
+**Publish a Markdown file as a social content platform note:**
 
 ```bash
 python3 {baseDir}/scripts/xhs_publish.py publish article.md
 ```
 
-**草稿模式（填写内容但不自动点击发布）：**
+**Draft mode (fills in the content but does not click publish automatically):**
 
 ```bash
 python3 {baseDir}/scripts/xhs_publish.py publish article.md --draft
 ```
 
-**无头模式（后台运行）：**
+**Headless mode (runs in the background):**
 
 ```bash
 python3 {baseDir}/scripts/xhs_publish.py publish article.md --headless
 ```
 
-### 预览社交内容平台适配效果
+### Preview the social content platform adaptation result
 
-**查看 Markdown 转换为社交内容平台格式后的效果：**
+**See how the Markdown looks after conversion to the social content platform format:**
 
 ```bash
 python3 {baseDir}/scripts/xhs_publish.py adapt article.md
 ```
 
-这会显示：标题裁剪（≤20字）、正文转换、图片提取、话题标签等。
+This displays: title truncation (≤20 characters), body conversion, image extraction, topic hashtags, etc.
 
-### 检查社交内容平台环境
+### Check the social content platform environment
 
 ```bash
 python3 {baseDir}/scripts/xhs_publish.py check
@@ -313,141 +313,141 @@ python3 {baseDir}/scripts/xhs_publish.py check
 
 ---
 
-## 一文多发命令
+## Multi-Platform Publishing Commands
 
-### 同时发布到微信 + 社交内容平台
+### Publish to WeChat + social content platforms at the same time
 
-**一条命令，Markdown 同时发布到两个平台：**
+**One command publishes the Markdown to both platforms at once:**
 
 ```bash
-# 先发内容运营平台
+# Publish to the content operation platform first
 python3 {baseDir}/scripts/wechat_publish.py publish article.md
 
-# 再发社交内容平台
+# Then publish to the social content platform
 python3 {baseDir}/scripts/xhs_publish.py publish article.md
 ```
 
-> 💡 **内容自动适配**：微信端保持完整长文排版，社交内容平台端自动转换为短笔记 + 图片 + 话题标签格式。同一篇 Markdown，两个平台各自呈现最佳形态。
+> 💡 **Automatic content adaptation**: the WeChat side keeps the complete long-form typography, while the social content platform side is automatically converted into a short note + images + topic hashtags format. One Markdown article, and each platform shows it in its best form.
 
 ---
 
 ## Environment Variables
 
-### 内容运营平台
+### Content operation platforms
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `WECHAT_APP_ID` | 内容运营平台 AppID | — (必填) |
-| `WECHAT_APP_SECRET` | 内容运营平台 AppSecret | — (必填) |
-| `WENYAN_SERVER` | wenyan server URL（Server 模式） | — (可选) |
-| `WENYAN_API_KEY` | wenyan server API Key（Server 模式） | — (可选) |
-| `WENYAN_THEME` | 默认渲染主题 | `github` |
+| `WECHAT_APP_ID` | Content operation platform AppID | — (required) |
+| `WECHAT_APP_SECRET` | Content operation platform AppSecret | — (required) |
+| `WENYAN_SERVER` | wenyan server URL (Server mode) | — (optional) |
+| `WENYAN_API_KEY` | wenyan server API Key (Server mode) | — (optional) |
+| `WENYAN_THEME` | Default rendering theme | `github` |
 
-### 社交内容平台
+### Social content platforms
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `XHS_COOKIE_FILE` | 社交内容平台 Cookie 文件路径 | `~/.xhs-cookies.json` |
-| `GEMINI_API_KEY` | Gemini API Key（AI 封面生成） | — (可选) |
-| `IMG_API_KEY` | 图片生成 API Key（AI 封面生成） | — (可选) |
-| `HUNYUAN_API_KEY` | 腾讯混元 API Key（AI 封面生成） | — (可选) |
+| `XHS_COOKIE_FILE` | Social content platform cookie file path | `~/.xhs-cookies.json` |
+| `GEMINI_API_KEY` | Gemini API Key (AI cover generation) | — (optional) |
+| `IMG_API_KEY` | Image generation API Key (AI cover generation) | — (optional) |
+| `HUNYUAN_API_KEY` | Tencent Hunyuan API Key (AI cover generation) | — (optional) |
 
 ## Typical Workflow
 
-### 首次使用
+### First use
 
-1. **安装 wenyan-cli** → `npm install -g @wenyan-md/cli`
-2. **安装 playwright** → `pip install playwright && playwright install chromium`
-3. **环境检查** → `wechat_publish.py check` + `xhs_publish.py check`
-4. **配置微信白名单** → 本地模式或 `setup-server` Server 模式
-5. **登录社交内容平台** → `xhs_publish.py login`（扫码登录）
-6. **写文章** → 用 Markdown 编写，添加 frontmatter（title、cover、tags）
-7. **预览** → `wechat_publish.py render` + `xhs_publish.py adapt`（分别查看两端效果）
-8. **一文多发** → `wechat_publish.py publish` + `xhs_publish.py publish`
-9. **登录公众号后台** → 检查草稿箱，点击发布
-10. **发布后校验** → 在 [搜狗微信搜索](https://weixin.sogou.com/) 搜索文章标题，确认文章已被收录
+1. **Install wenyan-cli** → `npm install -g @wenyan-md/cli`
+2. **Install playwright** → `pip install playwright && playwright install chromium`
+3. **Environment check** → `wechat_publish.py check` + `xhs_publish.py check`
+4. **Configure the WeChat whitelist** → local mode or the `setup-server` Server mode
+5. **Log in to the social content platform** → `xhs_publish.py login` (QR-code login)
+6. **Write an article** → write it in Markdown and add frontmatter (title, cover, tags)
+7. **Preview** → `wechat_publish.py render` + `xhs_publish.py adapt` (view each side's result separately)
+8. **Multi-platform publishing** → `wechat_publish.py publish` + `xhs_publish.py publish`
+9. **Log in to the Official Account backend** → check the draft box, then click publish
+10. **Post-publish verification** → search for the article title on [Sogou WeChat Search](https://weixin.sogou.com/) to confirm the article has been indexed
 
-### 日常使用（一文多发）
+### Daily use (multi-platform publishing)
 
-1. **写 Markdown** → 任意编辑器
-2. **发布微信** → `wechat_publish.py publish article.md`
-3. **发布社交内容平台** → `xhs_publish.py publish article.md`
-4. **去公众号后台发布** → 检查、发布
-5. **发布后校验** → 去 [搜狗微信搜索](https://weixin.sogou.com/) 搜索文章标题，确认可被搜到
+1. **Write Markdown** → any editor
+2. **Publish to WeChat** → `wechat_publish.py publish article.md`
+3. **Publish to the social content platform** → `xhs_publish.py publish article.md`
+4. **Go to the Official Account backend to publish** → check, then publish
+5. **Post-publish verification** → go to [Sogou WeChat Search](https://weixin.sogou.com/) and search for the article title to confirm it can be found
 
-### AI 辅助写作 + 一文多发
+### AI-assisted writing + multi-platform publishing
 
-1. **让 AI 生成 Markdown 内容** → 包含 frontmatter（title、cover、tags）
-2. **预览两端效果** → `render` 看微信排版 + `adapt` 看社交内容平台适配
-3. **修改调整** → 可让 AI 继续修改
-4. **一键多发** → 先 `wechat_publish.py publish`，再 `xhs_publish.py publish`
-5. **发布后校验** → 用户确认在公众号后台发布后，去 [搜狗微信搜索](https://weixin.sogou.com/) 搜索验证
+1. **Have the AI generate the Markdown content** → including frontmatter (title, cover, tags)
+2. **Preview both sides** → `render` to see the WeChat typography + `adapt` to see the social content platform adaptation
+3. **Revise and adjust** → the AI can keep refining it
+4. **Publish to many platforms in one step** → first `wechat_publish.py publish`, then `xhs_publish.py publish`
+5. **Post-publish verification** → after the user confirms publishing from the Official Account backend, verify by searching on [Sogou WeChat Search](https://weixin.sogou.com/)
 
 ---
 
-## Markdown 文件格式
+## Markdown File Format
 
-每篇文章的 Markdown 文件顶部必须包含 frontmatter：
+Every article's Markdown file must include frontmatter at the top:
 
 ```yaml
 ---
-title: 文章标题（必填）
-cover: 封面图路径或URL（可选，推荐）
-author: 作者名（可选）
-source_url: 原文链接（可选）
-tags: 标签1, 标签2, 标签3（可选，用于社交内容平台话题标签）
+title: Article title (required)
+cover: Cover image path or URL (optional, recommended)
+author: Author name (optional)
+source_url: Source article link (optional)
+tags: tag1, tag2, tag3 (optional, used for social content platform topic hashtags)
 ---
 ```
 
-### 社交内容平台内容适配规则
+### Social content platform adaptation rules
 
-Markdown 发布到社交内容平台时会自动适配：
+When Markdown is published to a social content platform it is adapted automatically:
 
-| 项目 | 内容运营平台 | 社交内容平台 |
+| Item | Content operation platforms | Social content platforms |
 |------|-----------|--------|
-| 标题 | 完整标题 | 截取前 20 字 |
-| 正文 | HTML 精美排版 | 纯文本，emoji 标注段落 |
-| 图片 | 嵌入文章内 | 作为笔记图片上传 |
-| 代码块 | 语法高亮 | `💻 代码片段:` 文本化 |
-| 链接 | 保留超链接 | 仅保留链接文字 |
-| 标签 | 不使用 | frontmatter `tags` → `#话题` |
-| 长度 | 无限制 | ≤1800 字，超长自动截断 |
+| Title | Full title | First 20 characters |
+| Body | Beautiful HTML typography | Plain text, with emoji marking paragraphs |
+| Images | Embedded in the article | Uploaded as note images |
+| Code blocks | Syntax highlighting | Turned into text as `💻 Code snippet:` |
+| Links | Hyperlinks preserved | Link text only |
+| Tags | Not used | frontmatter `tags` → `#topic` |
+| Length | Unlimited | ≤1800 characters; anything longer is truncated automatically |
 
-### 图片支持
+### Image support
 
-- 本地图片：`![alt](./images/photo.jpg)` — 自动上传到微信图床
-- 网络图片：`![alt](https://example.com/photo.jpg)` — 自动下载并上传
-- 封面图：在 frontmatter 的 `cover` 字段指定
+- Local images: `![alt](./images/photo.jpg)` — automatically uploaded to the WeChat image host
+- Online images: `![alt](https://example.com/photo.jpg)` — automatically downloaded and uploaded
+- Cover image: specified in the `cover` field of the frontmatter
 
 ---
 
-## 发布后校验
+## Post-Publish Verification
 
-当用户告知草稿已在公众号后台正式发布后，需要进行最后一步校验：
+After the user reports that the draft has been officially published from the Official Account backend, one final verification step is required:
 
-1. 打开 [搜狗微信搜索](https://weixin.sogou.com/)
-2. 搜索文章标题或公众号名称
-3. 确认文章能被搜索到
+1. Open [Sogou WeChat Search](https://weixin.sogou.com/)
+2. Search for the article title or the Official Account name
+3. Confirm the article can be found
 
-> **注意**：文章从发布到被搜狗收录通常需要一段时间（几小时到一天不等）。如果刚发布就搜不到，可以稍后再试。
+> **Note**: it usually takes some time (a few hours to a day) for an article to be indexed by Sogou after publishing. If you cannot find it right after publishing, try again later.
 
-这一步是整个发布流程的**最终校验**，确保文章不仅进入了草稿箱、在公众号后台发布成功，还能被外部搜索引擎正常索引和检索。
+This step is the **final verification** of the entire publishing process, ensuring the article not only reaches the draft box and is published successfully from the Official Account backend, but can also be indexed and retrieved normally by external search engines.
 
 ## Notes
 
-### 内容运营平台
-- wenyan-cli 会自动将文章中的图片上传到微信素材库
-- 发布后文章进入**草稿箱**，需要登录公众号后台手动发布
-- 封面图建议尺寸：900x383 或 2.35:1 比例
-- 如果使用 Server 模式，只需在服务器上配置 IP 白名单，本地 IP 随意变动
-- 支持数学公式（LaTeX）、代码高亮、链接自动转脚注等
+### Content operation platforms
+- wenyan-cli automatically uploads the images in the article to the WeChat asset library
+- After publishing, the article goes into the **draft box**, and you must log in to the Official Account backend to publish it manually
+- Recommended cover image size: 900x383 or a 2.35:1 ratio
+- If you use Server mode, you only need to configure the IP whitelist on the server, and the local IP can change freely
+- Supports math formulas (LaTeX), code highlighting, automatic conversion of links to footnotes, and more
 
-### 社交内容平台
-- 社交内容平台笔记**必须包含至少一张图片**，建议在 frontmatter 中设置 `cover` 字段
-- 封面图建议尺寸：1080x1440（3:4 竖屏）或 1080x1080（正方形）
-- 正文会自动从 Markdown 转换为社交内容平台友好的纯文本格式
-- 标题限制 20 字以内，超长会自动截取
-- 正文建议 1800 字以内，超长会自动截断并附加公众号引导语
-- Cookie 有效期通常为 7-30 天，过期需要重新 `login` 扫码
-- frontmatter 中的 `tags` 字段会自动转为社交内容平台 `#话题标签`
-- 建议使用 `--draft` 模式先预览，确认无误后再正式发布
+### Social content platforms
+- A social content platform note **must contain at least one image**; it is recommended to set the `cover` field in the frontmatter
+- Recommended cover image size: 1080x1440 (3:4 portrait) or 1080x1080 (square)
+- The body text is automatically converted from Markdown into a plain-text format friendly to social content platforms
+- Titles are limited to 20 characters; anything longer is truncated automatically
+- The body text should stay within 1800 characters; anything longer is truncated automatically with an Official Account call-to-action appended
+- Cookies are usually valid for 7-30 days; once they expire you need to `login` again by scanning the QR code
+- The `tags` field in the frontmatter is automatically converted into social content platform `#topic hashtags`
+- It is recommended to preview with `--draft` mode first, then publish for real once everything looks right

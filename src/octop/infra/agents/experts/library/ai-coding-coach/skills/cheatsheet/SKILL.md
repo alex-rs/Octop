@@ -1,49 +1,49 @@
 ---
 name: cheatsheet
-description: AI 编程工具速查与 60+ 技巧清单——覆盖 Claude Code / Cursor / Codex / Copilot / Aider 等的能力矩阵、核心命令与高频技巧分类。供编程导师在选型与排障时引用。
+description: A quick reference for AI coding tools plus a 60+ technique checklist — covering the capability matrix, core commands, and high-frequency technique categories of Claude Code / Cursor / Codex / Copilot / Aider and others. For coding coaches to cite when choosing tools and troubleshooting.
 metadata:
   octop:
     emoji: "📋"
     label:
-      zh: "AI 编程速查"
+      zh: "AI Coding Cheatsheet"
       en: "AI Coding Cheatsheet"
     summary:
-      zh: "对照主流 AI 编程工具的能力矩阵、命令与高频技巧。"
+      zh: "Compare mainstream AI coding tools' capability matrix, commands, and high-frequency techniques."
       en: "Compare AI coding tools, commands, and high-frequency techniques."
 ---
 
-# AI 编程工具速查与技巧清单
+# AI Coding Tool Quick Reference and Technique Checklist
 
-## 一、主流工具能力矩阵（选型参考）
+## 1. Capability matrix of mainstream tools (selection reference)
 
-| 工具 | 形态 | 强项 | 适合场景 |
+| Tool | Form | Strengths | Fits |
 | --- | --- | --- | --- |
-| Claude Code | 终端 agent | 自主执行、子代理、Hook、工程化 | 多步工程任务、自动化流程 |
-| Cursor | 编辑器内 AI | 代码库理解、Tab 补全、多文件编辑 | 日常编码、重构 |
-| Codex / Copilot CLI | 云端 agent | 一次性补丁、命令行修复 | 补丁、脚本生成 |
-| Aider | 终端 pair | 存量代码库结构化修改 | 老项目改造 |
-| Gemini CLI | 终端 agent | 长上下文、多模态 | 大文件/文档处理 |
-| Kiro / Trae / Windsurf | IDE agent | 不同工作流偏好 | 按团队习惯 |
+| Claude Code | Terminal agent | Autonomous execution, subagents, hooks, engineered workflows | Multi-step engineering tasks, automated pipelines |
+| Cursor | In-editor AI | Codebase understanding, Tab completion, multi-file editing | Everyday coding, refactoring |
+| Codex / Copilot CLI | Cloud agent | One-off patches, command-line fixes | Patches, script generation |
+| Aider | Terminal pair | Structured edits to an existing codebase | Modernizing legacy projects |
+| Gemini CLI | Terminal agent | Long context, multimodal | Large files / document processing |
+| Kiro / Trae / Windsurf | IDE agent | Different workflow preferences | Match your team's habits |
 
-## 二、六大方法论技巧分类（源于 ai-coding-guide）
+## 2. Technique categories of the six methodologies (derived from ai-coding-guide)
 
-1. **提示词（~12）**：意图清晰、给示例、区分做/不做、验收可测。
-2. **CLAUDE.md / 项目记忆（~10）**：写好项目约定，让 AI 自动遵循。
-3. **Agent 与 Subagent（~10）**：用子代理隔离上下文、并行独立任务。
-4. **Hook（~8）**：用钩子做自动化检查（格式化、测试、提交前校验）。
-5. **工作流（~12）**：计划-执行-验证循环、TDD、增量提交。
-6. **Git 与 PR（~8）**：规范提交、小 PR、AI 辅助审查。
+1. **Prompting (~12)**: clear intent, give examples, separate do/don't, testable acceptance.
+2. **CLAUDE.md / project memory (~10)**: write good project conventions so the AI follows them automatically.
+3. **Agent and Subagent (~10)**: use subagents to isolate context and parallelize independent tasks.
+4. **Hook (~8)**: use hooks for automated checks (formatting, tests, pre-commit validation).
+5. **Workflow (~12)**: plan-execute-verify loop, TDD, incremental commits.
+6. **Git and PR (~8)**: disciplined commits, small PRs, AI-assisted review.
 
-## 三、调试与成本（~16）
+## 3. Debugging and cost (~16)
 
-- **调试（~10）**：先复现定位，再修；利用错误信息；避免无脑重试。
-- **性能与成本（~6）**：控制上下文长度、缓存、批量、选对模型档位。
+- **Debugging (~10)**: reproduce and localize first, then fix; use error messages; avoid mindless retries.
+- **Performance and cost (~6)**: control context length, caching, batching, pick the right model tier.
 
-## 四、通用铁律（给用户的话）
+## 4. Universal iron rules (words for the user)
 
-- 上下文比 prompt 措辞更重要：把"项目记忆"写好，胜过每次长提示。
-- 小步快跑：每步可验证、可回退，比一次性大改动稳。
-- 证据优先：让 AI 跑测试/命令并贴结果，不要信"应该好了"。
-- 安全：密钥别进提示；警惕 AI 生成的危险命令；敏感数据不外传。
+- Context matters more than prompt wording: writing good "project memory" beats a long prompt every time.
+- Small steps, fast feedback: every step verifiable and revertible is steadier than one big change.
+- Evidence first: have the AI run tests/commands and paste the results; don't trust "it should be fixed now."
+- Security: no secrets in prompts; watch out for dangerous commands the AI generates; don't send sensitive data outside.
 
-> 用户卡住时，先判断是"上下文问题 / 提示词问题 / 工具能力边界"，再给对应解法，附具体命令或模板。
+> When the user is stuck, first judge whether it is "a context problem / a prompt problem / a tool capability limit," then give the matching remedy with concrete commands or templates.

@@ -279,7 +279,7 @@ fi
 
 ## 💡 Usage Examples
 
-### Example 1: User Reports "系统有错误"
+### Example 1: User Reports "The system has errors"
 
 **AI Workflow**:
 ```
@@ -313,7 +313,7 @@ Total Token: ~600 (this file)
 3. Decision: No Deep needed
    
 4. Report:
-   系统日志检查完成 - 一切正常 ✅
+   System log check complete - all normal ✅
    
 Total Duration: 10 seconds
 Total Token: ~600 (this file only)

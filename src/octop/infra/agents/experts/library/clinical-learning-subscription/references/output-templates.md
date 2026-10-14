@@ -1,189 +1,189 @@
-# 输出模板
+# Output Templates
 
-## 普通医学问答（轻量快路径）
+## Ordinary medical Q&A (lightweight fast path)
 
-普通概念解释和常见误区由 `clinical-q-and-a` 使用，不展开成章节模板：
+Ordinary concept explanations and common misconceptions are handled by `clinical-q-and-a` and are not expanded into a section template:
 
-    【临床学习问答｜{主题}】
-    结论：{准确/不准确/需要条件化理解}
-    解释：{2-4 个简明要点}
-    证据说明：{指南/共识；原文有等级则保留，没有则写未标注}
-    边界：本回答用于医学学习和沟通参考，不提供个体诊疗或处方建议。
-    来源：{正式文件名称}：[链接]({权威原文 URL})
+    [Clinical Learning Q&A | {topic}]
+    Conclusion: {accurate/inaccurate/needs conditional understanding}
+    Explanation: {2-4 concise points}
+    Evidence note: {guideline/consensus; keep the grade if the original text has one, otherwise write "not stated"}
+    Boundary: This answer is for medical learning and communication reference; it does not provide individual diagnosis or treatment or prescription advice.
+    Source: {formal document name}: [link]({authoritative original URL})
 
-快路径只使用一份足以覆盖问题的权威规范性正文，并在同一推理回合检查结论、边界、来源和不超出原文四项；不写草稿文件或启动格式校验脚本。精确推荐/定位、药品高风险事实、版本比较、医保监管或个体处置请求不得使用本模板。
+The fast path uses only one authoritative normative body of text sufficient to cover the question, and checks four things within the same reasoning turn: conclusion, boundary, source, and not going beyond the original text; it does not write a draft file or launch the format validation script. Precise recommendations/locators, high-risk drug facts, version comparisons, medical-insurance regulation, or individual management requests must not use this template.
 
-## 登记启用回执
+## Registration activation receipt
 
-用户明确选择任务且任务实际创建成功时使用（平台 cronjob_create 自动绑定当前会话通道，无需微信绑定）：
+Used when the user explicitly selects tasks and the tasks are actually created successfully (the platform cronjob_create automatically binds the current session channel, so no WeChat binding is needed):
 
-    【学习订阅已启用】
-    称谓/医院：已记录（后续推送默认不重复展示）
-    地区：{省-市-区县}
-    识别专业：{科室系统} / {亚专业}
-    内容深度：{职称对应层级}
+    [Learning Subscription Enabled]
+    Form of address/Hospital: recorded (not shown repeatedly by default in later pushes)
+    Region: {province-city-district/county}
+    Identified specialty: {department system} / {subspecialty}
+    Content depth: {level corresponding to professional title}
 
-    已启用任务：
-    {仅列出用户明确选择且实际创建成功的任务，逐条注明“推送至当前会话通道”}
+    Enabled tasks:
+    {list only the tasks the user explicitly selected and that were actually created successfully, noting "pushed to the current session channel" for each}
 
-    未启用：
-    {列出用户未选择的任务；全部开启时写“无”}
+    Not enabled:
+    {list the tasks the user did not select; write "none" when all are enabled}
 
-    说明：上述任务排程已创建，平台按当前会话通道（微信/QQ/dashboard/CLI 等）自动投递。每日指南学习使用通用 cron + 弱投递防重规程（无通道回执，以 cron 执行为准，按逻辑日期去重）；在您选定一份权威指南轨道前，它不会随机推送知识点，选定后从第 1 单元开始。
-    医学学习边界：本助手基于权威指南做医学指南学习与政策摘要，不提供个体诊疗、处方剂量；急诊处置与医保报销只提供指南/政策层面的学习性建议，不作为个体执行或报销依据；其他通用任务可直接提出。
+    Note: The schedules for the above tasks have been created and the platform delivers automatically through the current session channel (WeChat/QQ/dashboard/CLI, etc.). Daily guideline learning uses the generic cron + weak-delivery dedup protocol (no channel receipt; the cron run prevails; deduplicated by logical date); before you select an authoritative guideline track it will not push knowledge points at random, and after selection it starts from unit 1.
+    Medical learning boundary: This assistant performs medical guideline learning and policy summaries based on authoritative guidelines; it does not provide individual diagnosis or treatment or prescription dosages; for emergency management and medical-insurance reimbursement it only offers guideline/policy-level educational suggestions, not a basis for individual action or reimbursement; other general tasks may be raised directly.
 
-工具不可用或创建失败时，不得宣称任务已启用；如实说明失败原因并保留登记档案，不要以“未绑定微信通道”作为回执。
+When the tool is unavailable or creation fails, do not claim that the task is enabled; state the failure reason honestly and keep the registration record, and do not use "WeChat channel not bound" as a receipt.
 
-## 每日指南学习单元
+## Daily guideline learning unit
 
-    【指南学习单元｜{科室名称}】
-    轨道：{用户可读名称}
-    依据：{完整指南名称}（{版本/年份}，{发布机构}）
-    学习单元：{ordinal} / {total_units}
-    章节：{章节锚点}
-    关联目标：{学习目标或“通用学习”}
-    主题：{今日学习主题}
+    [Guideline Learning Unit | {department}]
+    Track: {user-readable name}
+    Basis: {full guideline name} ({version/year}, {issuing body})
+    Learning unit: {ordinal} / {total_units}
+    Section: {section anchor}
+    Linked goal: {learning objective or "general learning"}
+    Topic: {today's learning topic}
 
-    1. {教育性学习要点一，不写处置命令}
-    2. {教育性学习要点二，突出基层学习价值}
-    3. {教育性学习要点三，说明边界或本地确认事项}
+    1. {educational learning point one, no management orders}
+    2. {educational learning point two, highlighting primary-care learning value}
+    3. {educational learning point three, stating boundaries or local confirmation items}
 
-    {非最后一个单元：
-    下一单元预告：
-    {下一固定单元主题} — {下一单元学习目标}}
+    {For a non-final unit:
+    Next unit preview:
+    {next fixed unit topic} — {next unit learning objective}}
 
-    {最后一个单元：
-    下一阶段可选指南（待确认）：
-    A. 《{正式指南完整名称}》（{年份/版本}，{发布机构}）：[链接]({权威原文 URL})
-       推荐衔接：{与当前轨道的衔接点}
-    B. 《{正式指南完整名称}》（{年份/版本}，{发布机构}）：[链接]({权威原文 URL})
-       推荐衔接：{与当前轨道的衔接点}
-    回复 A/B，或告诉我其他学习方向。确认前不会创建或启用新轨道。}
+    {For the final unit:
+    Optional guidelines for the next stage (pending confirmation):
+    A. "{full name of the formal guideline}"({year/version}, {issuing body}): [link]({authoritative original URL})
+       Recommended connection: {the connection with the current track}
+    B. "{full name of the formal guideline}"({year/version}, {issuing body}): [link]({authoritative original URL})
+       Recommended connection: {the connection with the current track}
+    Reply A/B, or tell me another learning direction. No new track will be created or enabled before confirmation.}
 
-    来源：{文件名称}：[链接]({URL})
-    说明：本内容用于医生继续学习，不提供个体诊疗、处方剂量或急诊处置建议。
+    Source: {file name}: [link]({URL})
+    Note: This content is for doctors' continuing learning and does not provide individual diagnosis or treatment, prescription dosages, or emergency management advice.
 
-每日学习单元默认 600-900 字，最多不超过 1000 字。详细约束见 daily-learning-template.md。最后一个单元只推荐 2-3 个已核验的正式指南/共识/规范；综述和研究论文不作为最终来源或候选。没有足够候选时应询问学习方向，不得用低可信来源凑数。预览首行标记【格式预览｜不计入学习进度】，不会创建投递账本或推进。只有真实通道回执才可在内部确认送达，且确认送达不等于已掌握。
+Daily learning units default to 600-900 characters, no more than 1000 characters. See daily-learning-template.md for the detailed constraints. The final unit recommends only 2-3 verified formal guidelines/consensus statements/standards; review articles and research papers are not used as final sources or candidates. When there are not enough candidates, ask about the learning direction and do not pad the list with low-credibility sources. The first line of a preview is marked [Format Preview | Not Counted Toward Progress] and will not create a delivery ledger or advance. Only a real channel receipt allows delivery to be confirmed internally, and confirmed delivery does not equal mastery.
 
-## 专业指南更新提醒
+## Professional guideline update reminder
 
-    【专业指南更新提醒｜{科室名称}】
-    更新文件：{完整名称}
-    发布机构：{机构}
-    发布时间：{日期或年份}
-    适用范围：{涉及人群/疾病/检查/管理场景}
-    变化主题：
-    1. {变化主题，不写命令式临床动作}
-    2. {变化主题}
-    基层学习相关性：{说明哪些知识点值得学习，不给患者处置建议}
-    来源：{文件名称}：[链接]({URL})
+    [Professional Guideline Update Alert | {department}]
+    Updated document: {full name}
+    Issuing body: {body}
+    Publication date: {date or year}
+    Scope of application: {populations/diseases/tests/management scenarios involved}
+    Changed topics:
+    1. {changed topic, no prescriptive clinical actions}
+    2. {changed topic}
+    Primary-care learning relevance: {explain which knowledge points are worth learning, without patient management advice}
+    Source: {file name}: [link]({URL})
 
-无可靠更新时：
+When there is no reliable update:
 
-    【专业指南更新提醒｜{科室名称}】
-    本周期未发现与{地区}{科室}直接相关、且可回溯到权威原文的指南、共识、规范、临床路径或质控文件更新。
+    [Professional Guideline Update Alert | {department}]
+    In this cycle, no updates were found to guidelines, consensus statements, standards, clinical pathways, or quality-control documents that are directly related to {region} {department} and traceable to an authoritative original text.
 
-## 地区医保政策变化学习
+## Learning about regional medical-insurance policy changes
 
-    【医保政策变化学习｜{地区}】
-    政策文件：{完整名称}
-    发布机构：{机构}
-    生效时间：{日期}
-    摘要：
-    1. {政策原文层面的变化或要求}
-    2. {政策原文层面的变化或要求}
-    待确认：本院目录、结算映射、医保办执行口径。
-    来源：{文件名称}：[链接]({URL})
-    说明：实际执行以当地医保局、医院医保办和院内正式结算口径为准，本摘要不作为报销依据。
+    [Insurance Policy Change Study | {region}]
+    Policy document: {full name}
+    Issuing body: {body}
+    Effective date: {date}
+    Summary:
+    1. {change or requirement at the level of the policy text}
+    2. {change or requirement at the level of the policy text}
+    Pending confirmation: this hospital's catalog, settlement mapping, and the medical insurance office's implementation rules.
+    Source: {file name}: [link]({URL})
+    Note: Actual implementation is governed by the local medical insurance bureau, the hospital medical insurance office, and the hospital's formal settlement rules; this summary is not a basis for reimbursement.
 
-## 指南章节展开
+## Guideline section expansion
 
-用户要求展开、细看或详解某一章节时使用。目的是帮用户读懂原文，不是替代原文。
+Used when the user asks to expand, look closely at, or explain a section in detail. The purpose is to help the user understand the original text, not to replace it.
 
-    【指南章节展开｜{章节名称}】
-    依据：{完整指南名称}（{版本/年份}，{发布机构}）
-    章节：{章/节编号与标题}
-    原文定位：{章节号 / 小节号 / 条目号或页码范围}
+    [Guideline Section Expansion | {section name}]
+    Basis: {full guideline name} ({version/year}, {issuing body})
+    Section: {chapter/section number and title}
+    Original-text locator: {chapter number / subsection number / item number or page range}
 
-    原文要点：
-    1. {该节讲了什么，按原文结构陈述}
-    2. {关键定义、要素或分层概念}
-    3. {证据等级、推荐强度或质量指标（如原文有）}
+    Key points of the original text:
+    1. {what this section says, stated following the original structure}
+    2. {key definitions, elements, or stratification concepts}
+    3. {levels of evidence, strength of recommendations, or quality indicators (if the original text has them)}
 
-    章节关系：{本节与上下游章节的关系，说明它在指南结构中的位置}
-    易混淆点：{读这节时容易混淆或误用的地方}
-    学习提示：{建议如何学这节、需要先掌握什么}
-    边界：本节展开用于学习原文结构与概念，不替代原文，也不作为个体诊疗依据；请以权威原文为准。
-    来源：{文件名称}：[链接]({URL})
+    Section relationships: {this section's relationship with the preceding and following sections, explaining its position in the guideline structure}
+    Easily confused points: {places that are easily confused or misapplied when reading this section}
+    Learning tips: {how to study this section, and what must be mastered first}
+    Boundary: This section expansion is for learning the original structure and concepts; it does not replace the original text and is not a basis for individual diagnosis or treatment; please rely on the authoritative original text.
+    Source: {file name}: [link]({URL})
 
-约束：只做结构化摘要与精确定位，不整段复制指南全文；不得把展开内容改写成院内可执行流程、行动卡或处置步骤。取不到权威原文时，只说明待核验，不凭记忆展开。
+Constraints: Only structured summaries and precise locators; do not copy the full guideline text paragraph by paragraph; the expansion must not be rewritten into a hospital-executable process, an action card, or management steps. When the authoritative original text cannot be obtained, only state that it is pending verification and do not expand from memory.
 
-## 指南学习路径图
+## Guideline learning pathway map
 
-用户说“把指南总结成流程”“该怎么学这份指南”时使用。先确认用户要的是学习顺序而非床旁处置顺序。
+Used when the user says "summarize the guideline into a process" or "how should I study this guideline". First confirm that the user wants a learning order rather than a bedside management order.
 
-    【指南学习路径图｜{指南简称}】
-    依据：{完整指南名称}（{版本/年份}，{发布机构}）
-    适用学习目标：{学习目标或“通用学习”}
-    前置知识：{学这份指南前建议已掌握的内容}
+    [Guideline Learning Pathway | {guideline}]
+    Basis: {full guideline name} ({version/year}, {issuing body})
+    Applicable learning objective: {learning objective or "general learning"}
+    Prerequisite knowledge: {what is recommended to have mastered before studying this guideline}
 
-    学习顺序：
-    1. {第一步学什么} — 对应原文：{章节/条目} — 预计 {N} 分钟 — 掌握标志：{可自查的学习结果}
-    2. {第二步学什么} — 对应原文：{章节/条目} — 预计 {N} 分钟 — 掌握标志：{...}
-    3. {第三步学什么} — 对应原文：{章节/条目} — 预计 {N} 分钟 — 掌握标志：{...}
+    Learning order:
+    1. {what to study first} — corresponding original text: {section/item} — estimated {N} minutes — mastery marker: {self-checkable learning outcome}
+    2. {what to study second} — corresponding original text: {section/item} — estimated {N} minutes — mastery marker: {...}
+    3. {what to study third} — corresponding original text: {section/item} — estimated {N} minutes — mastery marker: {...}
 
-    可选深入：{进阶或专题方向，供用户自主选择}
-    边界：本路径图只安排学习顺序，不用于床旁执行，也不构成个体诊疗依据；临床执行以本院正式文件与上级医师意见为准。
-    来源：{文件名称}：[链接]({URL})
+    Optional deep dive: {advanced or special-topic directions for the user to choose from}
+    Boundary: This pathway map only sets out a learning order; it is not for bedside execution and does not constitute a basis for individual diagnosis or treatment; clinical execution is governed by the hospital's formal documents and the opinions of supervising physicians.
+    Source: {file name}: [link]({URL})
 
-约束：禁止把内容写成床旁执行步骤或抢救顺序（不得出现“处置流程”“诊疗流程”“抢救流程”“处理流程”“急诊行动卡”等表述）。每一步必须能对应到原文章节；无法对应时标注待核验。用户确认后可据此创建学习轨道的固定单元。
+Constraints: It is forbidden to write the content as bedside execution steps or resuscitation sequences (expressions such as "management process", "diagnosis-and-treatment process", "resuscitation process", "handling process", and "emergency action card" must not appear). Each step must map to a section of the original text; when it cannot, mark it as pending verification. After the user confirms, it may be used to create the fixed units of a learning track.
 
-## 备考学习材料推荐
+## Exam-preparation study material recommendations
 
-用户说明考试或岗位目标（副高、中级、规培、执业医师等）时使用。
+Used when the user states an exam or position goal (associate chief physician, intermediate, residency training, licensed physician, etc.).
 
-    【备考学习材料推荐｜{考试或岗位目标}】
-    考试目标：{目标名称}｜目标时间：{YYYY-MM 或待定}
-    可投入时间：{每日分钟数或“待确认”}
+    [Exam Prep Material Recommendation | {exam or role target}]
+    Exam objective: {objective name} | target time: {YYYY-MM or undetermined}
+    Time available: {minutes per day or "pending confirmation"}
 
-    推荐材料：
-    1. {材料名称}（{类型：官方大纲/指南/教材/规范}，{版本/年份}，{发布机构}）— 用途：{为什么推荐}
-    2. {材料名称}（...）— 用途：{...}
-    3. {材料名称}（...）— 用途：{...}
+    Recommended materials:
+    1. {material name} ({type: official syllabus/guideline/textbook/standard}, {version/year}, {issuing body}) — purpose: {why it is recommended}
+    2. {material name} (...) — purpose: {...}
+    3. {material name} (...) — purpose: {...}
 
-    学习顺序：{建议先后顺序及理由}
-    待确认：当年官方考试大纲、考办正式通知、本地报考要求。
-    边界：以官方考试大纲为准；本推荐不代表考试范围、题型、分值或必考点，也不承诺通过结果。
-    来源：{文件名称}：[链接]({URL})
+    Learning order: {suggested sequence and the reason}
+    Pending confirmation: this year's official exam syllabus, formal notices from the exam office, and local registration requirements.
+    Boundary: The official exam syllabus prevails; this recommendation does not represent the exam scope, question types, score weighting, or must-test points, and does not promise a passing result.
+    Source: {file name}: [link]({URL})
 
-约束：必须区分“官方大纲要求”与“助手补充建议”。不得编造教材版本、书号或书目；取不到权威大纲时只给学习方向初稿并标注待核验。
+Constraints: A distinction must be made between "official syllabus requirements" and "the assistant's supplementary suggestions". Do not fabricate textbook versions, ISBNs, or bibliographies; when the authoritative syllabus cannot be obtained, give only a draft of the learning direction and mark it as pending verification.
 
-## 医保政策回顾学习（长周期）
+## Medical-insurance policy retrospective learning (long cycle)
 
-用户要求回顾近一年、本年度或指定区间的医保政策时使用，与每周变更推送区分开。
+Used when the user asks for a review of medical-insurance policy over the past year, the current year, or a specified period; keep it distinct from the weekly change push.
 
-    【医保政策回顾学习｜{地区}】
-    回顾区间：{YYYY-MM-DD 至 YYYY-MM-DD}
-    检索范围：{国家/省/市/区县层级说明}
+    [Insurance Policy Review Study | {region}]
+    Review window: {YYYY-MM-DD to YYYY-MM-DD}
+    Retrieval scope: {national/provincial/municipal/district-county level description}
 
-    重点政策：
-    1. {政策文件完整名称}（{发布机构}，发布 {日期}，生效 {日期}）｜状态：{现行有效/已废止/已被替代}
-       要点：{原文层面的要求或变化}
-       来源：{文件名称}：[链接]({URL})
-    2. {政策文件完整名称}（...）｜状态：{...}
-       要点：{...}
-       来源：{文件名称}：[链接]({URL})
+    Key policies:
+    1. {full name of the policy document} ({issuing body}, published {date}, effective {date}) | status: {currently in force/repealed/superseded}
+       Key points: {requirements or changes at the level of the original text}
+       Source: {file name}: [link]({URL})
+    2. {full name of the policy document} (...) | status: {...}
+       Key points: {...}
+       Source: {file name}: [link]({URL})
 
-    学习提示：{这些政策对基层医生学习的意义，按主题归纳}
-    待确认：本院目录、结算映射、医保办执行口径。
-    说明：实际执行以当地医保局、医院医保办和院内正式结算口径为准，本摘要不作为报销依据。
+    Learning tips: {what these policies mean for primary-care doctors' learning, grouped by topic}
+    Pending confirmation: this hospital's catalog, settlement mapping, and the medical insurance office's implementation rules.
+    Note: Actual implementation is governed by the local medical insurance bureau, the hospital medical insurance office, and the hospital's formal settlement rules; this summary is not a basis for reimbursement.
 
-约束：按发布时间排序；必须标注废止或被替代状态，不得把失效政策当作现行有效。区间内未检索到可回溯原文时如实说明，不用二手平台补齐。
+Constraints: Sort by publication date; the repealed or superseded status must be marked, and lapsed policies must not be presented as currently in force. When no traceable original text is found within the window, state that honestly and do not fill the gap from second-hand platforms.
 
-## 信源格式硬规则
+## Hard rules for source format
 
-只要本次输出查询、引用或核验了权威信源，无论是定时推送还是回答问题，都必须列出来源。统一格式为：
+Whenever this output queries, cites, or verifies an authoritative source, whether for a scheduled push or for answering a question, the sources must be listed. The unified format is:
 
-    来源：{文件或页面名称}：[链接]({URL})
+    Source: {file or page name}: [link]({URL})
 
-不得裸露长 URL，不得把链接文字写成查看原文、官网、点击这里等其他词。多个来源分多行列出。无可靠来源时不得伪造链接，只写未取得可核验权威来源或需人工核验。
+Long bare URLs must not appear, and the link text must not be written as other words such as view original, official website, or click here. Multiple sources are listed on separate lines. When there is no reliable source, do not fabricate links; write only that no verifiable authoritative source was obtained or that manual verification is required.

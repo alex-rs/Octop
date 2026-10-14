@@ -1,79 +1,79 @@
 ---
-summary: "心跳任务 — 基于用户偏好的定期推送"
+summary: "Heartbeat tasks — periodic pushes based on user preferences"
 read_when:
-  - 心跳轮询
+  - heartbeat polling
 ---
 
-# 心跳任务清单
+# Heartbeat Task List
 
-## 1. 市场日报推送
+## 1. Market daily report push
 
-**触发条件：** 每个交易日盘后（15:30 后）
+**Trigger:** after the close on every trading day (after 15:30)
 
-**执行步骤：**
+**Steps:**
 
-1. 读 `MEMORY.md` 和 `USER.md`，获取用户关注的行业、持仓方向、投资风格
-2. 确认今天是交易日（非交易日跳过）
-3. 按用户偏好拉取数据并生成摘要：
+1. Read `MEMORY.md` and `USER.md` to get the industries the user follows, their holding direction, and their investment style
+2. Confirm that today is a trading day (skip on non-trading days)
+3. Pull data according to the user's preferences and generate a summary:
 
 ```
-必查项（所有用户）：
-- 三大指数收盘：沪指/深成指/创业板指 涨跌幅+成交额
-- 北向资金：净流入/流出金额
+Always check (all users):
+- Closing of the three major indices: Shanghai Composite / Shenzhen Component / ChiNext changes + turnover
+- Northbound capital: net inflow/outflow amount
 
-按偏好追加：
-- 用户关注行业 → 该行业板块今日涨跌 + 领涨/领跌个股
-- 用户有持仓方向 → 相关板块资金流向
-- 用户风格=价值 → 高股息板块表现
-- 用户风格=成长 → 科技/新能源等成长板块表现
-- 用户风格=趋势 → 涨跌停统计 + 连板梯队
+Add according to preferences:
+- Industries the user follows → that sector's move today + leading gainers/losers
+- User has a holding direction → capital flow of the related sectors
+- User style = value → performance of high-dividend sectors
+- User style = growth → performance of growth sectors such as technology/new energy
+- User style = momentum → limit-up/limit-down statistics + consecutive limit-up tiers
 ```
 
-4. 输出格式：
+4. Output format:
 
 ```
-【老钱收盘速递 YYYY-MM-DD】
+[Laoqian Market Close Brief YYYY-MM-DD]
 
-📊 大盘：沪指 XXXX（+X.XX%），深成指 XXXX，创业板 XXXX
-💰 北向：净流入/流出 XX亿
-🔥 你关注的：{行业} 今天 +X.XX%，{领涨股}涨停
+📊 Market: Shanghai Composite XXXX (+X.XX%), Shenzhen Component XXXX, ChiNext XXXX
+💰 Northbound: net inflow/outflow XX billion
+🔥 What you follow: {industry} +X.XX% today, {leading stock} limit up
 
-{一句话点评，带点老钱风格}
+{one-sentence commentary, with a touch of Laoqian style}
 
 ---
-数据来源：akshare | 仅供参考，不构成投资建议
+Data source: akshare | for reference only, not investment advice
 ```
 
 ---
 
-## 2. 异动提醒
+## 2. Movement alert
 
-**触发条件：** 盘中心跳（如有）
+**Trigger:** intraday heartbeat (if any)
 
-**执行步骤：**
+**Steps:**
 
-1. 读 `MEMORY.md` 获取用户关注的行业/板块
-2. 检查用户关注板块是否出现异动（涨跌幅 > 3%）
-3. 有异动才推送，没有则 `HEARTBEAT_OK`
-
----
-
-## 3. 记忆维护
-
-**触发条件：** 每周一次（周末心跳时）
-
-**执行步骤：**
-
-1. 翻阅近期 `memory/YYYY-MM-DD.md`
-2. 筛出值得长期保留的洞察、用户偏好变化
-3. 蒸馏后更新 `MEMORY.md`
-4. 清理过时的行情分析结论
+1. Read `MEMORY.md` to get the industries/sectors the user follows
+2. Check whether the sectors the user follows show unusual movement (change > 3%)
+3. Push only when there is movement; otherwise `HEARTBEAT_OK`
 
 ---
 
-## 无偏好时的行为
+## 3. Memory maintenance
 
-如果 `USER.md` 偏好仍为"待确认"且 `MEMORY.md` 无记录：
-- 只推送大盘 + 北向的极简摘要
-- 不猜测用户兴趣，不推送行业/个股信息
-- 在摘要末尾加一句："告诉我你关注哪些行业，下次给你定制推送。"
+**Trigger:** once per week (during the weekend heartbeat)
+
+**Steps:**
+
+1. Review recent `memory/YYYY-MM-DD.md`
+2. Pick out insights worth keeping long term and changes in the user's preferences
+3. After distilling them, update `MEMORY.md`
+4. Clean up outdated market analysis conclusions
+
+---
+
+## Behavior without preferences
+
+If the preferences in `USER.md` are still "pending confirmation" and `MEMORY.md` has no records:
+- Push only a minimal summary of the market and northbound capital
+- Do not guess the user's interests and do not push industry/stock information
+- Add a sentence at the end of the summary: "Tell me which industries you follow, and I will customize the push for you next time."

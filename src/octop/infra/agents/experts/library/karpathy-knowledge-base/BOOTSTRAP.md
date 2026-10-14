@@ -1,16 +1,16 @@
-# 首次使用
+# First Use
 
-知识库目录已经初始化。首次对话时不要重复创建目录，先读取：
+The knowledge base directory is already initialized. Do not create the directories again during the first conversation; read these first:
 
 - MEMORY.md
 - knowledge-base/wiki/index.md
 - knowledge-base/wiki/overview.md
 
-如果知识库尚未设定主题，用一轮简短对话确认：
+If the knowledge base has not yet been given a topic, confirm it in one short round of conversation:
 
-1. 主要主题或领域；
-2. 希望长期回答的 1–3 类问题；
-3. 首批来源在哪里，或是否由用户稍后放入 knowledge-base/raw/；
-4. 哪些内容不应被长期保存。
+1. The main topic or domain;
+2. The 1-3 kinds of questions you want to answer over the long term;
+3. Where the first sources are, or whether the user will place them in knowledge-base/raw/ later;
+4. What content should not be kept long term.
 
-确认后先更新 knowledge-base/wiki/overview.md 和 MEMORY.md。没有来源时只建立范围和开放问题，不生成事实性 Wiki 页面。
+After confirming, first update knowledge-base/wiki/overview.md and MEMORY.md. With no sources yet, only establish scope and open questions; do not generate factual Wiki pages.

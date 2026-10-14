@@ -1,47 +1,47 @@
-# 多专家协作协议（AGENTS 指南）
+# Multi-Expert Collaboration Protocol (AGENTS Guide)
 
-本文件定义主 agent 在「多专家协作编排」模式下的派发协议。它把 agency-orchestrator 的 DAG 理念落到 OCTOP 已有的子智能体委派机制上。
+This file defines the dispatch protocol for the main agent in "multi-expert collaboration orchestration" mode. It grounds the DAG concept of agency-orchestrator onto OCTOP's existing sub-agent delegation mechanism.
 
-## 1. 角色目录与 slug
+## 1. Role catalog and slug
 
-OCTOP 子智能体人格文件位于：
+OCTOP sub-agent persona files live at:
 
 ```
 subagents/library/zh/<division>/<slug>.md
 ```
 
-- `<division>`：academic / design / engineering / finance / game-development / gis / hr / legal / marketing / paid-media / product / project-management / sales / security / spatial-computing / specialized / supply-chain / support / testing
-- `<slug>`：文件名（去 .md），如 `engineering-software-architect`、`marketing-content-creator`
+- `<division>`: academic / design / engineering / finance / game-development / gis / hr / legal / marketing / paid-media / product / project-management / sales / security / spatial-computing / specialized / supply-chain / support / testing
+- `<slug>`: the filename (without .md), such as `engineering-software-architect`, `marketing-content-creator`
 
-委派时引用 `division/slug`（例如 `engineering/engineering-code-reviewer`）。
+When delegating, reference `division/slug` (for example `engineering/engineering-code-reviewer`).
 
-## 2. DAG 结构（字段约定）
+## 2. DAG structure (field conventions)
 
-每个协作计划用如下结构描述：
+Describe each collaboration plan with the following structure:
 
 ```
-goal: <一句话目标>
+goal: <one-sentence goal>
 steps:
   - id: <step_id>
-    role: <division>/<slug>        # 该步由哪个子智能体执行
-    task: "<任务描述，可用 {{var}} 引用上游输出>"
-    depends_on: [<step_id>, ...]   # 空或省略 = 可立即并行
-    output: <output_var>           # 本步命名产出，供下游引用
-    llm: <可选，覆写该步所用模型>
+    role: <division>/<slug>        # which sub-agent executes this step
+    task: "<task description, may reference upstream output with {{var}}>"
+    depends_on: [<step_id>, ...]   # empty or omitted = can be dispatched in parallel immediately
+    output: <output_var>           # named output of this step, for downstream reference
+    llm: <optional, overrides the model used by this step>
 ```
 
-## 3. 接力与并行规则
+## 3. Relay and parallelism rules
 
-- **接力**：下游 `task` 中用 `{{上一步output}}` 消费上游结果，避免重复生成或上下文丢失。
-- **并行**：`depends_on` 为空的步骤同时派发；有依赖的等依赖完成再派发。
-- **收敛**：最后用一步（或主 agent 自身）汇总所有 output 成最终交付。
+- **Relay**: in a downstream `task`, consume the upstream result with `{{previous step output}}` to avoid regenerating or losing context.
+- **Parallelism**: steps with an empty `depends_on` are dispatched at the same time; dependent steps wait for their dependencies to finish before dispatch.
+- **Convergence**: finish with one step (or the main agent itself) that aggregates all outputs into the final deliverable.
 
-## 4. 团队复用（team）
+## 4. Team reuse (team)
 
-对持续项目，把锁定的一组 `role` 记为一个"团队阵容"，例如：
+For an ongoing project, record a locked set of `role` entries as a "team roster", for example:
 
 ```
-team: "产品从0到1"
+team: "Product zero to one"
   - product/product-manager
   - engineering/engineering-software-architect
   - engineering/engineering-frontend-developer
@@ -49,16 +49,16 @@ team: "产品从0到1"
   - ops-engineer
 ```
 
-后续任务直接复用该阵容，省去每次重新选角。
+Later tasks reuse that roster directly, saving the need to recast every time.
 
-## 5. 执行纪律
+## 5. Execution discipline
 
-- 派发前先把 DAG 计划呈现给用户确认（尤其涉及不可逆操作或外部调用的步骤）。
-- 某步失败：回退重排或换角，不要无脑重试同一提示。
-- 不可逆/外部副作用步骤（发邮件、改生产、付费）必须 `securityGate` 二次确认。
-- 每个子智能体的调用计入会话审计（对接 ai-safety-guardian 的 L8 Session Guard）。
+- Present the DAG plan to the user for confirmation before dispatch (especially for steps involving irreversible operations or external calls).
+- If a step fails: back off, re-sequence, or swap roles; do not blindly retry the same prompt.
+- Steps with irreversible or external side effects (sending email, changing production, payments) must go through `securityGate` for a second confirmation.
+- Every sub-agent invocation counts toward session audit (integrating with ai-safety-guardian's L8 Session Guard).
 
-## 6. 与单 agent 模式的边界
+## 6. Boundary with single-agent mode
 
-- 目标可拆、且各步需要不同专业视角 → 用本协作协议（多专家）。
-- 目标单一、专业性集中 → 直接让对口专家/子智能体做，不必强行编排。
+- If the goal can be split and each step needs a different professional perspective → use this collaboration protocol (multi-expert).
+- If the goal is singular and the expertise is concentrated → let the matching expert/sub-agent do it directly; do not force orchestration.

@@ -1,119 +1,119 @@
 ---
 name: guideline-learning-diagnosis
 description: >-
-  当用户要求评估自己对某份指南的掌握情况、制定指南学习/备考计划、梳理薄弱章节、
-  做教育性小测，或学习指南中的诊断标准、鉴别框架和流程关系时使用。
-  本技能只做学习诊断与诊断标准教学，不对具体患者作疾病诊断、治疗、处方、剂量、
-  急诊处置或医保报销判断。
+  Use when the user asks to assess their mastery of a specific guideline, create a guideline study / exam-preparation
+  plan, sort out weak sections, do an educational quiz, or study the diagnostic criteria, differential framework,
+  and workflow relationships in a guideline. This skill only performs learning diagnosis and teaches diagnostic criteria;
+  it does not make disease diagnosis, treatment, prescription, dosage, emergency management, or insurance reimbursement judgments for any patient.
 metadata:
   octop:
     emoji: "🧩"
     label:
-      zh: "学习诊断"
+      zh: "Learning Diagnosis"
       en: "Learning Diagnosis"
     summary:
-      zh: "评估指南掌握情况，讲解诊断标准，不做个体诊疗。"
+      zh: "Assess guideline mastery and explain diagnostic criteria, without individual case management."
       en: "Assess guideline mastery and teach diagnostic criteria, not cases."
 ---
 
-# 指南学习诊断与诊断标准学习
+# Guideline Learning Diagnosis and Diagnostic Criteria Study
 
-## 先分清三类诊断
+## First Distinguish the Three Types of Diagnosis
 
-用户说诊断时，先按上下文归入下面之一；名称相近，不得混用：
+When the user says "diagnosis", first classify it into one of the following by context; the names are similar and must not be conflated:
 
-| 类型 | 是否允许 | 处理方式 |
+| Type | Allowed | How to handle |
 | --- | --- | --- |
-| 学习诊断/学习评估 | 允许 | 评估学习目标、知识覆盖度、薄弱章节和复习路径。 |
-| 指南中的诊断标准学习 | 允许 | 讲解定义、标准要素、鉴别框架、风险提示和流程关系，并给原文来源。 |
-| 具体患者诊断或处理 | 不允许 | 不根据病例、症状、检查或影像得出诊断、检查或治疗结论；转为一般性学习资料与权威来源。 |
+| Learning diagnosis / learning assessment | Allowed | Assess learning goals, knowledge coverage, weak sections, and review paths. |
+| Studying diagnostic criteria in a guideline | Allowed | Explain definitions, criteria elements, differential frameworks, risk notes, and workflow relationships, with the original source. |
+| Diagnosis or management of a specific patient | Not allowed | Do not derive diagnosis, testing, or treatment conclusions from cases, symptoms, examinations, or imaging; redirect to general learning material and authoritative sources. |
 
-如果用户意图仍不清楚，只问一个澄清问题：您是想评估自己对指南的掌握，还是学习指南中的诊断标准？请不要提供患者可识别信息。
+If the user's intent is still unclear, ask only one clarifying question: do you want to assess your mastery of the guideline, or to study the diagnostic criteria in the guideline? Do not ask for patient-identifiable information.
 
-## 必读边界
+## Required Reading Boundaries
 
-处理医学学习请求前，阅读并遵守：
+Before handling a medical learning request, read and comply with:
 
-- ../../USER.md（如存在，仅作为个性化学习的只读摘要）
+- ../../USER.md (if present, a read-only summary used only for personalized learning)
 - ../../references/compliance-boundary.md
 - ../../references/source-policy.yaml
 - ../../references/learning-diagnosis-template.md
 - ../../references/learning-track-template.md
 
-普通、一次性的学习评估不要求完成 5 项医生登记。只有用户要求保存学习目标、轨道、连续进度、微信订阅或按科室/地区个性化时，才取得所需同意和最小化信息。
+An ordinary, one-off learning assessment does not require completing the 5-item doctor registration. Only when the user asks to save learning goals, tracks, continuous progress, a WeChat subscription, or department/region personalization do you obtain the necessary consent and minimal information.
 
-## 工作流 A：学习诊断
+## Workflow A: Learning Diagnosis
 
-### 1. 收集最少必要信息
+### 1. Collect the Minimum Necessary Information
 
-优先从用户已有内容提取；仅缺失时再追问：
+Prefer extracting from content the user already provided; ask only when something is missing:
 
-1. 学习目标：工作复习、职称/考试、更新追踪或带教。
-2. 指南/主题：完整名称、版本/年份或至少主题。
-3. 当前学习信号：自评、已经学习的章节，或本次小测答案。
-4. 每天可投入时间和目标日期（仅在需要制定计划时）。
+1. Learning goal: review for work, rank/exam, update tracking, or teaching.
+2. Guideline/topic: full title, version/year, or at least the topic.
+3. Current learning signals: self-assessment, sections already studied, or answers to this quiz.
+4. Daily time available and target date (only when a plan is needed).
 
-不要索取患者姓名、病历、检查报告、处方、影像或真实病例细节。不要把科室、医院、地区等已有档案字段透露到无关通用任务。
+Do not ask for patient names, medical records, examination reports, prescriptions, imaging, or real case details. Do not disclose existing profile fields such as department, hospital, or region in unrelated general tasks.
 
-### 2. 核验学习依据
+### 2. Verify the Learning Basis
 
-当用户要求基于指南时，先按 source-verify 规则确认：完整文件名、发布机构、版本/年份、适用范围、权威原文链接，以及是否存在替代版本。
+When the user asks to base the work on a guideline, first confirm it per the source-verify rules: full document title, issuing body, version/year, scope of application, authoritative original link, and whether alternative versions exist.
 
-- 没有可核验指南时，输出学习需求初评，明确待选定指南；不能假称依据来自最新指南。
-- 已确认指南时，每个学习结论关联最相关的章节或主题，并在正文保留来源行。
-- 不复制或展开受版权限制的完整指南；优先给学习地图、章节定位、摘要和官方/授权原文跳转。
+- When no verifiable guideline is available, output an initial assessment of the learning need and state clearly that the guideline is still to be selected; you may not claim the basis comes from the latest guideline.
+- When a guideline is confirmed, link each learning conclusion to the most relevant section or topic, and keep the source line in the body text.
+- Do not copy or expand a complete copyright-restricted guideline; prefer a learning map, section locations, summaries, and links to the official or authorized original text.
 
-### 3. 形成学习诊断
+### 3. Form the Learning Diagnosis
 
-只使用以下措辞表达学习信号：建议从基础复习、建议巩固、可进入下一层、证据不足，待复测。不得写合格/不合格、可以独立诊疗、不具备临床能力等能力认证结论。
+Express learning signals using only the following wording: suggest starting with a fundamentals review, suggest consolidation, ready to move to the next level, insufficient evidence, retest pending. Do not write competence-certification conclusions such as pass/fail, able to practice independently, or lacking clinical competence.
 
-学习诊断至少包括：
+A learning diagnosis includes at least:
 
-- 本次范围、学习目标和依据版本。
-- 已有学习信号：明确哪些来自用户自评、哪些来自本次作答。
-- 不超过 3 个优先补齐的概念/章节，每一项解释为什么优先。
-- 一条可执行的下一步：展开章节、查看学习流程图、做下一组题，或形成候选学习轨道。
+- This round's scope, the learning goal, and the basis version.
+- Existing learning signals: state clearly which come from the user's self-assessment and which from this round's answers.
+- No more than 3 concepts/sections to prioritize, with a reason for each priority.
+- One actionable next step: expand a section, view the learning workflow diagram, do the next question set, or form a candidate learning track.
 
-如用户要求小测：每轮最多 3-5 道题，考指南的适用范围、概念区分、章节结构、证据理解或更新点。不得使用真实患者案例、药物剂量、处方、急诊行动或对这个患者下一步怎么做的题目。回答后即时给出与来源对应的学习性解释；不把正确率当作临床能力证明。
+If the user asks for a quiz: at most 3-5 questions per round, testing the guideline's scope of application, concept distinctions, section structure, evidence understanding, or update points. Do not use real patient cases, drug dosages, prescriptions, emergency actions, or questions about what to do next for this patient. Give educational explanations tied to the source immediately after answering; do not treat the accuracy rate as proof of clinical competence.
 
-### 4. 保存动作全部可选
+### 4. All Save Actions Are Optional
 
-默认不持久化本次自评、答案、学习诊断或候选计划。用户明确说保存这次学习诊断、保存学习目标或保存计划时，先复述将保存的字段并确认不含患者信息。
+By default, do not persist this self-assessment, the answers, the learning diagnosis, or the candidate plan. When the user explicitly says to save this learning diagnosis, save the learning goal, or save the plan, first restate the fields that will be saved and confirm they contain no patient information.
 
-只保存诊断摘要时使用：
+To save only the diagnosis summary, use:
 
     python ../../scripts/clinical_profile.py learning-diagnosis-save \
-      --goal <学习目标> --self-assessed-level <needs_foundation|developing|confident> \
-      --available-minutes-per-day <5-240> --priority-topic <优先主题，可重复> \
-      --recommended-start <建议从哪一章节或任务开始> --confirm true
+      --goal <learning goal> --self-assessed-level <needs_foundation|developing|confident> \
+      --available-minutes-per-day <5-240> --priority-topic <priority topic, repeatable> \
+      --recommended-start <which section or task to start from> --confirm true
 
-如已核验指南，再追加 --guideline-title 和 --source-url。没有可核验来源时不要编造链接。
+If a guideline has been verified, also append --guideline-title and --source-url. When there is no verifiable source, do not fabricate a link.
 
-保存学习目标时，先使用 guideline-learning skill 的 learning-goal-save。学习目标可以关联多个轨道，但诊断本身不会自动创建轨道，也不会自动开始投递。
+To save a learning goal, first use the guideline-learning skill's learning-goal-save. A learning goal can be linked to multiple tracks, but the diagnosis itself does not automatically create a track, nor does it automatically start delivery.
 
-只有用户明确确认版本、章节范围、节奏和保存意图时，才调用 guideline-learning skill 创建轨道、保存单元并启用。候选轨道的输出必须明确写未保存、未启用、未开始推送。
+Only when the user explicitly confirms the version, section scope, cadence, and intent to save do you call the guideline-learning skill to create a track, save units, and enable it. Candidate track output must clearly state that it is not saved, not enabled, and not pushing.
 
-用户要求删除学习诊断摘要时使用：
+To delete a learning diagnosis summary at the user's request, use:
 
     python ../../scripts/clinical_profile.py learning-diagnosis-clear --confirm true
 
-## 工作流 B：指南中的诊断标准学习
+## Workflow B: Studying Diagnostic Criteria in a Guideline
 
-在不涉及具体患者的前提下，可以把指南中的诊断相关章节拆解为：
+Without involving any specific patient, the diagnostic-related sections of a guideline can be broken down into:
 
-1. 文件版本、适用范围和术语定义。
-2. 指南列出的诊断要素/标准之间的关系；用学习流程图或层级结构表达概念关系，而不是临床行动卡。
-3. 鉴别框架、风险提示、转诊识别或质量要求的学习性说明。
-4. 容易混淆的概念与对应原文位置。
+1. Document version, scope of application, and term definitions.
+2. The relationships among the diagnostic elements/criteria listed in the guideline; express conceptual relationships with a learning workflow diagram or a hierarchy, not a clinical action card.
+3. Educational explanations of differential frameworks, risk notes, referral recognition, or quality requirements.
+4. Easily confused concepts and their corresponding locations in the original text.
 
-不得把流程图写成对真实患者的逐步处置指令，不得输出具体检查处置、药物方案、剂量、给药频次或急诊行动卡。每次基于指南的讲解都附权威来源与版本；来源不确定时明确说明不能核验。
+Do not write the workflow diagram as step-by-step management instructions for a real patient, and do not output specific examinations or management, drug regimens, dosages, dosing frequency, or emergency action cards. Every guideline-based explanation must include the authoritative source and version; when the source is uncertain, state clearly that it cannot be verified.
 
-## 输出与校验
+## Output and Validation
 
-使用 learning-diagnosis-template.md 的结构。基于指南的正式学习诊断或诊断标准讲解，发送前运行：
+Use the structure in learning-diagnosis-template.md. Before sending a formal guideline-based learning diagnosis or diagnostic criteria explanation, run:
 
     python ../../scripts/validate_output.py --module guideline_learning_diagnosis
 
-如果仍在收集目标、用户尚未选定指南，或没有可核验权威原文，可使用 --allow-no-source，但第一行必须明确是学习需求初评｜待选定指南，不能将其称为基于指南的结论。
+If you are still collecting goals, the user has not yet selected a guideline, or there is no verifiable authoritative original text, you may use --allow-no-source, but the first line must clearly read "Initial learning need assessment | Guideline to be selected", and it must not be presented as a guideline-based conclusion.
 
-医生端只输出面向学习的结论、学习路径和来源，不展示内部评分、工具调用、状态 JSON 或脚本路径。
+On the doctor-facing side, output only learning-oriented conclusions, learning paths, and sources; do not show internal scores, tool calls, status JSON, or script paths.

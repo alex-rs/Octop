@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""校验临床学习输出，在投递前检查格式、来源与边界声明。"""
+"""Validate clinical learning output: format, sources, and boundary declarations before delivery."""
 
 from __future__ import annotations
 
@@ -12,6 +12,14 @@ from urllib.parse import urlparse
 
 PACKAGE_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_POLICY = PACKAGE_ROOT / "references" / "source-policy.yaml"
+
+# Chinese has no letter case; every text check below is therefore matched
+# case-insensitively so that English capitalization never changes a verdict.
+_TEXT_FLAGS = re.IGNORECASE
+
+# The body-of-text host label appears in both spellings across the reference
+# documents, so both are accepted.
+_BODY_HOST_RE = re.compile(r"body(?:-of)?-text host", _TEXT_FLAGS)
 
 
 def _load_list_yaml(path: Path) -> dict[str, list[str]]:
@@ -87,30 +95,30 @@ def _is_attributed_relay_url(url: str, text: str, policy: dict[str, list[str]]) 
         (
             line.strip()
             for line in text.splitlines()
-            if line.strip().startswith(("来源：", "来源:")) and url in line
+            if line.strip().lower().startswith("source:") and url in line
         ),
         "",
     )
-    if "转述页面（C级，仅作背景）" not in source_line:
+    if "relay page (c-tier, background only)" not in source_line.lower():
         return False
 
     required_markers = policy.get("attributed_relay_required_markers", [])
-    if any(marker not in text for marker in required_markers):
+    if any(marker.lower() not in text.lower() for marker in required_markers):
         return False
 
     identity_line = next(
         (
             line.strip()
             for line in text.splitlines()
-            if line.strip().startswith(("原始出处：", "原始出处:"))
+            if line.strip().lower().startswith("original source:")
         ),
         "",
     )
-    if identity_line.count("｜") < 3:
+    if identity_line.count(" | ") < 3:
         return False
-    if not re.search(r"(?:19|20)\d{2}|年份未提供|版本未提供", identity_line):
+    if not re.search(r"(?:19|20)\d{2}|not provided", identity_line, _TEXT_FLAGS):
         return False
-    return "DOI" in identity_line or "文号" in identity_line
+    return "doi" in identity_line.lower() or "document number" in identity_line.lower()
 
 
 def _extract_markdown_links(text: str) -> list[tuple[str, str]]:
@@ -133,36 +141,43 @@ def _visible_length(text: str) -> int:
 
 
 _EXCLUDED_CONTENT_TYPE_PATTERNS: dict[str, str] = {
-    "systematic_review": r"系统综述|系统评价|systematic\s+review",
-    "meta_analysis": r"Meta\s*分析|荟萃分析|meta[-\s]?analysis",
-    "systematic_review_and_meta_analysis": (
-        r"系统综述与Meta\s*分析|系统评价与Meta\s*分析|systematic\s+review\s+and\s+meta"
+    "systematic_review": r"systematic\s+review",
+    "meta_analysis": r"meta[-\s]?analysis",
+    "systematic_review_and_meta_analysis": r"systematic\s+review\s+and\s+meta",
+    "narrative_review": r"narrative\s+review",
+    "scoping_review": r"scoping\s+review",
+    "umbrella_review": r"umbrella\s+review",
+    "rapid_review": r"rapid\s+review",
+    "expert_review": r"expert\s+review",
+    "literature_review": r"literature\s+review",
+    "randomized_controlled_trial": r"randomi[sz]ed\s+controlled\s+trial|\bRCT\b",
+    "observational_study": r"observational\s+stud(?:y|ies)",
+    "case_report_or_case_series": r"case\s+(?:report|series)",
+    "editorial_commentary_or_letter": r"editorial|commentary|letter\s+to",
+    "conference_abstract": r"conference\s+abstract",
+    "preprint": r"preprint",
+    "retracted_or_expression_of_concern": r"retract(?:ed|ion)|expression\s+of\s+concern",
+    "science_popularization": r"popular\s+science",
+    "guideline_or_consensus_interpretation": (
+        r"guideline\s+interpretation|consensus\s+interpretation|"
+        r"standard\s+interpretation|policy\s+interpretation"
     ),
-    "narrative_review": r"叙述性综述|narrative\s+review",
-    "scoping_review": r"范围综述|scoping\s+review",
-    "umbrella_review": r"伞状综述|umbrella\s+review",
-    "rapid_review": r"快速综述|rapid\s+review",
-    "expert_review": r"专家综述|专家述评|expert\s+review",
-    "literature_review": r"文献综述|literature\s+review",
-    "randomized_controlled_trial": r"随机对照试验|randomi[sz]ed\s+controlled\s+trial|\bRCT\b",
-    "observational_study": r"观察性研究|observational\s+stud(?:y|ies)",
-    "case_report_or_case_series": r"病例报告|病例系列|case\s+(?:report|series)",
-    "editorial_commentary_or_letter": r"述评|社论|读者来信|editorial|commentary|letter\s+to",
-    "conference_abstract": r"会议摘要|conference\s+abstract",
-    "preprint": r"预印本|preprint",
-    "retracted_or_expression_of_concern": r"撤稿|关注声明|retract(?:ed|ion)|expression\s+of\s+concern",
-    "science_popularization": r"科普",
-    "guideline_or_consensus_interpretation": r"指南解读|共识解读|规范解读|政策解读",
-    "repost_or_excerpt": r"转载|摘编",
-    "interview_or_media_report": r"访谈|媒体报道",
-    "public_health_check_education_or_interpretation": r"体检知识|体检解读",
-    "conference_training_or_event_report": r"会议报道|培训报道|活动报道",
-    "marketing_or_institutional_promotion": r"营销|机构宣传",
+    "repost_or_excerpt": r"reprint|excerpt",
+    "interview_or_media_report": r"interview|media\s+report",
+    "public_health_check_education_or_interpretation": (
+        r"physical\s+examination\s+knowledge|examination\s+interpretation"
+    ),
+    "conference_training_or_event_report": (
+        r"conference\s+report|training\s+report|event\s+report"
+    ),
+    "marketing_or_institutional_promotion": (
+        r"marketing|institutional\s+promotion|institutional\s+publicity"
+    ),
 }
 
 
 def _extract_learning_position(text: str) -> tuple[int, int] | None:
-    match = re.search(r"学习单元\s*[:：]\s*(\d+)\s*[/／]\s*(\d+)", text)
+    match = re.search(r"learning unit\s*[:：]\s*(\d+)\s*[/／]\s*(\d+)", text, _TEXT_FLAGS)
     if match is None:
         return None
     return int(match.group(1)), int(match.group(2))
@@ -170,16 +185,18 @@ def _extract_learning_position(text: str) -> tuple[int, int] | None:
 
 def _extract_section(text: str, heading: str) -> str:
     match = re.search(
-        rf"{re.escape(heading)}\s*[:：]?\s*(.*?)(?=\n\s*(?:来源|说明)\s*[:：]|\Z)",
+        rf"{re.escape(heading)}\s*[:：]?\s*(.*?)(?=\n\s*(?:source|note)\s*[:：]|\Z)",
         text,
-        flags=re.DOTALL,
+        flags=re.DOTALL | _TEXT_FLAGS,
     )
     return match.group(1).strip() if match else ""
 
 
 def _final_evidence_lines(text: str) -> list[str]:
     evidence_prefix = re.compile(
-        r"^\s*(?:(?:依据|指南|来源|更新文件|政策文件|权威来源)\s*[:：]|[A-C][.、]\s*)"
+        r"^\s*(?:(?:basis|guideline|source|updated document|policy document|"
+        r"authoritative source)\s*[:：]|[A-C][.、]\s*)",
+        _TEXT_FLAGS,
     )
     return [line.strip() for line in text.splitlines() if evidence_prefix.search(line)]
 
@@ -194,13 +211,17 @@ def _validate_final_evidence_content_types(
             if pattern is None:
                 continue
             if re.search(pattern, line, flags=re.IGNORECASE):
-                errors.append(f"最终依据不得使用非规范性文档类型：{content_type}")
+                errors.append(
+                    f"final evidence must not use a non-normative document type: {content_type}"
+                )
                 break
 
 
-# 临床安全域模块清单。只有这些模块会套用医学禁用词和权威来源白名单。
-# 其他模块（通用写作/翻译/编程/其他 skill）按通用助手输出校验，
-# 医生的非医学工作和其他 skill 的输出不会被医学规则降级或截断。
+# Clinical safety domain module list. Only these modules get the medical
+# prohibited-term list and the authoritative-source allowlist.
+# Other modules (general writing/translation/programming/other skills) are
+# validated as general assistant output; a doctor's non-medical work and the
+# output of other skills are not downgraded or truncated by medical rules.
 _DEFAULT_CLINICAL_SAFETY_MODULES = (
     "guideline_learning",
     "daily_guideline_learning",
@@ -220,7 +241,8 @@ _DEFAULT_SOURCE_RESTRICTED_MODULES = tuple(
     name for name in _DEFAULT_CLINICAL_SAFETY_MODULES if name != "high_risk_refusal"
 )
 
-# 医学安全域终稿不得夹带英文/中文过程句。来源标题里的英文专名不在此列。
+# A medical safety domain final draft must not carry process sentences.
+# English proper nouns inside source titles are exempt.
 _PROCESS_LANGUAGE_PATTERNS: tuple[tuple[str, str], ...] = (
     (r"\bI'll\b", "I'll"),
     (r"\bI will\b", "I will"),
@@ -229,15 +251,15 @@ _PROCESS_LANGUAGE_PATTERNS: tuple[tuple[str, str], ...] = (
     (r"\bNow running\b", "Now running"),
     (r"Validation passed", "Validation passed"),
     (r"Here is the answer", "Here is the answer"),
-    (r"搜索过程", "搜索过程"),
-    (r"检索日志", "检索日志"),
+    (r"search process", "search process"),
+    (r"retrieval log", "retrieval log"),
 )
 
 
 def _body_without_source_lines(text: str) -> str:
-    """Drop 来源 lines so English titles in citations are not process-language hits."""
+    """Drop Source lines so English titles in citations are not process-language hits."""
     return "\n".join(
-        line for line in text.splitlines() if not line.strip().startswith(("来源：", "来源:"))
+        line for line in text.splitlines() if not line.strip().lower().startswith("source:")
     )
 
 
@@ -245,7 +267,7 @@ def _validate_process_language(text: str, errors: list[str]) -> None:
     body = _body_without_source_lines(text)
     for pattern, label in _PROCESS_LANGUAGE_PATTERNS:
         if re.search(pattern, body, flags=re.IGNORECASE):
-            errors.append(f"医学输出不得包含过程语句：{label}")
+            errors.append(f"medical output must not contain process sentences: {label}")
 
 
 def _policy_modules(policy: dict[str, list[str]], key: str, fallback: tuple[str, ...]) -> set[str]:
@@ -256,131 +278,230 @@ def _policy_modules(policy: dict[str, list[str]], key: str, fallback: tuple[str,
 def _validate_daily_guideline_learning(text: str, errors: list[str], warnings: list[str]) -> None:
     numbered_points = re.findall(r"(?m)^\s*[1-3][.、]\s+", text)
     if len(numbered_points) != 3:
-        errors.append("每日指南模板需要恰好3个编号要点")
-    if "学习单元" not in text:
-        errors.append("每日指南模板缺少：学习单元")
-    if "依据：" not in text and "指南：" not in text:
-        errors.append("每日指南模板缺少：版本化指南（依据/指南）")
-    if "自测题" in text:
-        errors.append("每日指南模板不得包含自测题")
+        errors.append("the daily guideline template requires exactly 3 numbered points")
+    if "learning unit" not in text.lower():
+        errors.append("the daily guideline template is missing: learning unit")
+    if "basis:" not in text.lower() and "guideline:" not in text.lower():
+        errors.append(
+            "the daily guideline template is missing: versioned guideline (basis/guideline)"
+        )
+    if re.search(r"self[-\s]?test", text, _TEXT_FLAGS):
+        errors.append("the daily guideline template must not contain self-test questions")
 
     position = _extract_learning_position(text)
     if position is None:
-        errors.append("每日指南模板缺少可解析的学习单元序号（N / 总数）")
+        errors.append(
+            "the daily guideline template is missing a parseable learning unit ordinal (N / total)"
+        )
     else:
         ordinal, total = position
         if ordinal < 1 or total < 1 or ordinal > total:
-            errors.append("每日指南模板的学习单元序号无效")
+            errors.append("the daily guideline template's learning unit ordinal is invalid")
         elif ordinal < total:
-            preview = _extract_section(text, "下一单元预告") or _extract_section(text, "明日预告")
+            preview = _extract_section(text, "Next unit preview") or _extract_section(
+                text, "Tomorrow's preview"
+            )
             if not preview:
-                errors.append("非最后单元缺少实质性的下一单元预告")
-            elif "—" not in preview and "学习目标" not in preview:
-                errors.append("非最后单元预告需要同时写明下一单元主题与学习目标")
-            if re.search(r"等待.*(?:复盘|确认新轨道)|本轨道单元已全部送达", preview):
-                errors.append("非最后单元不得用等待状态代替下一单元主题与学习目标")
+                errors.append("a non-final unit is missing a substantive next unit preview")
+            elif "—" not in preview and "learning objective" not in preview.lower():
+                errors.append(
+                    "a non-final unit preview must state both the next unit topic "
+                    "and the learning objective"
+                )
+            if re.search(
+                r"waiting.*(?:review|confirm\s+(?:a\s+)?new\s+track)"
+                r"|all units of this track have been delivered",
+                preview,
+                _TEXT_FLAGS,
+            ):
+                errors.append(
+                    "a non-final unit must not replace the next unit topic and "
+                    "learning objective with a waiting status"
+                )
         else:
-            if "下一单元预告" in text or "明日预告" in text:
-                errors.append("最后单元不得继续使用下一单元预告")
-            candidate_section = _extract_section(text, "下一阶段可选指南（待确认）")
-            planning_section = _extract_section(text, "下一阶段规划（待你选择）")
+            if "next unit preview" in text.lower() or "tomorrow's preview" in text.lower():
+                errors.append("the final unit must not keep using a next unit preview")
+            candidate_section = _extract_section(
+                text, "Optional guidelines for the next stage (pending confirmation)"
+            )
+            planning_section = _extract_section(text, "next-stage planning (awaiting your choice)")
             if candidate_section:
                 candidates = re.findall(r"(?m)^\s*([A-C])[.、]\s*(.+)$", candidate_section)
                 if not 2 <= len(candidates) <= 3:
-                    errors.append("最后单元需要提供2-3个下一阶段正式指南候选")
+                    errors.append(
+                        "the final unit must provide 2-3 next-stage formal guideline candidates"
+                    )
                 for _label, candidate in candidates:
-                    if not re.search(r"指南|共识|规范|临床路径|质控|标准|办法|通知", candidate):
-                        errors.append("下一阶段候选必须是正式指南/共识/规范性文件")
-                    if not re.search(r"（[^）]*(?:19|20)\d{2}[^）]*[，,][^）]+）", candidate):
-                        errors.append("下一阶段候选缺少年份/版本或发布机构")
-                    if not re.search(r"\[链接\]\(https?://[^)\s]+\)", candidate):
-                        errors.append("下一阶段候选缺少权威原文链接")
-                if candidate_section.count("推荐衔接：") < len(candidates):
-                    errors.append("每个下一阶段候选都需要说明推荐衔接")
-                if "确认前不会创建或启用新轨道" not in candidate_section:
-                    errors.append("最后单元缺少确认前不创建或启用新轨道的声明")
+                    if not re.search(
+                        r"guideline|consensus|standard|clinical\s+pathway|quality\s+control"
+                        r"|measures|notice",
+                        candidate,
+                        _TEXT_FLAGS,
+                    ):
+                        errors.append(
+                            "a next-stage candidate must be a formal guideline/consensus/"
+                            "normative document"
+                        )
+                    if not re.search(
+                        r"[（(][^）)]*(?:19|20)\d{2}[^）)]*[，,][^）)]+[）)]", candidate
+                    ):
+                        errors.append(
+                            "a next-stage candidate is missing the year/version or the issuing body"
+                        )
+                    if not re.search(r"\[[Ll]ink\]\(https?://[^)\s]+\)", candidate):
+                        errors.append(
+                            "a next-stage candidate is missing an authoritative original-text link"
+                        )
+                if candidate_section.lower().count("recommended connection:") < len(candidates):
+                    errors.append(
+                        "every next-stage candidate must state its recommended connection"
+                    )
+                if (
+                    "no new track will be created or enabled before confirmation"
+                    not in candidate_section.lower()
+                ):
+                    errors.append(
+                        "the final unit is missing the statement that no new track will be "
+                        "created or enabled before confirmation"
+                    )
             elif planning_section:
-                if "未取得足够的可核验正式指南" not in planning_section:
-                    errors.append("无足够候选时必须如实说明未取得足够的可核验正式指南")
-                if "学习方向" not in planning_section:
-                    errors.append("无足够候选时必须询问用户下一阶段学习方向")
-                if "确认前不会创建或启用新轨道" not in planning_section:
-                    errors.append("最后单元缺少确认前不创建或启用新轨道的声明")
+                if (
+                    "not enough verifiable formal guidelines were obtained"
+                    not in planning_section.lower()
+                ):
+                    errors.append(
+                        "when there are not enough candidates, state honestly that not enough "
+                        "verifiable formal guidelines were obtained"
+                    )
+                if "learning direction" not in planning_section.lower():
+                    errors.append(
+                        "when there are not enough candidates, ask the user for the next-stage "
+                        "learning direction"
+                    )
+                if (
+                    "no new track will be created or enabled before confirmation"
+                    not in planning_section.lower()
+                ):
+                    errors.append(
+                        "the final unit is missing the statement that no new track will be "
+                        "created or enabled before confirmation"
+                    )
             else:
-                errors.append("最后单元缺少待确认的下一阶段指南候选或学习方向询问")
+                errors.append(
+                    "the final unit is missing either the pending next-stage guideline "
+                    "candidates or a question about the learning direction"
+                )
 
     length = _visible_length(text)
     if length > 1000:
-        errors.append(f"每日指南模板过长：{length}字")
+        errors.append(f"the daily guideline template is too long: {length} characters")
     elif length < 400:
-        warnings.append(f"每日指南模板偏短：{length}字")
+        warnings.append(f"the daily guideline template is too short: {length} characters")
 
 
 def _validate_guideline_learning_diagnosis(text: str, errors: list[str]) -> None:
-    """检查学习诊断回复是否为教育性内容。"""
-    if "【指南学习诊断" in text:
-        required = ("学习目标", "学习信号", "优先补齐", "建议起点", "下一步", "边界")
-    elif "【指南诊断标准学习" in text:
-        required = ("学习框架", "易混淆点", "下一步", "边界")
-    elif "【学习需求初评｜待选定指南】" in text:
-        required = ("学习目标", "当前学习信号", "建议", "下一步", "边界")
+    """Check that a learning diagnosis reply is educational content."""
+    if "[Guideline Learning Diagnosis" in text:
+        required = (
+            "Learning objective",
+            "Learning signals",
+            "Priority gaps to close",
+            "Suggested starting point",
+            "Next step",
+            "Boundary",
+        )
+    elif "[Guideline Diagnostic Criteria Study" in text:
+        required = ("Learning framework", "Easily confused points", "Next step", "Boundary")
+    elif "[Learning Needs Pre-assessment | Guideline Pending]" in text:
+        required = (
+            "Learning objective",
+            "Current learning signal",
+            "Recommendation",
+            "Next step",
+            "Boundary",
+        )
     else:
-        errors.append("学习诊断模板缺少标题")
+        errors.append("the learning diagnosis template is missing the title")
         return
     for label in required:
-        if label not in text:
-            errors.append(f"学习诊断模板缺少：{label}")
+        if label.lower() not in text.lower():
+            errors.append(f"the learning diagnosis template is missing: {label}")
 
 
 def _validate_guideline_section_expansion(text: str, errors: list[str]) -> None:
-    """章节展开必须是带来源的阅读辅助，不能是改写后的指南。"""
-    if "【指南章节展开" not in text:
-        errors.append("章节展开模板缺少标题")
+    """Section expansion must be source-backed reading support, not a rewritten guideline."""
+    if "[Guideline Section Expansion" not in text:
+        errors.append("the section expansion template is missing the title")
         return
-    for label in ("依据", "章节", "原文要点", "学习提示", "边界"):
-        if label not in text:
-            errors.append(f"章节展开模板缺少：{label}")
-    if "原文定位" not in text and "定位" not in text:
-        errors.append("章节展开模板缺少：原文定位")
-    if "不替代原文" not in text:
-        errors.append("章节展开模板缺少：不替代原文声明")
+    for label in (
+        "Basis",
+        "Section",
+        "Key points of the original text",
+        "Learning tips",
+        "Boundary",
+    ):
+        if label.lower() not in text.lower():
+            errors.append(f"the section expansion template is missing: {label}")
+    if "original-text locator" not in text.lower() and "locator" not in text.lower():
+        errors.append("the section expansion template is missing: original-text locator")
+    if "does not replace the original text" not in text.lower():
+        errors.append(
+            "the section expansion template is missing: the "
+            "does-not-replace-the-original-text statement"
+        )
 
 
 def _validate_guideline_learning_pathway(text: str, errors: list[str]) -> None:
-    """路径图是学习顺序图，不能读起来像临床分诊。"""
-    if "【指南学习路径图" not in text:
-        errors.append("学习路径图模板缺少标题")
+    """A pathway map is a learning order, not clinical triage."""
+    if "[Guideline Learning Pathway" not in text:
+        errors.append("the learning pathway template is missing the title")
         return
-    for label in ("依据", "学习顺序", "前置知识", "边界"):
-        if label not in text:
-            errors.append(f"学习路径图模板缺少：{label}")
+    for label in ("Basis", "Learning order", "Prerequisite knowledge", "Boundary"):
+        if label.lower() not in text.lower():
+            errors.append(f"the learning pathway template is missing: {label}")
     if not re.search(r"(?m)^\s*\d+[.、]\s+", text):
-        errors.append("学习路径图缺少编号步骤")
-    for banned in ("处置流程", "诊疗流程", "抢救流程", "处理流程"):
-        if banned in text:
-            errors.append(f"学习路径图不得写成临床流程：{banned}")
+        errors.append("the learning pathway is missing numbered steps")
+    for banned in (
+        "management process",
+        "diagnosis-and-treatment process",
+        "resuscitation process",
+        "handling process",
+    ):
+        if banned in text.lower():
+            errors.append(
+                f"the learning pathway must not be written as a clinical process: {banned}"
+            )
 
 
 def _validate_exam_material_recommendation(text: str, errors: list[str]) -> None:
-    """备考材料清单必须明确范围与核验要求。"""
-    if "【备考学习材料推荐" not in text:
-        errors.append("备考材料模板缺少标题")
+    """The exam material list must state its scope and verification requirements."""
+    if "[Exam Prep Material Recommendation" not in text:
+        errors.append("the exam prep material template is missing the title")
         return
-    for label in ("考试目标", "推荐材料", "学习顺序", "待确认", "边界"):
-        if label not in text:
-            errors.append(f"备考材料模板缺少：{label}")
-    if "以官方考试大纲为准" not in text:
-        errors.append("备考材料模板缺少：以官方考试大纲为准声明")
+    for label in (
+        "Exam objective",
+        "Recommended materials",
+        "Learning order",
+        "Pending confirmation",
+        "Boundary",
+    ):
+        if label.lower() not in text.lower():
+            errors.append(f"the exam prep material template is missing: {label}")
+    if "the official exam syllabus prevails" not in text.lower():
+        errors.append(
+            "the exam prep material template is missing: the "
+            "official-exam-syllabus-prevails statement"
+        )
 
 
 def _validate_insurance_retrospective(text: str, errors: list[str]) -> None:
-    """长周期医保回顾必须标注区间且不作为权威依据。"""
-    if "【医保政策回顾学习" not in text:
-        errors.append("医保回顾模板缺少标题")
+    """A long-cycle medical insurance review must state its window and not act as authority."""
+    if "[Insurance Policy Review Study" not in text:
+        errors.append("the medical insurance review template is missing the title")
         return
-    for label in ("回顾区间", "重点政策", "学习提示", "待确认"):
-        if label not in text:
-            errors.append(f"医保回顾模板缺少：{label}")
+    for label in ("Review window", "Key policies", "Learning tips", "Pending confirmation"):
+        if label.lower() not in text.lower():
+            errors.append(f"the medical insurance review template is missing: {label}")
 
 
 def validate(text: str, module: str, policy_path: Path, allow_no_source: bool) -> dict[str, object]:
@@ -396,78 +517,93 @@ def validate(text: str, module: str, policy_path: Path, allow_no_source: bool) -
     )
     in_clinical_domain = module in clinical_modules
 
-    # 通用助手输出不受医学禁用词约束。
+    # General assistant output is not bound by the medical prohibited-term list.
     if in_clinical_domain:
         for pattern in policy.get("blocked_output_patterns", []):
             if re.search(pattern, text, flags=re.IGNORECASE):
-                errors.append(f"命中禁止输出模式：{pattern}")
+                errors.append(f"hits a prohibited output pattern: {pattern}")
         _validate_process_language(text, errors)
 
     markdown_links = _extract_markdown_links(text)
     bare_urls = _extract_bare_urls(text)
     urls = _extract_markdown_urls(text)
     source_lines = [
-        line.strip() for line in text.splitlines() if line.strip().startswith(("来源：", "来源:"))
+        line.strip() for line in text.splitlines() if line.strip().lower().startswith("source:")
     ]
     source_required = module in source_restricted
 
     if source_required:
         if not urls and not allow_no_source:
-            errors.append("缺少来源URL")
+            errors.append("missing source URL")
         if urls and not markdown_links:
-            errors.append("来源URL必须是Markdown链接格式")
-        if urls and not any("[链接](" in line for line in source_lines):
-            errors.append("来源行缺少可点击的[链接](URL)")
+            errors.append("the source URL must be in Markdown link format")
+        if urls and not any("[link](" in line.lower() for line in source_lines):
+            errors.append("the source line is missing a clickable [link](URL)")
         for label, _url in markdown_links:
-            if label != "链接":
-                errors.append(f"来源链接文字必须是'链接'：{label}")
+            if label.lower() != "link":
+                errors.append(f"source link text must be 'link': {label}")
         for url in bare_urls:
-            errors.append(f"不允许裸URL：{url}")
+            errors.append(f"bare URL is not allowed: {url}")
 
-        # 权威来源白名单只约束医学和政策声明；通用任务可引用任何合法链接。
+        # The authoritative-source allowlist only constrains medical and policy claims;
+        # general tasks may cite any legal link.
         attributed_relay_urls: list[str] = []
         for url in urls:
             domain = _domain(url)
             if not domain:
-                errors.append(f"无效URL：{url}")
+                errors.append(f"invalid URL: {url}")
                 continue
             if not _is_allowed_domain(domain, policy):
                 if _is_attributed_relay_url(url, text, policy):
                     attributed_relay_urls.append(url)
                 else:
-                    errors.append(f"来源域名不在白名单：{domain}")
+                    errors.append(f"source domain is not on the allowlist: {domain}")
 
         if attributed_relay_urls:
-            if "正文承载" in text:
-                errors.append("C级转述页面不得标记为正文承载")
-            if "原文定位：" in text or "原文定位:" in text:
-                errors.append("C级转述页面不得声称提供原文定位")
-            warnings.append("包含C级全网转述页面：只能作为背景，不是最终证据")
+            if _BODY_HOST_RE.search(text):
+                errors.append("a C-tier relay page must not be marked as the body-of-text host")
+            if "original-text locator:" in text.lower():
+                errors.append(
+                    "a C-tier relay page must not claim to provide an original-text locator"
+                )
+            warnings.append(
+                "contains a C-tier web-wide relay page: background only, not final evidence"
+            )
 
         secondary_urls = [url for url in urls if _is_secondary_domain(_domain(url), policy)]
         if secondary_urls:
             primary_urls = [url for url in urls if _is_primary_domain(_domain(url), policy)]
             if not primary_urls:
-                errors.append("B+正文承载链接必须同时提供S/A原始元数据链接")
-            if "原始元数据" not in text:
-                errors.append("B+受控降级必须标明：原始元数据")
-            if "正文承载" not in text:
-                errors.append("B+受控降级必须标明：正文承载")
+                errors.append(
+                    "a B+ body-of-text host link must also provide an S/A original-metadata link"
+                )
+            if "original metadata" not in text.lower():
+                errors.append("a B+ controlled downgrade must be labeled: original metadata")
+            if not _BODY_HOST_RE.search(text):
+                errors.append("a B+ controlled downgrade must be labeled: body-of-text host")
         _validate_final_evidence_content_types(text, policy, errors)
     else:
         for url in urls:
             if not _domain(url):
-                errors.append(f"无效URL：{url}")
+                errors.append(f"invalid URL: {url}")
 
-    if "本摘要不作为报销依据" not in text and module in {
+    if "not a basis for reimbursement" not in text.lower() and module in {
         "insurance_policy_summary",
         "insurance_policy_learning",
         "insurance_policy_retrospective",
     }:
-        errors.append("医保内容缺少'本摘要不作为报销依据'声明")
+        errors.append(
+            "medical insurance content is missing the 'not a basis for reimbursement' statement"
+        )
 
-    if "不提供个体诊疗" not in text and module == "high_risk_refusal":
-        errors.append("高风险拒绝内容缺少'不提供个体诊疗'边界声明")
+    if (
+        "does not provide individual diagnosis or treatment" not in text.lower()
+        and module == "high_risk_refusal"
+    ):
+        errors.append(
+            "high-risk refusal content is missing the 'does not provide individual diagnosis "
+            "or treatment' boundary statement"
+        )
 
     if module == "daily_guideline_learning":
         _validate_daily_guideline_learning(text, errors, warnings)
@@ -494,7 +630,10 @@ def validate(text: str, module: str, policy_path: Path, allow_no_source: bool) -
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="校验临床学习输出（投递前检查格式、来源与边界声明）。"
+        description=(
+            "Validate clinical learning output "
+            "(check format, sources, and boundary declarations before delivery)."
+        )
     )
     parser.add_argument("--module", required=True)
     parser.add_argument("--policy", type=Path, default=DEFAULT_POLICY)

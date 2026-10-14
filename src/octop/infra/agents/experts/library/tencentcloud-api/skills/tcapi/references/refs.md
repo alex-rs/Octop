@@ -1,48 +1,48 @@
-# 信息库检索步骤与示例
+# Information-base search steps and examples
 
-通过 curl + grep 检索业务、接口、最佳实践、数据结构。入口与结构见 SKILL.md「信息库」节。
+Use curl + grep to search services, actions, best practices, and data structures. See the "Information base" section of SKILL.md for the entry point and structure.
 
-## 发现业务
+## Discover the service
 
-确定对应的 tccli 服务名（如 cvm、cbs）。
-
-```sh
-curl -s https://cloudcache.tencentcs.com/capi/refs/services.md | grep 云服务器
-```
-
-参考输出：
-
-```
-[cvm](service/cvm/index.md) | 云服务器 | 2017-03-12 | ...
-```
-
-## 检索业务最佳实践
-
-优先检索是否有匹配当前场景的最佳实践。
+Determine the corresponding tccli service name (such as cvm, cbs).
 
 ```sh
-curl -s https://cloudcache.tencentcs.com/capi/refs/service/cvm/practices.md | grep 重装
+curl -s https://cloudcache.tencentcs.com/capi/refs/services.md | grep "Cloud Virtual Machine"
 ```
 
-## 检索接口
+Reference output:
 
-若最佳实践未覆盖，在业务接口列表中检索（接口名即 tccli 的 &lt;Action&gt;）。
+```
+[cvm](service/cvm/index.md) | Cloud Virtual Machine | 2017-03-12 | ...
+```
+
+## Search for service best practices
+
+First search whether a best practice matching the current scenario exists.
 
 ```sh
-curl -s https://cloudcache.tencentcs.com/capi/refs/service/cvm/actions.md | grep "扩容\|磁盘"
+curl -s https://cloudcache.tencentcs.com/capi/refs/service/cvm/practices.md | grep reinstall
 ```
 
-## 阅读接口文档
+## Search for the action
 
-确认参数、地域、版本（tccli 一般自动匹配版本）：
+If the best practices do not cover it, search the service's action list (the action name is the tccli &lt;Action&gt;).
+
+```sh
+curl -s https://cloudcache.tencentcs.com/capi/refs/service/cvm/actions.md | grep "resize\|disk"
+```
+
+## Read the action documentation
+
+Confirm the parameters, region, and version (tccli generally matches the version automatically):
 
 ```sh
 curl -s https://cloudcache.tencentcs.com/capi/refs/service/cvm/action/ResizeInstanceDisks.md
 ```
 
-## 阅读数据结构
+## Read the data structures
 
-文档中涉及的数据结构可进一步查看：
+Data structures referenced by the documentation can be examined further:
 
 ```sh
 curl -s https://cloudcache.tencentcs.com/capi/refs/service/cvm/model/SystemDisk.md

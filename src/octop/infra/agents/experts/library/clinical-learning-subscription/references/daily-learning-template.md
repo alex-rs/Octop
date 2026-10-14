@@ -1,57 +1,57 @@
-# 每日指南学习单元硬模板
+# Hard Template for the Daily Guideline Learning Unit
 
-用于具备通道回执能力的正式指南订阅，或生成待发送草稿。默认 600-900 字；门诊忙碌场景优先短版，不写成综述。它不限制 guideline-learning-diagnosis skill 中按需进行的学习诊断、诊断标准学习或教育性小测。
+Used for formal guideline subscriptions that have channel-receipt capability, or to generate a draft awaiting delivery. Default 600-900 characters; for busy outpatient settings prefer the short version, and do not write it as a review article. It does not restrict the on-demand learning diagnosis, diagnostic-criteria learning, or educational quizzes performed in the guideline-learning-diagnosis skill.
 
-示例结构：
+Example structure:
 
-    【指南学习单元｜{科室/主题}】
-    轨道：{用户可读的轨道名称}
-    依据：{权威指南完整名称}（{版本/年份}，{发布机构}）
-    学习单元：{ordinal} / {total_units}
-    章节：{已固定的章节锚点}
-    关联目标：{考试/工作复习/更新追踪/带教；未关联时写“通用学习”}
-    主题：{本单元主题}
+    [Guideline Learning Unit | {department/topic}]
+    Track: {user-readable track name}
+    Basis: {full name of the authoritative guideline} ({version/year}, {issuing body})
+    Learning unit: {ordinal} / {total_units}
+    Section: {fixed section anchor}
+    Linked goal: {exam/work review/update tracking/teaching; write "general learning" when not linked}
+    Topic: {topic of this unit}
 
-    1. {要点一：只讲学习点，不写患者处置命令}
-    2. {要点二：突出基层识别、随访、质控或学习价值}
-    3. {要点三：说明边界或需要本地制度确认的地方}
+    1. {Point one: state the learning point only, do not write patient management orders}
+    2. {Point two: highlight primary-care recognition, follow-up, quality control, or learning value}
+    3. {Point three: state the boundaries or the points that need confirmation from local policy}
 
-    {非最后一个单元使用：
-    下一单元预告：
-    {下一固定单元主题} — {下一单元学习目标}}
+    {For a non-final unit:
+    Next unit preview:
+    {next fixed unit topic} — {next unit learning objective}}
 
-    {最后一个单元使用：
-    下一阶段可选指南（待确认）：
-    A. 《{正式指南/共识/规范完整名称}》（{年份/版本}，{发布机构}）：[链接]({已核验权威原文 URL})
-       推荐衔接：{它与当前轨道的知识衔接点}
-    B. 《{正式指南/共识/规范完整名称}》（{年份/版本}，{发布机构}）：[链接]({已核验权威原文 URL})
-       推荐衔接：{它与当前轨道的知识衔接点}
-    {可选 C，最多 3 项}
-    回复 A/B/C，或告诉我其他学习方向。确认前不会创建或启用新轨道。}
+    {For the final unit:
+    Optional guidelines for the next stage (pending confirmation):
+    A. "{full name of the formal guideline/consensus/standard}"({year/version}, {issuing body}): [link]({verified authoritative original URL})
+       Recommended connection: {its knowledge connection with the current track}
+    B. "{full name of the formal guideline/consensus/standard}"({year/version}, {issuing body}): [link]({verified authoritative original URL})
+       Recommended connection: {its knowledge connection with the current track}
+    {Optional C, at most 3 items}
+    Reply A/B/C, or tell me another learning direction. No new track will be created or enabled before confirmation.}
 
-    来源：{文件名}：[链接]({权威原文 URL})
-    说明：本内容基于权威指南整理，用于医生学习；不提供个体诊疗、处方剂量，急诊处置只提供指南层面的学习性建议，不作为执行依据。
+    Source: {file name}: [link]({authoritative original URL})
+    Note: This content is compiled from authoritative guidelines and is intended for doctors' learning; it does not provide individual diagnosis or treatment or prescription dosages, and for emergency management it only offers guideline-level educational suggestions, not a basis for action.
 
-## 硬规则
+## Hard Rules
 
-- 必须正好 3 个编号要点。
-- 非最后一个单元必须包含实质性的下一单元预告，写明下一固定单元主题和学习目标；不得用“等待复盘”“等待确认新轨道”等状态语句代替。
-- 最后一个单元不得继续输出空的下一单元预告。应给出 2-3 个已核验的下一阶段正式指南候选，包含完整名称、年份/版本、发布机构、权威原文链接和推荐衔接，并明确“待确认”及“确认前不会创建或启用新轨道”。
-- 周期末没有至少 2 个可核验正式指南候选时，不得用综述、Meta 分析或研究论文补位。改写为“下一阶段规划（待你选择）”，说明“未取得足够的可核验正式指南”，询问用户希望继续的方向；不创建或启用新轨道。
-- 不设置自测题，也不写答案之后公布等提示；此规则只适用于每日订阅内容。
-- 必须显示已固定的指南版本、学习单元序号和章节锚点；不要显示内部轨道 ID、投递账本、令牌、哈希、session_key 或通道回执。
-- 默认 600-900 字，最多不超过 1000 字。
-- 不输出药物剂量、给药途径、频次、疗程、首剂、急诊行动卡、疾病 SOP、医保报销结论或 HIS 建议。
-- 来源必须写成 来源：文件名：[链接](URL)，链接文字固定为链接，不得裸露长 URL。
-- 系统综述、Meta 分析、叙述性/范围/伞状/快速/专家综述及其他文献综述，只能用于内部发现原始指南，不得出现在最终来源、下一阶段候选或学习轨道来源中。
-- 不得调用旧的 guideline-advance。
-- 只有发送适配器收到真实通道回执后，才可在内部确认送达并解锁下一单元。内容生成、预览、cron 执行或草稿校验都不等于送达。
-- 单日回执只能在有真实通道回执时使用今日学习内容已由通道受理，订阅仍持续启用；不得写学习任务完成、学习订阅已完成、用户已掌握或第 N 天学习完成。
+- Must be exactly 3 numbered points.
+- A non-final unit must contain a substantive next unit preview that states the next fixed unit topic and learning objective; do not replace it with status statements such as "waiting for review" or "waiting to confirm a new track".
+- The final unit must not keep outputting an empty next unit preview. It should provide 2-3 verified formal guideline candidates for the next stage, including the full name, year/version, issuing body, authoritative original link, and recommended connection, and must clearly state "pending confirmation" and that "no new track will be created or enabled before confirmation".
+- When there are not at least 2 verifiable formal guideline candidates at the end of a cycle, do not fill the gap with a review article, a meta-analysis, or a research paper. Rewrite it as "next-stage planning (awaiting your choice)", explain that "not enough verifiable formal guidelines were obtained", and ask the user which direction they wish to continue; do not create or enable a new track.
+- Do not set self-test questions, and do not write prompts such as announcing the answer afterwards; this rule applies only to daily subscription content.
+- Must display the fixed guideline version, learning unit ordinal, and section anchor; do not display the internal track ID, delivery ledger, token, hash, session_key, or channel receipt.
+- Default 600-900 characters, at most no more than 1000 characters.
+- Do not output drug dosages, routes of administration, frequencies, treatment courses, loading doses, emergency action cards, disease SOPs, medical-insurance reimbursement conclusions, or HIS recommendations.
+- The source must be written as Source: file name: [link](URL); the link text is fixed as link, and long bare URLs must not appear.
+- Systematic reviews, meta-analyses, narrative/scoping/umbrella/rapid/expert reviews, and other literature reviews may only be used internally to discover original guidelines and must not appear in the final sources, next-stage candidates, or learning track sources.
+- The old guideline-advance must not be called.
+- Only after the sending adapter receives a real channel receipt may delivery be confirmed internally and the next unit unlocked. Content generation, preview, cron execution, or draft validation do not count as delivery.
+- The single-day receipt may be used only when there is a real channel receipt, stating that today's learning content has been accepted by the channel and the subscription remains enabled; do not write that the learning task is complete, the learning subscription is complete, the user has mastered the content, or day N of learning is complete.
 
-## 预览模板规则
+## Preview Template Rules
 
-用户要求看看效果、预览或测试推送时，在正文首行增加：
+When the user asks to see the effect, to preview, or to test the push, add the following as the first line of the body:
 
-    【格式预览｜不计入学习进度】
+    [Format Preview | Not Counted Toward Progress]
 
-预览响应必须直接以上述标记开头，标记前不得出现标题、寒暄、冒号或“校验通过”“为您推送第 N 单元预览内容”等过程说明。预览只读取下一单元，不领取投递、不调用定时任务手动触发、不改变任何学习状态。
+A preview response must begin directly with the above marker, and no title, greeting, colon, or process explanations such as "validation passed" or "pushing the preview of unit N for you" may appear before the marker. A preview only reads the next unit; it does not claim a delivery, does not call the manual trigger of the scheduled task, and does not change any learning state.

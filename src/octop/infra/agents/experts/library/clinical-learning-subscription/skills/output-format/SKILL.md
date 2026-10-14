@@ -1,89 +1,89 @@
 ---
 name: output-format
-description: 结构化医学学习产物的统一格式校验。四条硬格式与 validate_output.py 单次标准输入流程。指南章节、路径图、诊断、备考、医保、更新和每日单元使用；普通医学问答走 clinical-q-and-a 的轻量自检，通用任务不套用。
+description: Unified format validation for structured medical learning artifacts. The four hard formats and the single standard-input flow of validate_output.py. Used by guideline sections, pathway maps, diagnosis, exam prep, insurance, updates, and daily units; ordinary medical Q&A goes through the lightweight self-check of clinical-q-and-a, and general tasks are exempt.
 metadata:
   octop:
     emoji: "✅"
     label:
-      zh: "输出格式校验"
+      zh: "Output Format Check"
       en: "Output Format Check"
     summary:
-      zh: "校验结构化医学学习产物的硬格式后再发出。"
+      zh: "Validate the hard format of structured medical learning artifacts before sending them."
       en: "Validate structured medical learning output before sending."
 ---
 
-# 医学安全域输出格式校验
+# Output Format Validation for the Medical Safety Domain
 
-## 适用范围
+## Scope
 
-以下模块的输出（无论对话内即时回答还是定时推送）必须经本技能校验：
+The output of the following modules (whether an immediate answer inside a conversation or a scheduled push) must be validated by this skill:
 
-`guideline_learning`、`daily_guideline_learning`、`guideline_section_expansion`、`guideline_learning_pathway`、`guideline_learning_diagnosis`、`guideline_update_reminder`、`professional_update_summary`、`insurance_policy_summary`、`insurance_policy_learning`、`insurance_policy_retrospective`、`exam_material_recommendation`。
+`guideline_learning`, `daily_guideline_learning`, `guideline_section_expansion`, `guideline_learning_pathway`, `guideline_learning_diagnosis`, `guideline_update_reminder`, `professional_update_summary`, `insurance_policy_summary`, `insurance_policy_learning`, `insurance_policy_retrospective`, `exam_material_recommendation`.
 
-**普通教育性医学问答不加载本技能**：由 `clinical-q-and-a` 使用内嵌的短模板和四项自检，避免为一段简短解释加载完整模板、写草稿文件和启动校验脚本。问题一旦涉及精确推荐/定位、药品高风险事实、版本比较、医保监管，立即退出快路径，转入对应专业 skill 与本技能。
+**Ordinary educational medical Q&A does not load this skill**: `clinical-q-and-a` uses its embedded short template and four self-checks, so that a brief explanation does not require loading the full template, writing a draft file, and starting the validation script. Once a question involves precise recommendations/localization, high-risk drug facts, version comparison, or insurance regulation, leave the fast path immediately and switch to the corresponding professional skill and to this skill.
 
-**通用任务（写作/翻译/编程/计划/数据整理等）不套用本技能**：不要求模板头、不要求权威来源行、不加医学免责声明。校验时对通用输出使用 `--module general_task`，不要误用医学模块名。
+**General tasks (writing/translation/programming/planning/data organization, etc.) are exempt from this skill**: no template head, no authoritative source line, and no medical disclaimer are required. When validating, use `--module general_task` for general output, and do not mistakenly use a medical module name.
 
-**纯信源核验不套用本技能**：只判断文件是否为权威原文、是否最新有效以及修订/替代/废止关系时，由 `source-verify` skill 使用自己的【信源核验】模板完成，不再调用本技能或 `validate_output.py`。如果核验后还要生成指南学习内容，再对学习内容调用本技能。
+**Pure source verification is exempt from this skill**: when only judging whether a file is an authoritative original text, whether it is the latest and in effect, and the revision/replacement/repeal relationships, the `source-verify` skill completes the work with its own [Source Verification] template, and neither this skill nor `validate_output.py` is called. If guideline learning content is still generated after verification, then call this skill on the learning content.
 
-## 资源路径
+## Resource Paths
 
-以下路径均从当前 `skills/output-format/SKILL.md` 向上两级定位专家工作区，必须直接使用，不得通过 `glob`、`grep` 或递归 `ls` 寻找，也不得为调用校验器而先读取脚本源码：
+The following paths all locate the expert workspace two levels up from the current `skills/output-format/SKILL.md`; they must be used directly, and must not be located through `glob`, `grep`, or recursive `ls`, nor may the script source be read first in order to call the validator:
 
 - `../../references/output-templates.md`
 - `../../references/source-policy.yaml`
 - `../../scripts/validate_output.py`
 
-校验器从标准输入或 `--text-file` 接收待校验正文。不要无正文试运行校验器，也不要通过读取/搜索源码猜参数或模板规则。
+The validator receives the text to be validated from standard input or from `--text-file`. Do not run the validator without text, and do not guess parameters or template rules by reading or searching the source.
 
-## 常用模块映射
+## Common Module Mapping
 
-| 用户请求实质 | module | 模板要求 |
+| Substance of the user request | module | Template requirement |
 | --- | --- | --- |
-| 普通概念解释、常见医学误区澄清 | `clinical_q_and_a` | 由 `clinical-q-and-a` 轻量自检，不执行本技能脚本流程 |
-| 总结、展开或讲解指南中的某章、某节、筛查/随访等专题 | `guideline_section_expansion` | 【指南章节展开】；含依据、章节、原文定位、原文要点、学习提示、边界及“不替代原文” |
-| 把整份指南整理为学习顺序或学习路径 | `guideline_learning_pathway` | 【指南学习路径图】；含依据、前置知识、编号学习顺序、边界 |
-| 每日固定学习单元 | `daily_guideline_learning` | 【指南学习单元】；恰好 3 个编号要点及单元进度 |
-| 学习状态或薄弱点评估 | `guideline_learning_diagnosis` | 【指南学习诊断】或【指南诊断标准学习】 |
+| Ordinary concept explanation, clarification of common medical misconceptions | `clinical_q_and_a` | Lightweight self-check by `clinical-q-and-a`; the script flow of this skill is not executed |
+| Summarizing, expanding, or explaining a chapter or section of a guideline, or a topic such as screening/follow-up | `guideline_section_expansion` | [Guideline Section Expansion]; includes basis, section, original-text localization, original-text key points, learning tips, boundary, and "does not replace the original text" |
+| Organizing a whole guideline into a learning order or learning pathway | `guideline_learning_pathway` | [Guideline Learning Pathway]; includes basis, prerequisite knowledge, numbered learning order, boundary |
+| Fixed daily learning unit | `daily_guideline_learning` | [Guideline Learning Unit]; exactly 3 numbered key points and the unit progress |
+| Assessment of learning status or weak points | `guideline_learning_diagnosis` | [Guideline Learning Diagnosis] or [Guideline Diagnostic Criteria Study] |
 
-命中上表后直接使用对应 module，不读取校验器源码二次判断。
+Once the table above is matched, use the corresponding module directly; do not read the validator source to decide a second time.
 
-## 四条硬格式（每次都必须）
+## The Four Hard Formats (required every time)
 
-1. **模板头**：首行 `【{模块名}｜{主题}】`，如【指南章节展开｜风险分层】。
-2. **来源行**：结尾 `来源：{文件名称}：[链接]({URL})`，正例：`来源：国家卫生健康委官网：[链接](https://www.nhc.gov.cn/)`。给出期刊名、DOI、文件名时必须同时包成可点击链接，不允许只写文字出处。取不到权威链接时写明"未取得可核验权威来源，需人工核验"——不得省略来源行，不得伪造链接。
-3. **边界声明**：按模块带对应一句——章节展开"不替代原文"、备考"以官方考试大纲为准"、医保"不作为报销依据"、涉患者请求"不提供个体诊疗"。
-4. **不得编造**：页码、条目号、版本、文件名、机构名称，取不到权威依据就标"待核验"，绝不凭记忆补全。
+1. **Template head**: the first line is `[{module name} | {topic}]`, for example [Guideline Section Expansion | Risk Stratification].
+2. **Source line**: at the end, `Source: {file name}: [Link]({URL})`, positive example: `Source: National Health Commission official website: [Link](https://www.nhc.gov.cn/)`. When giving a journal name, DOI, or file name, you must also wrap it as a clickable link; a plain-text attribution alone is not allowed. When no authoritative link can be obtained, state explicitly "no verifiable authoritative source was obtained, manual verification is required" - never omit the source line and never fabricate a link.
+3. **Boundary declaration**: one corresponding sentence per module - section expansion "does not replace the original text", exam prep "the official exam syllabus prevails", insurance "not a basis for reimbursement", and any request involving patients "no individual diagnosis or treatment".
+4. **Never fabricate**: page numbers, item numbers, versions, file names, institution names - when no authoritative basis can be obtained, mark them "pending verification"; never fill them in from memory.
 
-详细模板见 `../../references/output-templates.md`。
+Detailed templates are in `../../references/output-templates.md`.
 
-## 校验流程
+## Validation Flow
 
-每次医学安全域输出前，严格按顺序：
+Before every medical safety domain output, follow this order strictly:
 
-1. 按对应模板一次生成完整草稿，不先写半成品。
-2. 优先把完整草稿通过标准输入交给校验器，在一次工具调用内直接运行：
+1. Generate a complete draft from the corresponding template in one pass; do not write a half-finished version first.
+2. Prefer passing the complete draft to the validator through standard input, running it directly inside a single tool call:
    ```bash
-   python ../../scripts/validate_output.py --module <模块名>
+   python ../../scripts/validate_output.py --module <module_name>
    ```
-   只有当前执行工具无法传标准输入时，才写入 `../../outbound/.clinical-output-draft.md` 并使用 `--text-file`；不得为了同步同一草稿反复读写或复制文件。
-   模块名必须与内容实质一致（医学学习内容用医学模块名，普通任务用 `general_task`）。
-3. 校验通过 → 直接输出草稿正文。草稿与终稿必须是简体中文；不得向用户输出思考/检索/执行过程，也不得输出 `I'll`、`Let me`、`Now running`、`Validation passed`、`Here is the answer.`、“校验通过”“校验完成”“为您推送预览内容”等过程性前缀。执行检索和校验时静默，不要先用英文过程句占住通道再补中文正文。
-4. 校验失败 → 只根据校验器返回的 `errors` 修正草稿并再校验一次；不得读取或搜索校验器源码，仍不通过则停止并说明原因，**不得绕过校验直接输出**，也不得省略【】模板头和来源行。
+   Only when the currently executing tool cannot pass standard input, write to `../../outbound/.clinical-output-draft.md` and use `--text-file`; do not repeatedly read, write, or copy files just to synchronize the same draft.
+   The module name must match the substance of the content (use a medical module name for medical learning content and `general_task` for general tasks).
+3. Validation passes -> output the draft text directly. The draft and the final text must be in Simplified Chinese; do not output your thinking/retrieval/execution process to the user, and do not output procedural prefixes such as `I'll`, `Let me`, `Now running`, `Validation passed`, `Here is the answer.`, "validation passed", "validation complete", or "pushing preview content for you". Stay silent while retrieving and validating; do not first occupy the channel with English procedural sentences and then append the Chinese body.
+4. Validation fails -> fix the draft only according to the `errors` returned by the validator and validate once more; do not read or search the validator source, and if it still fails, stop and explain why, **never bypass validation and output directly**, and never omit the [] template head or the source line.
 
-## 来源行格式硬规则
+## Hard Rules for the Source Line Format
 
-只要本次输出查询、引用或核验了权威信源，都必须列出来源。统一格式：
+Whenever this output queries, cites, or verifies an authoritative source, the source must be listed. Unified format:
 
 ```
-来源：{文件或页面名称}：[链接]({URL})
+Source: {file or page name}: [Link]({URL})
 ```
 
-- 不得裸露长 URL；
-- 不得把链接文字写成"查看原文""官网""点击这里"等其他词；
-- 多个来源分多行列出；
-- 无可靠来源时不得伪造链接，只写"未取得可核验权威来源或需人工核验"。
+- Long URLs must not be exposed;
+- The link text must not be written as other words such as "view original text", "official website", or "click here";
+- Multiple sources are listed on separate lines;
+- When there is no reliable source, do not fabricate a link; write only "no verifiable authoritative source was obtained or manual verification is required".
 
-## 边界
+## Boundary
 
-本技能只管医学安全域输出的格式与校验，不生成医学内容本身（内容由各专业 skill 生成）、不执行登记/订阅、不做信源分级（信源规则见 `../../references/source-policy.yaml` 和 `source-verify` skill）。通用任务与纯信源核验一律豁免，不得借格式校验之名降级通用输出。
+This skill only handles the format and validation of medical safety domain output; it does not generate medical content itself (content is generated by the respective professional skills), does not perform registration/subscription, and does not grade sources (source rules are in `../../references/source-policy.yaml` and the `source-verify` skill). General tasks and pure source verification are always exempt; never degrade general output under the pretext of format validation.

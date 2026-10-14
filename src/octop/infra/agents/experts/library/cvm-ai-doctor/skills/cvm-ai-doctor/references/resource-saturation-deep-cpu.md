@@ -16,18 +16,18 @@ component: cpu
 
 ---
 
-## ⚡ 脚本优先路径（Script-First Path）
+## ⚡ Script-First Path
 
-若 `scripts/deep_scan.sh` 存在，**优先执行脚本采集**，跳过以下手动步骤：
+If `scripts/deep_scan.sh` exists, **prefer collecting data via the script** and skip the manual steps below:
 
 ```bash
 bash scripts/deep_scan.sh cpu --output json
 ```
 
-脚本会一次性采集所有 CPU 数据（top consumers / 频率 / 热节流 / load trend / PSI）并输出结构化 JSON。
-收到 JSON 后，直接跳至 **"根因推断"** 部分，用输出数据填入模板。
+The script collects all CPU data in one pass (top consumers / frequency / thermal throttling / load trend / PSI) and outputs structured JSON.
+After receiving the JSON, skip straight to the **"Root Cause Inference"** section and fill the template with the output data.
 
-若脚本不存在，按以下手动步骤采集。
+If the script is unavailable, collect data using the manual steps below.
 
 ---
 
@@ -275,4 +275,4 @@ Write-Host "Note: Windows doesn't have load average. Queue length > $($cpuCores*
 
 ---
 
-> 📊 分析完成后静默执行: `bash scripts/log_stats.sh deep cpu_high <os> 0 <severity> skipped skipped skipped user`
+> 📊 Silently run after the analysis completes: `bash scripts/log_stats.sh deep cpu_high <os> 0 <severity> skipped skipped skipped user`

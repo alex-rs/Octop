@@ -1,44 +1,44 @@
-# cvm-ai-doctor × tencentcloud-infra 协作协议
+# cvm-ai-doctor × tencentcloud-infra Collaboration Protocol
 
-> 本文件定义两个技能如何协同完成集群诊断和管理任务。
-> **核心原则：技能通过 Markdown 散文指令协作，Agent 作为编排者，不存在代码级 API 调用。**
+> This document defines how the two skills work together to complete cluster diagnosis and management tasks.
+> **Core principle: skills collaborate through Markdown prose instructions, with the Agent acting as orchestrator; there are no code-level API calls.**
 
 ---
 
-## 职责分工表
+## Responsibility Split
 
-| 职责 | cvm-ai-doctor | tencentcloud-infra |
+| Responsibility | cvm-ai-doctor | tencentcloud-infra |
 |------|:---:|:---:|
-| 节点发现（DescribeInstances） | ❌ | ✅ |
-| 云端监控指标（GetMonitorData） | ❌ | ✅ |
-| TAT 批量命令执行（RunCommand） | ❌ | ✅ |
-| TAT 结果轮询（DescribeInvocationTasks） | ❌ | ✅ |
-| 实例生命周期（Reboot/Stop/Start） | ❌ | ✅ |
-| OS 数据解析与诊断分析 | ✅ | ❌ |
-| 跨节点关联分析 | ✅ | ❌ |
-| 集群健康评分 | ✅ | ❌ |
-| 诊断报告生成 | ✅ | ❌ |
-| MEMORY.md 集群配置维护 | ✅ | ❌ |
-| OAuth 凭据管理 | ❌ | ✅ |
+| Node discovery (DescribeInstances) | ❌ | ✅ |
+| Cloud monitoring metrics (GetMonitorData) | ❌ | ✅ |
+| TAT batch command execution (RunCommand) | ❌ | ✅ |
+| TAT result polling (DescribeInvocationTasks) | ❌ | ✅ |
+| Instance lifecycle (Reboot/Stop/Start) | ❌ | ✅ |
+| OS data parsing and diagnostic analysis | ✅ | ❌ |
+| Cross-node correlation analysis | ✅ | ❌ |
+| Cluster health scoring | ✅ | ❌ |
+| Diagnostic report generation | ✅ | ❌ |
+| MEMORY.md cluster configuration maintenance | ✅ | ❌ |
+| OAuth credential management | ❌ | ✅ |
 
 ---
 
-## 核心协议：TAT 远程命令执行（集群 OS 快照）
+## Core Protocol: TAT Remote Command Execution (Cluster OS Snapshot)
 
-### ⚡ 脚本优先路径（Script-First Path）
+### ⚡ Script-First Path
 
-**优先**使用 `cvm-ai-doctor` 技能 `scripts/` 目录中的对应脚本，在本地 base64 编码后通过 TAT 发送到远端 CVM 执行。这样可以避免 LLM 每次重新组装命令，减少 token 消耗，也不容易遗漏或改写命令细节。
+**Prefer** the matching script in the `scripts/` directory of the `cvm-ai-doctor` skill: base64-encode it locally, then send it to the remote CVM through TAT for execution. This avoids the LLM reassembling the command every time, reduces token consumption, and makes it less likely that command details are omitted or altered.
 
-**Step A — Agent 在本地编码（根据 LightClaw 所在操作系统选择）：**
+**Step A — Agent encodes locally (choose according to the OS where LightClaw runs):**
 
 ```bash
-# Linux / macOS（-w 0 强制单行输出，无需 tr 管道）
-SKILL_DIR="<cvm-ai-doctor 技能绝对路径>"
+# Linux / macOS (-w 0 forces single-line output; no tr pipe needed)
+SKILL_DIR="<absolute path to the cvm-ai-doctor skill>"
 
-# Layer 2B 快速快照
+# Layer 2B quick snapshot
 CONTENT=$(base64 -w 0 < "$SKILL_DIR/scripts/cluster_os_snapshot.sh")
 
-# 深度分析（根据异常类型选择对应脚本）
+# Deep analysis (choose the matching script by anomaly type)
 # CONTENT=$(base64 -w 0 < "$SKILL_DIR/scripts/cluster_deep_cpu.sh")
 # CONTENT=$(base64 -w 0 < "$SKILL_DIR/scripts/cluster_deep_memory.sh")
 # CONTENT=$(base64 -w 0 < "$SKILL_DIR/scripts/cluster_deep_disk.sh")
@@ -47,13 +47,13 @@ CONTENT=$(base64 -w 0 < "$SKILL_DIR/scripts/cluster_os_snapshot.sh")
 ```
 
 ```powershell
-# Windows PowerShell（ReadAllBytes 不产生换行，无需额外处理）
-$SKILL_DIR = "<cvm-ai-doctor 技能绝对路径>"
+# Windows PowerShell (ReadAllBytes produces no line breaks; no extra handling needed)
+$SKILL_DIR = "<absolute path to the cvm-ai-doctor skill>"
 
-# Layer 2B 快速快照
+# Layer 2B quick snapshot
 $CONTENT = [Convert]::ToBase64String([IO.File]::ReadAllBytes("$SKILL_DIR\scripts\cluster_os_snapshot.sh"))
 
-# 深度分析（根据异常类型选择对应脚本）
+# Deep analysis (choose the matching script by anomaly type)
 # $CONTENT = [Convert]::ToBase64String([IO.File]::ReadAllBytes("$SKILL_DIR\scripts\cluster_deep_cpu.sh"))
 # $CONTENT = [Convert]::ToBase64String([IO.File]::ReadAllBytes("$SKILL_DIR\scripts\cluster_deep_memory.sh"))
 # $CONTENT = [Convert]::ToBase64String([IO.File]::ReadAllBytes("$SKILL_DIR\scripts\cluster_deep_disk.sh"))
@@ -61,7 +61,7 @@ $CONTENT = [Convert]::ToBase64String([IO.File]::ReadAllBytes("$SKILL_DIR\scripts
 # $CONTENT = [Convert]::ToBase64String([IO.File]::ReadAllBytes("$SKILL_DIR\scripts\cluster_deep_network.sh"))
 ```
 
-**Step B — 让 tencentcloud-infra 执行（将 Step A 的输出填入 --Content）：**
+**Step B — Have tencentcloud-infra execute it (put the Step A output into --Content):**
 
 ```bash
 tccli tat RunCommand \
@@ -69,26 +69,26 @@ tccli tat RunCommand \
   --InstanceIds '["ins-xxx","ins-yyy","ins-zzz"]' \
   --CommandType SHELL \
   --Timeout 30 \
-  --Content "<Step A 的输出>"
+  --Content "<output of Step A>"
 ```
 
-> **脚本路径说明**：`scripts/` 目录相对于 cvm-ai-doctor 技能目录。Agent 应在发出指令前将其展开为绝对路径。
-> **回退规则**：若脚本文件不存在，回退到 cluster-quick-check.md / cluster-deep-analysis.md 中的内联命令。
+> **Script path note**: the `scripts/` directory is relative to the cvm-ai-doctor skill directory. The Agent should expand it to an absolute path before issuing the instruction.
+> **Fallback rule**: if the script file does not exist, fall back to the inline commands in cluster-quick-check.md / cluster-deep-analysis.md.
 
 ---
 
-### 回退：内联命令路径（脚本不存在时）
+### Fallback: Inline Command Path (when the script does not exist)
 
-### cvm-ai-doctor 发出的指令（对 Agent 说）：
+### Instruction issued by cvm-ai-doctor (spoken to the Agent):
 
 ```
-请调用 tencentcloud-infra 技能，执行以下 TAT 批量命令：
+Please call the tencentcloud-infra skill to execute the following TAT batch command:
 
 Region: ap-guangzhou
 InstanceIds: ["ins-xxx", "ins-yyy", "ins-zzz"]
 CommandType: SHELL
 Timeout: 30
-Content（base64 编码前）:
+Content (before base64 encoding):
   h=$(hostname -s 2>/dev/null||echo unknown); \
   l=$(awk '{print $1}' /proc/loadavg 2>/dev/null||echo -1); \
   c=$(nproc 2>/dev/null||echo 1); \
@@ -97,16 +97,16 @@ Content（base64 编码前）:
   s=$(systemctl is-active sshd 2>/dev/null||echo unknown); \
   echo "HOST=$h LOAD=$l NCPU=$c MEM_MB=$m DISK_ROOT_PCT=$d SSH=$s"
 
-tccli 命令：
+tccli command:
   tccli tat RunCommand \
     --region ap-guangzhou \
     --InstanceIds '["ins-xxx","ins-yyy","ins-zzz"]' \
     --CommandType SHELL \
     --Timeout 30 \
-    --Content "$(printf '%s' '<上述命令>' | base64 -w 0)"
+    --Content "$(printf '%s' '<the command above>' | base64 -w 0)"
 ```
 
-### tencentcloud-infra 执行后返回（示例）：
+### What tencentcloud-infra returns after execution (example):
 
 ```json
 {
@@ -118,48 +118,48 @@ tccli 命令：
 }
 ```
 
-### cvm-ai-doctor 收到 InvocationId 后，发出轮询指令：
+### After receiving the InvocationId, cvm-ai-doctor issues a polling instruction:
 
 ```
-请调用 tencentcloud-infra 技能，轮询以下 TAT 执行结果：
+Please call the tencentcloud-infra skill to poll the following TAT execution results:
 
 tccli tat DescribeInvocationTasks \
   --InvocationId inv-abc123
 
-轮询策略：
-- 间隔：5 秒
-- 最多轮询：12 次（总计 60 秒）
-- 终止条件：所有任务 TaskStatus = SUCCESS 或 FAILED
+Polling strategy:
+- Interval: 5 seconds
+- Maximum polls: 12 times (60 seconds in total)
+- Termination condition: TaskStatus = SUCCESS or FAILED for all tasks
 ```
 
-### TAT 输出解码规则：
+### TAT output decoding rules:
 
-TAT 的 `TaskResult.Output` 字段为 base64 编码，解码方法：
+The `TaskResult.Output` field of TAT is base64-encoded; decode it as follows:
 
 ```bash
 echo "<base64_string>" | base64 -d
 ```
 
-解码后得到单行文本，格式如下：
+After decoding you get single-line text in the following format:
 ```
 HOST=order-api-1 LOAD=0.85 NCPU=4 MEM_MB=2048/8192 DISK_ROOT_PCT=55 SSH=active
 ```
 
-**由 cvm-ai-doctor 负责解析此输出**，tencentcloud-infra 只负责执行和返回原始结果。
+**cvm-ai-doctor is responsible for parsing this output**; tencentcloud-infra only executes commands and returns the raw result.
 
 ---
 
-## 核心协议：云端监控指标拉取
+## Core Protocol: Pulling Cloud Monitoring Metrics
 
-### cvm-ai-doctor 发出的指令：
+### Instruction issued by cvm-ai-doctor:
 
 ```
-请调用 tencentcloud-infra 技能，拉取以下实例的 CPU 和内存监控指标：
+Please call the tencentcloud-infra skill to pull the CPU and memory monitoring metrics for the following instances:
 
-时间窗口：最近 15 分钟（EndTime = 当前时间，StartTime = 当前时间 - 15 分钟）
-Period：300（5分钟聚合）
+Time window: the last 15 minutes (EndTime = current time, StartTime = current time - 15 minutes)
+Period: 300 (5-minute aggregation)
 
-对每个实例执行：
+Execute for each instance:
   tccli monitor GetMonitorData \
     --Namespace QCE/CVM \
     --MetricName CpuUsage \
@@ -177,34 +177,34 @@ Period：300（5分钟聚合）
     --EndTime "<EndTime>"
 ```
 
-### 返回数据处理：
+### Handling the returned data:
 
-tencentcloud-infra 返回 `DataPoints` 数组，**由 cvm-ai-doctor** 计算平均值：
-- 取 `DataPoints[*].Values` 的均值作为该节点的 5 分钟平均 CPU/内存使用率
-- 若 DataPoints 为空，标记该指标为"数据不可用"
+tencentcloud-infra returns a `DataPoints` array, and **cvm-ai-doctor** computes the averages:
+- Take the mean of `DataPoints[*].Values` as the node's 5-minute average CPU/memory utilization
+- If DataPoints is empty, mark that metric as "data unavailable"
 
 ---
 
-## 核心协议：实例生命周期操作
+## Core Protocol: Instance Lifecycle Operations
 
-### 🔴 高风险操作，必须在用户明确确认后才能发出
+### 🔴 High-risk operations; they may only be issued after explicit user confirmation
 
-**重启实例：**
+**Restart an instance:**
 ```
-请调用 tencentcloud-infra 技能，重启以下实例：
+Please call the tencentcloud-infra skill to restart the following instance:
 
 tccli cvm RebootInstances \
   --region <region> \
   --InstanceIds '["ins-xxx"]' \
   --StopType SOFT
 
-执行后，每 10 秒轮询一次 DescribeInstances 状态，直到实例回到 RUNNING。
-超时：10 分钟
+After execution, poll the DescribeInstances status every 10 seconds until the instance returns to RUNNING.
+Timeout: 10 minutes
 ```
 
-**停止实例：**
+**Stop an instance:**
 ```
-请调用 tencentcloud-infra 技能：
+Please call the tencentcloud-infra skill:
 
 tccli cvm StopInstances \
   --region <region> \
@@ -212,9 +212,9 @@ tccli cvm StopInstances \
   --StopType SOFT
 ```
 
-**启动实例：**
+**Start an instance:**
 ```
-请调用 tencentcloud-infra 技能：
+Please call the tencentcloud-infra skill:
 
 tccli cvm StartInstances \
   --region <region> \
@@ -223,54 +223,54 @@ tccli cvm StartInstances \
 
 ---
 
-## 降级模式：TAT 不可用时
+## Degraded Mode: When TAT Is Unavailable
 
-当 TAT Agent 状态为 Offline 时，执行降级流程：
+When the TAT Agent status is Offline, run the degraded flow:
 
-1. 跳过 TAT RunCommand（Layer 2B）
-2. 仍执行 Layer 1（DescribeInstances）+ Layer 2A（GetMonitorData）
-3. 在报告中每个无 OS 快照的节点旁标注：`⚠️ OS 快照不可用（TAT 离线）`
-4. 评分时跳过 OS 相关指标（负载、SSH 状态），仅基于云端指标评分
-5. 评分结果标注："仅云端指标，置信度较低"
+1. Skip TAT RunCommand (Layer 2B)
+2. Still run Layer 1 (DescribeInstances) + Layer 2A (GetMonitorData)
+3. In the report, annotate every node without an OS snapshot with: `⚠️ OS snapshot unavailable (TAT offline)`
+4. When scoring, skip OS-related metrics (load, SSH status) and score based only on cloud metrics
+5. Label the scoring result: "cloud metrics only, lower confidence"
 
 ---
 
-## 协作场景对照表
+## Collaboration Scenario Mapping
 
-| 用户说 | cvm-ai-doctor 动作 | tencentcloud-infra 动作 |
+| User says | cvm-ai-doctor action | tencentcloud-infra action |
 |--------|-------------------|------------------------|
-| 检查集群健康状态 | 读 cluster-quick-check.md，指挥执行 | DescribeInstances + GetMonitorData + TAT RunCommand |
-| 集群某节点负载高 | 读 cluster-deep-analysis.md，指挥深度 TAT | TAT RunCommand（ps aux, top 等） |
-| 重启某台 CVM | 读 cluster-remediation.md，确认风险后指挥 | RebootInstances + 轮询 DescribeInstances |
-| 发现新集群 | 读 cluster-discovery.md，指挥发现 | DescribeInstances + DescribeAutomationAgentStatus |
-| 查询某节点内存趋势 | 读 cluster-deep-analysis.md，指挥拉取 | GetMonitorData（过去 24 小时） |
+| Check cluster health status | Read cluster-quick-check.md, direct execution | DescribeInstances + GetMonitorData + TAT RunCommand |
+| High load on a cluster node | Read cluster-deep-analysis.md, direct deep TAT | TAT RunCommand (ps aux, top, etc.) |
+| Restart a CVM | Read cluster-remediation.md, confirm risk then direct | RebootInstances + poll DescribeInstances |
+| Discover a new cluster | Read cluster-discovery.md, direct discovery | DescribeInstances + DescribeAutomationAgentStatus |
+| Query a node's memory trend | Read cluster-deep-analysis.md, direct the pull | GetMonitorData (past 24 hours) |
 
 ---
 
-## 核心协议：OAuth 凭据检查
+## Core Protocol: OAuth Credential Check
 
-**每次调用任何 tccli 命令前，必须先执行此检查。**
+**This check must be run before every call to any tccli command.**
 
 ```bash
 python3 scripts/tccli-oauth-helper.py --status
 ```
 
-> `scripts/` 是 tencentcloud-infra 技能目录下的相对路径，随技能部署位置自动解析，无需硬编码绝对路径。
+> `scripts/` is a relative path under the tencentcloud-infra skill directory; it resolves automatically from the skill's deployment location, so no hard-coded absolute path is needed.
 
-**返回值处理：**
-- 输出含 `valid` → 凭据有效，继续执行
-- 输出含 `expired` 或 `missing` → 中断当前操作，提示用户刷新凭据：
+**Handling the return value:**
+- Output contains `valid` → credentials are valid, continue execution
+- Output contains `expired` or `missing` → abort the current operation and prompt the user to refresh credentials:
   ```
-  ⚠️ OAuth 凭据已过期，集群操作已暂停。
-  请先完成 OAuth 授权，授权后重新发起本次操作。
+  ⚠️ OAuth credentials have expired; cluster operations are paused.
+  Please complete OAuth authorization first, then re-initiate this operation.
   ```
 
 ---
 
-## 重要约束
+## Important Constraints
 
-1. **凭据前置检查**：每次让 tencentcloud-infra 执行 API 前，先按上方"OAuth 凭据检查"协议确认凭据有效
-2. **区域一致性**：TAT 是 Region-Scoped，跨区域集群需按区域分批调用
-3. **Lighthouse 特殊处理**：Lighthouse 实例用 `tccli lighthouse`，无 TAT 支持
-4. **批量优先**：TAT RunCommand 支持数组 InstanceIds，一次 API 覆盖所有节点，不要逐台调用
-5. **结果等待**：TAT 异步执行，必须轮询 DescribeInvocationTasks 直到完成，不能假设已完成
+1. **Credential pre-check**: before each API execution through tencentcloud-infra, first confirm the credentials are valid following the "OAuth Credential Check" protocol above
+2. **Region consistency**: TAT is Region-Scoped, so clusters spanning regions must be called in per-region batches
+3. **Lighthouse special handling**: Lighthouse instances use `tccli lighthouse`, which has no TAT support
+4. **Batch first**: TAT RunCommand accepts an InstanceIds array that covers all nodes in a single API call; do not call instances one by one
+5. **Wait for results**: TAT executes asynchronously; you must poll DescribeInvocationTasks until completion and must not assume it has already finished

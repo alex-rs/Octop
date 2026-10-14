@@ -1,74 +1,74 @@
 ---
 name: docx
-description: "当用户需要创建、读取、编辑或处理 Word 文档（.docx）时，使用此技能。触发场景包括提到“Word 文档”、“.docx”，或要求生成带目录、标题、页码、信头等格式的专业文档；也包括提取或重组 .docx 内容、插入或替换图片、在 Word 文件中查找替换、处理修订或批注，以及将内容整理为正式 Word 文档。如果用户要求生成“报告”“备忘录”“信函”“模板”等 Word / .docx 交付物，也应使用此技能。不要用于 PDF、电子表格、Google Docs，或与文档生成无关的一般编程任务。"
+description: "Use this skill when the user needs to create, read, edit or process a Word document (.docx). Trigger scenarios include mentioning “Word document” or “.docx”, or asking for professional documents formatted with a table of contents, headings, page numbers, letterhead and so on; they also include extracting or restructuring .docx content, inserting or replacing images, find-and-replace inside Word files, handling revisions or comments, and organizing content into a formal Word document. If the user asks for Word / .docx deliverables such as “reports”, “memos”, “letters” or “templates”, this skill should also be used. Do not use it for PDF, spreadsheets, Google Docs, or general programming tasks unrelated to document generation."
 license: Proprietary. LICENSE.txt has complete terms
 metadata:
   builtin_skill_version: "1.1"
   octop:
     emoji: "📝"
     label:
-      zh: "Word 文档"
+      zh: "Word Documents"
       en: "Word Documents"
     summary:
-      zh: "创建、读取、编辑或整理专业 .docx 文档。"
+      zh: "Create, read, edit or organize professional .docx documents."
       en: "Create, read, edit, or format professional .docx documents."
 ---
 
-> **重要:** 所有 `scripts/` 路径均相对于本技能目录。
-> 运行方式: `cd {this_skill_dir} && python scripts/...`
-> 或使用 `execute_shell_command` 的 `cwd` 参数。
+> **Important:** All `scripts/` paths are relative to this skill directory.
+> How to run: `cd {this_skill_dir} && python scripts/...`
+> Or use the `cwd` parameter of `execute_shell_command`.
 
-# DOCX 创建、编辑与分析
+# DOCX Creation, Editing and Analysis
 
-## 前置依赖
+## Prerequisites
 
-- **docx** (`npm install -g docx`): 新文档创建
-- **LibreOffice** (`soffice`): `.doc` -> `.docx` 转换、修订接受和 PDF 导出
-- **pandoc**: 文本提取
-- **pdftoppm** (poppler-utils): 文档转图片工作流
-- 如果 `pdftoppm` 不可用，Python 备用路径可能使用 `pdf2image`。
-- 在 Windows 上，依赖项必须已安装并在 `PATH` 中可用；如缺失，请报告依赖问题并停止（不要反复重试）。
+- **docx** (`npm install -g docx`): creating new documents
+- **LibreOffice** (`soffice`): `.doc` -> `.docx` conversion, accepting revisions, and PDF export
+- **pandoc**: text extraction
+- **pdftoppm** (poppler-utils): document-to-image workflows
+- If `pdftoppm` is unavailable, the Python fallback path may use `pdf2image`.
+- On Windows the dependencies must already be installed and available on `PATH`; if they are missing, report the dependency problem and stop (do not retry repeatedly).
 
-## 概述
+## Overview
 
-.docx 文件是包含 XML 文件的 ZIP 压缩包。
+.docx files are ZIP archives containing XML files.
 
-## 快速参考
+## Quick Reference
 
-| 任务 | 方法 |
+| Task | Method |
 |------|------|
-| 读取/分析内容 | `pandoc` 或解压获取原始 XML |
-| 创建新文档 | 使用 `docx-js` - 参见下方"创建新文档" |
-| 编辑现有文档 | 解压 → 编辑 XML → 重新打包 - 参见下方"编辑现有文档" |
+| Read/analyze content | `pandoc` or unzip to get the raw XML |
+| Create a new document | Use `docx-js` - see "Creating a New Document" below |
+| Edit an existing document | Unzip → edit the XML → repack - see "Editing an Existing Document" below |
 
-### 将 .doc 转换为 .docx
+### Converting .doc to .docx
 
-旧版 `.doc` 文件必须先转换才能编辑:
+Legacy `.doc` files must be converted before they can be edited:
 
 ```bash
 python scripts/office/soffice.py --headless --convert-to docx document.doc
 ```
 
-### 读取内容
+### Reading Content
 
 ```bash
-# 提取包含修订的文本
+# Extract text including revisions
 pandoc --track-changes=all document.docx -o output.md
 
-# 访问原始 XML
+# Access the raw XML
 python scripts/office/unpack.py document.docx unpacked/
 ```
 
-### 转换为图片
+### Converting to Images
 
 ```bash
 python scripts/office/soffice.py --headless --convert-to pdf document.docx
 pdftoppm -jpeg -r 150 document.pdf page
 ```
 
-### 接受修订
+### Accepting Revisions
 
-生成接受所有修订后的干净文档（需要 LibreOffice）:
+Produce a clean document with all revisions accepted (requires LibreOffice):
 
 ```bash
 python scripts/accept_changes.py input.docx output.docx
@@ -76,11 +76,11 @@ python scripts/accept_changes.py input.docx output.docx
 
 ---
 
-## 创建新文档
+## Creating a New Document
 
-使用 JavaScript 生成 .docx 文件，然后进行验证。安装: `npm install -g docx`
+Generate .docx files with JavaScript, then validate them. Install with: `npm install -g docx`
 
-### 初始设置
+### Initial Setup
 ```javascript
 const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, ImageRun,
         Header, Footer, AlignmentType, PageOrientation, LevelFormat, ExternalHyperlink,
@@ -91,61 +91,61 @@ const doc = new Document({ sections: [{ children: [/* content */] }] });
 Packer.toBuffer(doc).then(buffer => fs.writeFileSync("doc.docx", buffer));
 ```
 
-### 验证
-创建文件后进行验证。如果验证失败，解压、修复 XML 并重新打包。
+### Validation
+Validate after creating the file. If validation fails, unzip, fix the XML and repack.
 ```bash
 python scripts/office/validate.py doc.docx
 ```
 
-### 页面尺寸
+### Page Size
 
 ```javascript
-// 关键: docx-js 默认为 A4，而非 US Letter
-// 始终显式设置页面尺寸以获得一致的结果
+// Key: docx-js defaults to A4, not US Letter
+// Always set the page size explicitly for consistent results
 sections: [{
   properties: {
     page: {
       size: {
-        width: 12240,   // 8.5 英寸（DXA 单位）
-        height: 15840   // 11 英寸（DXA 单位）
+        width: 12240,   // 8.5 inches (DXA units)
+        height: 15840   // 11 inches (DXA units)
       },
-      margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 } // 1 英寸边距
+      margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 } // 1-inch margins
     }
   },
   children: [/* content */]
 }]
 ```
 
-**常见页面尺寸（DXA 单位，1440 DXA = 1 英寸）:**
+**Common page sizes (DXA units, 1440 DXA = 1 inch):**
 
-| 纸张 | 宽度 | 高度 | 内容宽度（1 英寸边距） |
+| Paper | Width | Height | Content width (1-inch margins) |
 |------|------|------|----------------------|
 | US Letter | 12,240 | 15,840 | 9,360 |
-| A4（默认） | 11,906 | 16,838 | 9,026 |
+| A4 (default) | 11,906 | 16,838 | 9,026 |
 
-**横向方向:** docx-js 在内部会交换宽度/高度，因此传入纵向尺寸并让其处理交换:
+**Landscape orientation:** docx-js swaps width/height internally, so pass portrait dimensions and let it handle the swap:
 ```javascript
 size: {
-  width: 12240,   // 将短边作为 width 传入
-  height: 15840,  // 将长边作为 height 传入
-  orientation: PageOrientation.LANDSCAPE  // docx-js 会在 XML 中交换它们
+  width: 12240,   // pass the short edge as width
+  height: 15840,  // pass the long edge as height
+  orientation: PageOrientation.LANDSCAPE  // docx-js swaps them in the XML
 },
-// 内容宽度 = 15840 - 左边距 - 右边距（使用长边）
+// Content width = 15840 - left margin - right margin (using the long edge)
 ```
 
-### 样式（覆盖内置标题）
+### Styles (Overriding the Built-in Headings)
 
-使用 Arial 作为默认字体（通用支持）。标题保持黑色以确保可读性。
+Use Arial as the default font (universally supported). Keep headings black for readability.
 
 ```javascript
 const doc = new Document({
   styles: {
-    default: { document: { run: { font: "Arial", size: 24 } } }, // 默认 12pt
+    default: { document: { run: { font: "Arial", size: 24 } } }, // 12pt by default
     paragraphStyles: [
-      // 重要: 使用精确的 ID 来覆盖内置样式
+      // Important: use the exact IDs to override the built-in styles
       { id: "Heading1", name: "Heading 1", basedOn: "Normal", next: "Normal", quickFormat: true,
         run: { size: 32, bold: true, font: "Arial" },
-        paragraph: { spacing: { before: 240, after: 240 }, outlineLevel: 0 } }, // outlineLevel 是目录所必需的
+        paragraph: { spacing: { before: 240, after: 240 }, outlineLevel: 0 } }, // outlineLevel is required for the table of contents
       { id: "Heading2", name: "Heading 2", basedOn: "Normal", next: "Normal", quickFormat: true,
         run: { size: 28, bold: true, font: "Arial" },
         paragraph: { spacing: { before: 180, after: 180 }, outlineLevel: 1 } },
@@ -159,14 +159,14 @@ const doc = new Document({
 });
 ```
 
-### 列表（绝对不要使用 Unicode 符号）
+### Lists (Never Use Unicode Symbols)
 
 ```javascript
-// ❌ 错误 - 绝不手动插入项目符号字符
-new Paragraph({ children: [new TextRun("• Item")] })  // 错误
-new Paragraph({ children: [new TextRun("\u2022 Item")] })  // 错误
+// ❌ Wrong - never insert bullet characters manually
+new Paragraph({ children: [new TextRun("• Item")] })  // wrong
+new Paragraph({ children: [new TextRun("\u2022 Item")] })  // wrong
 
-// ✅ 正确 - 使用 LevelFormat.BULLET 的编号配置
+// ✅ Right - use numbering config with LevelFormat.BULLET
 const doc = new Document({
   numbering: {
     config: [
@@ -188,32 +188,32 @@ const doc = new Document({
   }]
 });
 
-// ⚠️ 每个 reference 创建独立的编号序列
-// 相同 reference = 继续编号（1,2,3 然后 4,5,6）
-// 不同 reference = 重新开始（1,2,3 然后 1,2,3）
+// ⚠️ Each reference creates a separate numbering sequence
+// Same reference = numbering continues (1,2,3 then 4,5,6)
+// Different reference = numbering restarts (1,2,3 then 1,2,3)
 ```
 
-### 表格
+### Tables
 
-**关键: 表格需要双重宽度设置** - 必须同时在表格上设置 `columnWidths` 和在每个单元格上设置 `width`。缺少任一设置，表格在某些平台上会渲染不正确。
+**Key: tables need a double width setting** - you must set `columnWidths` on the table and `width` on every cell. Without either one, the table renders incorrectly on some platforms.
 
 ```javascript
-// 关键: 始终设置表格宽度以确保一致的渲染效果
-// 关键: 使用 ShadingType.CLEAR（而非 SOLID）以防止黑色背景
+// Key: always set the table width for consistent rendering
+// Key: use ShadingType.CLEAR (rather than SOLID) to prevent a black background
 const border = { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" };
 const borders = { top: border, bottom: border, left: border, right: border };
 
 new Table({
-  width: { size: 9360, type: WidthType.DXA }, // 始终使用 DXA（百分比在 Google Docs 中会出问题）
-  columnWidths: [4680, 4680], // 必须加起来等于表格宽度（DXA: 1440 = 1 英寸）
+  width: { size: 9360, type: WidthType.DXA }, // always use DXA (percentages break in Google Docs)
+  columnWidths: [4680, 4680], // must add up to the table width (DXA: 1440 = 1 inch)
   rows: [
     new TableRow({
       children: [
         new TableCell({
           borders,
-          width: { size: 4680, type: WidthType.DXA }, // 同样需要在每个单元格上设置
-          shading: { fill: "D5E8F0", type: ShadingType.CLEAR }, // 用 CLEAR 而非 SOLID
-          margins: { top: 80, bottom: 80, left: 120, right: 120 }, // 单元格内边距（内部的，不会增加宽度）
+          width: { size: 4680, type: WidthType.DXA }, // also needed on every cell
+          shading: { fill: "D5E8F0", type: ShadingType.CLEAR }, // CLEAR rather than SOLID
+          margins: { top: 80, bottom: 80, left: 120, right: 120 }, // cell padding (internal, does not increase the width)
           children: [new Paragraph({ children: [new TextRun("Cell")] })]
         })
       ]
@@ -222,61 +222,61 @@ new Table({
 })
 ```
 
-**表格宽度计算:**
+**Table width calculation:**
 
-始终使用 `WidthType.DXA` -- `WidthType.PERCENTAGE` 在 Google Docs 中会出问题。
+Always use `WidthType.DXA` -- `WidthType.PERCENTAGE` breaks in Google Docs.
 
 ```javascript
-// 表格宽度 = columnWidths 之和 = 内容宽度
-// US Letter 配合 1 英寸边距: 12240 - 2880 = 9360 DXA
+// Table width = sum of columnWidths = content width
+// US Letter with 1-inch margins: 12240 - 2880 = 9360 DXA
 width: { size: 9360, type: WidthType.DXA },
-columnWidths: [7000, 2360]  // 必须加起来等于表格宽度
+columnWidths: [7000, 2360]  // must add up to the table width
 ```
 
-**宽度规则:**
-- **始终使用 `WidthType.DXA`** -- 绝不使用 `WidthType.PERCENTAGE`（与 Google Docs 不兼容）
-- 表格宽度必须等于 `columnWidths` 之和
-- 单元格 `width` 必须与对应的 `columnWidth` 匹配
-- 单元格 `margins` 是内部边距 - 它们减少内容区域，而不是增加单元格宽度
-- 全宽表格: 使用内容宽度（页面宽度减去左右边距）
+**Width rules:**
+- **Always use `WidthType.DXA`** -- never use `WidthType.PERCENTAGE` (incompatible with Google Docs)
+- The table width must equal the sum of `columnWidths`
+- Each cell `width` must match the corresponding `columnWidth`
+- Cell `margins` are internal padding - they shrink the content area rather than increasing the cell width
+- Full-width tables: use the content width (page width minus the left and right margins)
 
-### 图片
+### Images
 
 ```javascript
-// 关键: type 参数是必需的
+// Key: the type parameter is required
 new Paragraph({
   children: [new ImageRun({
-    type: "png", // 必需: png, jpg, jpeg, gif, bmp, svg
+    type: "png", // required: png, jpg, jpeg, gif, bmp, svg
     data: fs.readFileSync("image.png"),
     transformation: { width: 200, height: 150 },
-    altText: { title: "Title", description: "Desc", name: "Name" } // 三个都是必需的
+    altText: { title: "Title", description: "Desc", name: "Name" } // all three are required
   })]
 })
 ```
 
-### 分页符
+### Page Breaks
 
 ```javascript
-// 关键: PageBreak 必须在 Paragraph 内部
+// Key: PageBreak must be inside a Paragraph
 new Paragraph({ children: [new PageBreak()] })
 
-// 或者使用 pageBreakBefore
+// Or use pageBreakBefore
 new Paragraph({ pageBreakBefore: true, children: [new TextRun("New page")] })
 ```
 
-### 目录
+### Table of Contents
 
 ```javascript
-// 关键: 标题必须仅使用 HeadingLevel - 不使用自定义样式
+// Key: headings must use HeadingLevel only - no custom styles
 new TableOfContents("Table of Contents", { hyperlink: true, headingStyleRange: "1-3" })
 ```
 
-### 页眉/页脚
+### Headers/Footers
 
 ```javascript
 sections: [{
   properties: {
-    page: { margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 } } // 1440 = 1 英寸
+    page: { margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 } } // 1440 = 1 inch
   },
   headers: {
     default: new Header({ children: [new Paragraph({ children: [new TextRun("Header")] })] })
@@ -290,112 +290,112 @@ sections: [{
 }]
 ```
 
-### docx-js 关键规则
+### Key docx-js Rules
 
-- **显式设置页面尺寸** - docx-js 默认为 A4；美国文档使用 US Letter（12240 x 15840 DXA）
-- **横向: 传入纵向尺寸** - docx-js 在内部交换宽度/高度；将短边作为 `width`，长边作为 `height`，并设置 `orientation: PageOrientation.LANDSCAPE`
-- **绝不使用 `\n`** - 使用独立的 Paragraph 元素
-- **绝不使用 Unicode 符号** - 使用 `LevelFormat.BULLET` 配合编号配置
-- **PageBreak 必须在 Paragraph 内** - 独立使用会创建无效的 XML
-- **ImageRun 需要 `type`** - 始终指定 png/jpg 等
-- **始终使用 DXA 设置表格 `width`** - 绝不使用 `WidthType.PERCENTAGE`（在 Google Docs 中会出问题）
-- **表格需要双重宽度** - `columnWidths` 数组和单元格 `width`，两者必须匹配
-- **表格宽度 = columnWidths 之和** - 对于 DXA，确保它们精确相加
-- **始终添加单元格边距** - 使用 `margins: { top: 80, bottom: 80, left: 120, right: 120 }` 获得可读的内边距
-- **使用 `ShadingType.CLEAR`** - 表格底纹绝不使用 SOLID
-- **目录需要仅使用 HeadingLevel** - 标题段落不使用自定义样式
-- **覆盖内置样式** - 使用精确的 ID: "Heading1"、"Heading2" 等
-- **包含 `outlineLevel`** - 目录所必需（H1 为 0，H2 为 1，依此类推）
+- **Set the page size explicitly** - docx-js defaults to A4; use US Letter for US documents (12240 x 15840 DXA)
+- **Landscape: pass portrait dimensions** - docx-js swaps width/height internally; pass the short edge as `width` and the long edge as `height`, and set `orientation: PageOrientation.LANDSCAPE`
+- **Never use `\n`** - use separate Paragraph elements
+- **Never use Unicode symbols** - use `LevelFormat.BULLET` with a numbering config
+- **PageBreak must be inside a Paragraph** - using it standalone creates invalid XML
+- **ImageRun needs `type`** - always specify png/jpg etc.
+- **Always set the table `width` with DXA** - never use `WidthType.PERCENTAGE` (breaks in Google Docs)
+- **Tables need a double width** - the `columnWidths` array and the cell `width`, and both must match
+- **Table width = sum of columnWidths** - for DXA, make sure they add up exactly
+- **Always add cell margins** - use `margins: { top: 80, bottom: 80, left: 120, right: 120 }` for readable padding
+- **Use `ShadingType.CLEAR`** - never use SOLID for table shading
+- **The table of contents needs HeadingLevel only** - no custom styles for heading paragraphs
+- **Override the built-in styles** - use the exact IDs: "Heading1", "Heading2", etc.
+- **Include `outlineLevel`** - required for the table of contents (0 for H1, 1 for H2, and so on)
 
 ---
 
-## 编辑现有文档
+## Editing an Existing Document
 
-**按顺序执行以下 3 个步骤。**
+**Carry out the following 3 steps in order.**
 
-### 第 1 步: 解压
+### Step 1: Unzip
 ```bash
 python scripts/office/unpack.py document.docx unpacked/
 ```
-提取 XML，进行格式化打印，合并相邻的 run，并将智能引号转换为 XML 实体（`&#x201C;` 等）以便在编辑过程中保留。使用 `--merge-runs false` 跳过 run 合并。
+Extract the XML, pretty-print it, merge adjacent runs, and convert smart quotes to XML entities (`&#x201C;` etc.) so that they are preserved during editing. Use `--merge-runs false` to skip run merging.
 
-### 第 2 步: 编辑 XML
+### Step 2: Edit the XML
 
-编辑 `unpacked/word/` 中的文件。参见下方的 XML 参考获取相关模式。
+Edit the files under `unpacked/word/`. See the XML reference below for the relevant patterns.
 
-**使用 "Claude" 作为作者**来添加修订和批注，除非用户明确要求使用其他名称。
+**Use "Claude" as the author** when adding revisions and comments, unless the user explicitly asks for another name.
 
-**直接使用 Edit 工具进行字符串替换。不要编写 Python 脚本。**脚本会引入不必要的复杂性。Edit 工具能准确显示被替换的内容。
+**Use the Edit tool for string replacements directly. Do not write Python scripts.** Scripts introduce unnecessary complexity. The Edit tool shows exactly what is being replaced.
 
-**关键: 新内容使用智能引号。**添加包含撇号或引号的文本时，使用 XML 实体生成智能引号:
+**Key: use smart quotes for new content.** When adding text that contains apostrophes or quotation marks, use XML entities to produce smart quotes:
 ```xml
-<!-- 使用这些实体生成专业的排版效果 -->
+<!-- Use these entities to produce professional typography -->
 <w:t>Here&#x2019;s a quote: &#x201C;Hello&#x201D;</w:t>
 ```
-| 实体 | 字符 |
+| Entity | Character |
 |------|------|
-| `&#x2018;` | ' (左单引号) |
-| `&#x2019;` | ' (右单引号 / 撇号) |
-| `&#x201C;` | " (左双引号) |
-| `&#x201D;` | " (右双引号) |
+| `&#x2018;` | ' (left single quote) |
+| `&#x2019;` | ' (right single quote / apostrophe) |
+| `&#x201C;` | " (left double quote) |
+| `&#x201D;` | " (right double quote) |
 
-**添加批注:** 使用 `comment.py` 处理跨多个 XML 文件的样板代码（文本必须是预转义的 XML）:
+**Adding comments:** use `comment.py` for the boilerplate that spans multiple XML files (the text must be pre-escaped XML):
 ```bash
 python scripts/comment.py unpacked/ 0 "Comment text with &amp; and &#x2019;"
-python scripts/comment.py unpacked/ 1 "Reply text" --parent 0  # 回复批注 0
-python scripts/comment.py unpacked/ 0 "Text" --author "Custom Author"  # 自定义作者名
+python scripts/comment.py unpacked/ 1 "Reply text" --parent 0  # reply to comment 0
+python scripts/comment.py unpacked/ 0 "Text" --author "Custom Author"  # custom author name
 ```
-然后在 document.xml 中添加标记（参见 XML 参考中的批注部分）。
+Then add the markup in document.xml (see the comments section of the XML reference).
 
-### 第 3 步: 打包
+### Step 3: Pack
 ```bash
 python scripts/office/pack.py unpacked/ output.docx --original document.docx
 ```
-进行验证并自动修复，压缩 XML，然后创建 DOCX。使用 `--validate false` 跳过验证。
+Validate and auto-fix, compress the XML, then create the DOCX. Use `--validate false` to skip validation.
 
-**自动修复可以修复的问题:**
-- `durableId` >= 0x7FFFFFFF（重新生成有效 ID）
-- `<w:t>` 上缺少的 `xml:space="preserve"`（当有空白字符时）
+**Problems that auto-fix can repair:**
+- `durableId` >= 0x7FFFFFFF (regenerate a valid ID)
+- Missing `xml:space="preserve"` on `<w:t>` (when there is whitespace)
 
-**自动修复无法修复的问题:**
-- 格式错误的 XML、无效的元素嵌套、缺失的关系、架构违规
+**Problems that auto-fix cannot repair:**
+- Malformed XML, invalid element nesting, missing relationships, schema violations
 
-### 常见陷阱
+### Common Pitfalls
 
-- **替换整个 `<w:r>` 元素**: 添加修订时，将整个 `<w:r>...</w:r>` 块替换为作为兄弟元素的 `<w:del>...<w:ins>...`。不要在 run 内部注入修订标签。
-- **保留 `<w:rPr>` 格式**: 将原始 run 的 `<w:rPr>` 块复制到修订 run 中，以保持粗体、字号等格式。
+- **Replacing an entire `<w:r>` element**: when adding a revision, replace the whole `<w:r>...</w:r>` block with `<w:del>...<w:ins>...` as sibling elements. Do not inject revision tags inside a run.
+- **Preserve `<w:rPr>` formatting**: copy the original run `<w:rPr>` block into the revision run to keep bold, font size and other formatting.
 
 ---
 
-## XML 参考
+## XML Reference
 
-### 架构合规性
+### Schema Compliance
 
-- **`<w:pPr>` 中的元素顺序**: `<w:pStyle>`、`<w:numPr>`、`<w:spacing>`、`<w:ind>`、`<w:jc>`、`<w:rPr>` 在最后
-- **空白字符**: 在含有前导/尾随空格的 `<w:t>` 上添加 `xml:space="preserve"`
-- **RSIDs**: 必须是 8 位十六进制数（例如 `00AB1234`）
+- **Element order inside `<w:pPr>`**: `<w:pStyle>`, `<w:numPr>`, `<w:spacing>`, `<w:ind>`, `<w:jc>`, with `<w:rPr>` last
+- **Whitespace**: add `xml:space="preserve"` on `<w:t>` elements that contain leading/trailing spaces
+- **RSIDs**: must be 8-digit hexadecimal numbers (for example `00AB1234`)
 
-### 修订
+### Revisions
 
-**插入:**
+**Insertions:**
 ```xml
 <w:ins w:id="1" w:author="Claude" w:date="2025-01-01T00:00:00Z">
   <w:r><w:t>inserted text</w:t></w:r>
 </w:ins>
 ```
 
-**删除:**
+**Deletions:**
 ```xml
 <w:del w:id="2" w:author="Claude" w:date="2025-01-01T00:00:00Z">
   <w:r><w:delText>deleted text</w:delText></w:r>
 </w:del>
 ```
 
-**在 `<w:del>` 内部**: 使用 `<w:delText>` 替代 `<w:t>`，使用 `<w:delInstrText>` 替代 `<w:instrText>`。
+**Inside `<w:del>`**: use `<w:delText>` instead of `<w:t>`, and `<w:delInstrText>` instead of `<w:instrText>`.
 
-**最小化编辑** - 只标记变更的部分:
+**Minimal edits** - mark only the changed part:
 ```xml
-<!-- 将 "30 days" 改为 "60 days" -->
+<!-- Change "30 days" to "60 days" -->
 <w:r><w:t>The term is </w:t></w:r>
 <w:del w:id="1" w:author="Claude" w:date="...">
   <w:r><w:delText>30</w:delText></w:r>
@@ -406,11 +406,11 @@ python scripts/office/pack.py unpacked/ output.docx --original document.docx
 <w:r><w:t> days.</w:t></w:r>
 ```
 
-**删除整个段落/列表项** - 当删除段落中的所有内容时，还需将段落标记标记为已删除，使其与下一段落合并。在 `<w:pPr><w:rPr>` 中添加 `<w:del/>`:
+**Deleting an entire paragraph/list item** - when you delete all the content of a paragraph, you must also mark the paragraph mark as deleted so that it merges with the next paragraph. Add `<w:del/>` inside `<w:pPr><w:rPr>`:
 ```xml
 <w:p>
   <w:pPr>
-    <w:numPr>...</w:numPr>  <!-- 列表编号（如存在） -->
+    <w:numPr>...</w:numPr>  <!-- list numbering (if present) -->
     <w:rPr>
       <w:del w:id="1" w:author="Claude" w:date="2025-01-01T00:00:00Z"/>
     </w:rPr>
@@ -420,9 +420,9 @@ python scripts/office/pack.py unpacked/ output.docx --original document.docx
   </w:del>
 </w:p>
 ```
-如果 `<w:pPr><w:rPr>` 中没有 `<w:del/>`，接受修订后会留下空段落/列表项。
+Without `<w:del/>` inside `<w:pPr><w:rPr>`, accepting the revision leaves an empty paragraph/list item behind.
 
-**拒绝其他作者的插入** - 将删除嵌套在其插入内部:
+**Rejecting another author's insertion** - nest the deletion inside their insertion:
 ```xml
 <w:ins w:author="Jane" w:id="5">
   <w:del w:author="Claude" w:id="10">
@@ -431,7 +431,7 @@ python scripts/office/pack.py unpacked/ output.docx --original document.docx
 </w:ins>
 ```
 
-**恢复其他作者的删除** - 在之后添加插入（不修改其删除标记）:
+**Restoring another author's deletion** - add an insertion after it (without modifying their deletion markup):
 ```xml
 <w:del w:author="Jane" w:id="5">
   <w:r><w:delText>deleted text</w:delText></w:r>
@@ -441,14 +441,14 @@ python scripts/office/pack.py unpacked/ output.docx --original document.docx
 </w:ins>
 ```
 
-### 批注
+### Comments
 
-运行 `comment.py`（参见第 2 步）后，在 document.xml 中添加标记。对于回复，使用 `--parent` 标志并将标记嵌套在父批注内部。
+After running `comment.py` (see Step 2), add the markup in document.xml. For replies, use the `--parent` flag and nest the markup inside the parent comment.
 
-**关键: `<w:commentRangeStart>` 和 `<w:commentRangeEnd>` 是 `<w:r>` 的兄弟元素，绝不在 `<w:r>` 内部。**
+**Key: `<w:commentRangeStart>` and `<w:commentRangeEnd>` are siblings of `<w:r>`, never inside `<w:r>`.**
 
 ```xml
-<!-- 批注标记是 w:p 的直接子元素，绝不在 w:r 内部 -->
+<!-- Comment markup is a direct child of w:p, never inside w:r -->
 <w:commentRangeStart w:id="0"/>
 <w:del w:id="1" w:author="Claude" w:date="2025-01-01T00:00:00Z">
   <w:r><w:delText>deleted</w:delText></w:r>
@@ -457,7 +457,7 @@ python scripts/office/pack.py unpacked/ output.docx --original document.docx
 <w:commentRangeEnd w:id="0"/>
 <w:r><w:rPr><w:rStyle w:val="CommentReference"/></w:rPr><w:commentReference w:id="0"/></w:r>
 
-<!-- 批注 0 及其嵌套的回复 1 -->
+<!-- Comment 0 and its nested reply 1 -->
 <w:commentRangeStart w:id="0"/>
   <w:commentRangeStart w:id="1"/>
   <w:r><w:t>text</w:t></w:r>
@@ -467,22 +467,22 @@ python scripts/office/pack.py unpacked/ output.docx --original document.docx
 <w:r><w:rPr><w:rStyle w:val="CommentReference"/></w:rPr><w:commentReference w:id="1"/></w:r>
 ```
 
-### 图片
+### Images
 
-1. 将图片文件添加到 `word/media/`
-2. 在 `word/_rels/document.xml.rels` 中添加关系:
+1. Add the image file to `word/media/`
+2. Add the relationship in `word/_rels/document.xml.rels`:
 ```xml
 <Relationship Id="rId5" Type=".../image" Target="media/image1.png"/>
 ```
-3. 在 `[Content_Types].xml` 中添加内容类型:
+3. Add the content type in `[Content_Types].xml`:
 ```xml
 <Default Extension="png" ContentType="image/png"/>
 ```
-4. 在 document.xml 中引用:
+4. Reference it in document.xml:
 ```xml
 <w:drawing>
   <wp:inline>
-    <wp:extent cx="914400" cy="914400"/>  <!-- EMU 单位: 914400 = 1 英寸 -->
+    <wp:extent cx="914400" cy="914400"/>  <!-- EMU units: 914400 = 1 inch -->
     <a:graphic>
       <a:graphicData uri=".../picture">
         <pic:pic>

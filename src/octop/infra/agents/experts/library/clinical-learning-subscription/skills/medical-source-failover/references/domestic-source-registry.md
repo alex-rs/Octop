@@ -20,10 +20,10 @@ This registry routes fact types to candidate authorities and fallback paths. It 
 
 ## Professional societies and formal publication sources
 
-中华医学会 91 个专科分会的官方目录、已确认专属子域，以及独立专业学会的
-分级路由记录在 `../../../references/professional-society-source-routes.yaml`。
-命中专业学会主题时先查该表，避免每次从全网猜测机构官网。表中的
-`official_discovery_pending_fulltext_acceptance` 只允许定位原文，不代表整个域名可作最终证据。
+The official directory of the Chinese Medical Association's 91 specialty branches, the confirmed dedicated
+subdomains, and the tiered routing of independent professional societies are recorded in
+`../../../references/professional-society-source-routes.yaml`. Consult that table first when a professional-society
+topic is hit, so you do not have to guess institutional websites each time. In that table, `official_discovery_pending_fulltext_acceptance` only permits locating the original text; it does not mean the whole domain can serve as final evidence.
 
 | Source | Canonical domains | Appropriate use | Fallback notes |
 |---|---|---|---|

@@ -1,78 +1,78 @@
-# 购买云硬盘（CBS）并挂载到云服务器
+# Buying a Cloud Disk (CBS) and Attaching It to a Cloud Server
 
-你对腾讯云 CBS、CVM 挂载、TAT 远程执行相关 API 的参数可能已过时。
-**执行前请先用 `tccli <服务> <操作> help` 确认最新参数。**
+Your knowledge of the parameters of the Tencent Cloud CBS, CVM attachment, and TAT remote execution APIs may be outdated.
+**Before executing, confirm the latest parameters with `tccli <service> <action> help`.**
 
-> 适用场景：为已有的 CVM 云服务器或 Lighthouse 轻量应用服务器购买新的云硬盘（CBS），并完成挂载、分区、格式化及自动挂载配置。
-> 全程通过 tccli 命令行完成，无需登录控制台。
+> Use case: buy a new cloud disk (CBS) for an existing CVM cloud server or Lighthouse instance, then complete attachment, partitioning, formatting, and automatic-mount configuration.
+> Everything is done through the tccli command line; no console login is needed.
 
 ---
 
-## 前置条件
+## Prerequisites
 
-### 所需权限
+### Required Permissions
 
-| 权限 | 说明 |
+| Permission | Description |
 |------|------|
-| `QcloudCBSFullAccess` | 创建/管理云硬盘 |
-| `QcloudCVMFullAccess` | 管理云服务器（CVM 场景） |
-| `QcloudLighthouseFullAccess` | 管理轻量应用服务器（Lighthouse 场景） |
-| `QcloudTATFullAccess` | TAT 自动化助手（远程执行磁盘初始化命令） |
+| `QcloudCBSFullAccess` | Create/manage cloud disks |
+| `QcloudCVMFullAccess` | Manage cloud servers (CVM scenario) |
+| `QcloudLighthouseFullAccess` | Manage Lighthouse instances (Lighthouse scenario) |
+| `QcloudTATFullAccess` | TAT automation assistant (remote execution of disk initialization commands) |
 
-> 子账号需在 CAM 控制台授予以上策略。
+> Sub-accounts must be granted the policies above in the CAM console.
 
-### 关键约束
+### Key Constraints
 
-- **可用区一致**：云硬盘必须与目标云服务器在**同一可用区**（如都在 `ap-beijing-3`），否则无法挂载
-- **挂载上限**：每台 CVM 最多挂载 20 块云硬盘；Lighthouse 最多挂载 5 块云硬盘
-- **计费方式**：需确认云硬盘的计费方式与实例是否匹配（包年包月/按量计费）
+- **Same availability zone**: the cloud disk must be in **the same availability zone** as the target cloud server (e.g. both in `ap-beijing-3`), otherwise it cannot be attached
+- **Attachment limit**: each CVM can have at most 20 cloud disks attached; Lighthouse at most 5 cloud disks
+- **Billing mode**: confirm that the cloud disk's billing mode matches the instance (prepaid subscription / pay-as-you-go)
 
 ---
 
-## 场景一：为 CVM 云服务器购买并挂载云硬盘
+## Scenario 1: Buying and Attaching a Cloud Disk for a CVM Cloud Server
 
-### 任务描述
+### Task Description
 
-为一台已有的 CVM 云服务器购买一块新的云硬盘（CBS），并将其挂载到该服务器上。
+Buy a new cloud disk (CBS) for an existing CVM cloud server and attach it to that server.
 
-### 执行步骤
+### Execution Steps
 
-#### 步骤 1：查询目标 CVM 实例信息
+#### Step 1: Query the target CVM instance information
 
-首先确认目标实例的可用区、当前挂载的云硬盘数量等信息：
+First confirm the target instance's availability zone, how many cloud disks are currently attached, and similar information:
 
 ```bash
 tccli cvm DescribeInstances --region <region> --InstanceIds '["<instance-id>"]'
 ```
 
-关注以下字段：
-- `Placement.Zone`：实例所在可用区（后续创建云硬盘必须指定相同可用区）
-- `InstanceId`：实例 ID
-- `InstanceName`：实例名称
-- `InstanceState`：实例状态（应为 `RUNNING` 或 `STOPPED`）
-- `DataDisks`：当前已挂载的数据盘列表
+Look at the following fields:
+- `Placement.Zone`: the availability zone of the instance (the same zone must be specified when creating the cloud disk later)
+- `InstanceId`: instance ID
+- `InstanceName`: instance name
+- `InstanceState`: instance state (should be `RUNNING` or `STOPPED`)
+- `DataDisks`: the list of currently attached data disks
 
-> ⚠️ 如果用户只提供了实例名称而非 ID，需使用 Filters 按名称查询：
+> ⚠️ If the user only provided the instance name rather than the ID, query by name with Filters:
 > ```bash
 > tccli cvm DescribeInstances --region <region> --Filters '[{"Name":"instance-name","Values":["<name>"]}]'
 > ```
 
-#### 步骤 2：查询云硬盘可用类型和价格
+#### Step 2: Query available cloud disk types and prices
 
 ```bash
-# 查询指定可用区支持的云硬盘类型
+# query the cloud disk types supported in the specified availability zone
 tccli cbs DescribeDiskConfigQuota --region <region> --InquiryType INQUIRY_CBS_CONFIG --DiskZones '["<zone>"]'
 ```
 
-常见云硬盘类型：
-| 类型 | DiskType | 说明 |
+Common cloud disk types:
+| Type | DiskType | Description |
 |------|----------|------|
-| 高性能云硬盘 | `CLOUD_PREMIUM` | 适用于大部分 I/O 场景 |
-| SSD 云硬盘 | `CLOUD_SSD` | 适用于中小型数据库 |
-| 增强型 SSD 云硬盘 | `CLOUD_HSSD` | 适用于高性能数据库和核心业务 |
-| 极速型 SSD 云硬盘 | `CLOUD_TSSD` | 适用于大型数据库和高 IOPS 场景 |
+| High-performance cloud disk | `CLOUD_PREMIUM` | Suitable for most I/O scenarios |
+| SSD cloud disk | `CLOUD_SSD` | Suitable for small and medium databases |
+| Enhanced SSD cloud disk | `CLOUD_HSSD` | Suitable for high-performance databases and core business |
+| Extreme SSD cloud disk | `CLOUD_TSSD` | Suitable for large databases and high-IOPS scenarios |
 
-可选：查询云硬盘价格：
+Optional: query cloud disk prices:
 
 ```bash
 tccli cbs InquirePriceCreateDisks --region <region> \
@@ -83,9 +83,9 @@ tccli cbs InquirePriceCreateDisks --region <region> \
   --DiskChargePrepaid '{"Period":<months>,"RenewFlag":"NOTIFY_AND_MANUAL_RENEW"}'
 ```
 
-#### 步骤 3：创建云硬盘
+#### Step 3: Create the cloud disk
 
-**包年包月云硬盘**（适配包年包月实例）：
+**Prepaid cloud disk** (for prepaid instances):
 
 ```bash
 tccli cbs CreateDisks --region <region> \
@@ -98,7 +98,7 @@ tccli cbs CreateDisks --region <region> \
   --Placement '{"Zone":"<zone>"}'
 ```
 
-**按量计费云硬盘**（适配按量计费实例）：
+**Pay-as-you-go cloud disk** (for pay-as-you-go instances):
 
 ```bash
 tccli cbs CreateDisks --region <region> \
@@ -110,24 +110,24 @@ tccli cbs CreateDisks --region <region> \
   --Placement '{"Zone":"<zone>"}'
 ```
 
-> ⚠️ 创建云硬盘属于**中危操作**，执行前需向用户确认：
-> - 云硬盘类型和大小
-> - 计费方式和费用
-> - 目标可用区
+> ⚠️ Creating a cloud disk is a **medium-risk operation**; confirm the following with the user before executing:
+> - The cloud disk type and size
+> - The billing mode and cost
+> - The target availability zone
 
-记录返回的 `DiskId`。
+Record the returned `DiskId`.
 
-#### 步骤 4：等待云硬盘就绪
+#### Step 4: Wait for the cloud disk to become ready
 
 ```bash
 tccli cbs DescribeDisks --region <region> --DiskIds '["<disk-id>"]'
 ```
 
-状态流转：`CREATING` → `UNATTACHED`（约 10–30 秒）
+State transition: `CREATING` → `UNATTACHED` (about 10-30 seconds)
 
-`DiskState` 变为 `UNATTACHED` 后方可进行挂载操作。
+Only once `DiskState` becomes `UNATTACHED` can the disk be attached.
 
-#### 步骤 5：挂载云硬盘到 CVM
+#### Step 5: Attach the cloud disk to the CVM
 
 ```bash
 tccli cbs AttachDisks --region <region> \
@@ -135,27 +135,27 @@ tccli cbs AttachDisks --region <region> \
   --InstanceId "<instance-id>"
 ```
 
-> ⚠️ 实例必须处于 `RUNNING` 或 `STOPPED` 状态才能挂载。
+> ⚠️ The instance must be in the `RUNNING` or `STOPPED` state to attach.
 
-#### 步骤 6：确认挂载成功
+#### Step 6: Confirm the attachment succeeded
 
 ```bash
 tccli cbs DescribeDisks --region <region> --DiskIds '["<disk-id>"]'
 ```
 
-确认以下字段：
-- `DiskState`：应变为 `ATTACHED`
-- `InstanceId`：应为目标实例 ID
-- `Attached`：应为 `true`
+Confirm the following fields:
+- `DiskState`: should become `ATTACHED`
+- `InstanceId`: should be the target instance ID
+- `Attached`: should be `true`
 
-#### 步骤 7：在实例内初始化磁盘（通过 TAT 远程执行）
+#### Step 7: Initialize the disk inside the instance (executed remotely through TAT)
 
-挂载成功后，云硬盘在操作系统中表现为一块未格式化的裸盘，需要分区、格式化并挂载到文件系统。
+After a successful attachment, the cloud disk appears in the operating system as an unformatted raw disk that needs to be partitioned, formatted, and mounted on the file system.
 
-**7a. 查看新磁盘设备名**
+**7a. Find the new disk device name**
 
 ```bash
-# 通过 TAT 执行命令
+# execute the command through TAT
 tccli tat RunCommand --region <region> \
   --InstanceIds '["<instance-id>"]' \
   --Content "$(echo 'lsblk' | base64)" \
@@ -164,42 +164,42 @@ tccli tat RunCommand --region <region> \
   --Timeout 30
 ```
 
-等待几秒后查询执行结果：
+Wait a few seconds, then query the execution result:
 
 ```bash
 tccli tat DescribeInvocationTasks --region <region> \
   --Filters '[{"Name":"invocation-id","Values":["<invocation-id>"]}]'
 ```
 
-> 返回结果中的 `Output` 字段为 Base64 编码，需解码查看。新磁盘通常显示为 `vdb`（或 `vdc`、`vdd` 等，取决于已有磁盘数量），无分区和挂载点。
+> The `Output` field in the result is Base64-encoded and must be decoded to view. The new disk usually appears as `vdb` (or `vdc`, `vdd`, etc., depending on how many disks already exist), with no partitions and no mount point.
 
-**7b. 分区、格式化并挂载**
+**7b. Partition, format, and mount**
 
 ```bash
-# 通过 TAT 执行一键初始化脚本
+# run the one-shot initialization script through TAT
 tccli tat RunCommand --region <region> \
   --InstanceIds '["<instance-id>"]' \
   --Content "$(echo 'DISK=/dev/vdb
 MOUNT_POINT=/data
 
-# 创建分区
+# create the partition
 parted -s ${DISK} mklabel gpt
 parted -s ${DISK} mkpart primary ext4 0% 100%
 partprobe ${DISK}
 sleep 2
 
-# 格式化
+# format
 mkfs.ext4 ${DISK}1
 
-# 创建挂载点并挂载
+# create the mount point and mount
 mkdir -p ${MOUNT_POINT}
 mount ${DISK}1 ${MOUNT_POINT}
 
-# 配置开机自动挂载（使用 UUID，更可靠）
+# configure automatic mounting at boot (using a UUID, which is more reliable)
 UUID=$(blkid -s UUID -o value ${DISK}1)
 echo "UUID=${UUID} ${MOUNT_POINT} ext4 defaults 0 2" >> /etc/fstab
 
-# 验证
+# verify
 df -h ${MOUNT_POINT}
 cat /etc/fstab | grep ${MOUNT_POINT}' | base64)" \
   --CommandType "SHELL" \
@@ -207,16 +207,16 @@ cat /etc/fstab | grep ${MOUNT_POINT}' | base64)" \
   --Timeout 60
 ```
 
-> ⚠️ **重要提示**：
-> - `DISK` 变量需替换为步骤 7a 中确认的实际设备名（如 `/dev/vdb`）
-> - `MOUNT_POINT` 可按用户需求自定义（常见：`/data`、`/mnt/data`）
-> - 如果是 CentOS 8+ / Ubuntu 20+，推荐使用 `xfs` 文件系统替代 `ext4`
-> - 此操作会**清除磁盘上的所有数据**，仅用于全新云硬盘
+> ⚠️ **Important notes**:
+> - The `DISK` variable must be replaced with the actual device name confirmed in step 7a (e.g. `/dev/vdb`)
+> - `MOUNT_POINT` can be customized to the user's needs (common choices: `/data`, `/mnt/data`)
+> - For CentOS 8+ / Ubuntu 20+, using the `xfs` file system instead of `ext4` is recommended
+> - This operation **erases all data on the disk** and is only for a brand-new cloud disk
 
-#### 步骤 8：验证最终状态
+#### Step 8: Verify the final state
 
 ```bash
-# 通过 TAT 查看磁盘使用情况
+# view disk usage through TAT
 tccli tat RunCommand --region <region> \
   --InstanceIds '["<instance-id>"]' \
   --Content "$(echo 'df -Th && echo "---" && lsblk && echo "---" && cat /etc/fstab' | base64)" \
@@ -225,52 +225,52 @@ tccli tat RunCommand --region <region> \
   --Timeout 30
 ```
 
-确认：
-- 新分区已挂载到指定目录
-- 文件系统类型正确
-- `/etc/fstab` 中已添加自动挂载配置
+Confirm:
+- The new partition is mounted at the specified directory
+- The file system type is correct
+- An automatic mount entry has been added to `/etc/fstab`
 
 ---
 
-## 场景二：为 Lighthouse 轻量应用服务器购买并挂载云硬盘
+## Scenario 2: Buying and Attaching a Cloud Disk for a Lighthouse Instance
 
-### 任务描述
+### Task Description
 
-为一台已有的 Lighthouse 轻量应用服务器购买一块新的云硬盘，并完成挂载。
+Buy a new cloud disk for an existing Lighthouse instance and complete the attachment.
 
-### 执行步骤
+### Execution Steps
 
-#### 步骤 1：查询目标 Lighthouse 实例信息
+#### Step 1: Query the target Lighthouse instance information
 
 ```bash
 tccli lighthouse DescribeInstances --region <region> --InstanceIds '["<instance-id>"]'
 ```
 
-关注以下字段：
-- `Zone`：实例所在可用区
-- `InstanceId`：实例 ID
-- `InstanceName`：实例名称
-- `InstanceState`：实例状态（应为 `RUNNING`）
+Look at the following fields:
+- `Zone`: the availability zone of the instance
+- `InstanceId`: instance ID
+- `InstanceName`: instance name
+- `InstanceState`: instance state (should be `RUNNING`)
 
-#### 步骤 2：查询当前已挂载的云硬盘
+#### Step 2: Query the currently attached cloud disks
 
 ```bash
 tccli lighthouse DescribeDisks --region <region> \
   --Filters '[{"Name":"instance-id","Values":["<instance-id>"]}]'
 ```
 
-> Lighthouse 单实例最多挂载 **5** 块数据盘，需确认未超出限制。
+> A single Lighthouse instance can have at most **5** data disks attached; confirm that the limit is not exceeded.
 
-#### 步骤 3：查询可用的云硬盘配置
+#### Step 3: Query the available cloud disk configurations
 
 ```bash
-# 查询 Lighthouse 云硬盘套餐
+# query the Lighthouse cloud disk plans
 tccli lighthouse DescribeDiskConfigs --region <region>
 ```
 
-> 注意：Lighthouse 的云硬盘创建接口与 CVM 不同，使用 Lighthouse 专用接口。
+> Note: Lighthouse's cloud disk creation API differs from CVM's; use the Lighthouse-specific API.
 
-#### 步骤 4：创建 Lighthouse 云硬盘
+#### Step 4: Create the Lighthouse cloud disk
 
 ```bash
 tccli lighthouse CreateDisks --region <region> \
@@ -282,20 +282,20 @@ tccli lighthouse CreateDisks --region <region> \
   --DiskName "<disk-name>"
 ```
 
-> ⚠️ Lighthouse 云硬盘仅支持**包年包月**计费方式。
+> ⚠️ Lighthouse cloud disks only support the **prepaid subscription** billing mode.
 
-记录返回的 `DiskId`。
+Record the returned `DiskId`.
 
-#### 步骤 5：等待云硬盘就绪
+#### Step 5: Wait for the cloud disk to become ready
 
 ```bash
 tccli lighthouse DescribeDisks --region <region> \
   --DiskIds '["<disk-id>"]'
 ```
 
-状态流转：`CREATING` → `UNATTACHED`
+State transition: `CREATING` → `UNATTACHED`
 
-#### 步骤 6：挂载云硬盘到 Lighthouse 实例
+#### Step 6: Attach the cloud disk to the Lighthouse instance
 
 ```bash
 tccli lighthouse AttachDisks --region <region> \
@@ -303,20 +303,20 @@ tccli lighthouse AttachDisks --region <region> \
   --InstanceId "<instance-id>"
 ```
 
-#### 步骤 7：确认挂载成功
+#### Step 7: Confirm the attachment succeeded
 
 ```bash
 tccli lighthouse DescribeDisks --region <region> --DiskIds '["<disk-id>"]'
 ```
 
-确认 `DiskState` 变为 `ATTACHED`，`InstanceId` 为目标实例。
+Confirm that `DiskState` becomes `ATTACHED` and `InstanceId` is the target instance.
 
-#### 步骤 8：在实例内初始化磁盘（通过 TAT 远程执行）
+#### Step 8: Initialize the disk inside the instance (executed remotely through TAT)
 
-Lighthouse 同样支持 TAT 自动化助手，初始化步骤与 CVM 场景一致：
+Lighthouse also supports the TAT automation assistant, and the initialization steps match the CVM scenario:
 
 ```bash
-# 查看新磁盘设备名
+# find the new disk device name
 tccli tat RunCommand --region <region> \
   --InstanceIds '["<instance-id>"]' \
   --Content "$(echo 'lsblk' | base64)" \
@@ -325,19 +325,19 @@ tccli tat RunCommand --region <region> \
   --Timeout 30
 ```
 
-然后按照场景一步骤 7b 执行分区、格式化和挂载操作。
+Then follow scenario 1, step 7b, to partition, format, and mount the disk.
 
 ---
 
-## 场景三：为云硬盘创建定期快照策略
+## Scenario 3: Creating a Scheduled Snapshot Policy for a Cloud Disk
 
-### 任务描述
+### Task Description
 
-为新挂载的云硬盘配置定期快照策略，保障数据安全。
+Configure a scheduled snapshot policy for the newly attached cloud disk to protect your data.
 
-### 执行步骤
+### Execution Steps
 
-#### 步骤 1：创建定期快照策略
+#### Step 1: Create the scheduled snapshot policy
 
 ```bash
 tccli cbs CreateAutoSnapshotPolicy --region <region> \
@@ -347,11 +347,11 @@ tccli cbs CreateAutoSnapshotPolicy --region <region> \
   --RetentionDays 7
 ```
 
-> 上例表示每周日和周三凌晨 2 点自动创建快照，保留 7 天。
+> The example above creates a snapshot automatically every Sunday and Wednesday at 2 a.m. and keeps them for 7 days.
 
-记录返回的 `AutoSnapshotPolicyId`。
+Record the returned `AutoSnapshotPolicyId`.
 
-#### 步骤 2：将云硬盘绑定到快照策略
+#### Step 2: Bind the cloud disk to the snapshot policy
 
 ```bash
 tccli cbs BindAutoSnapshotPolicy --region <region> \
@@ -359,79 +359,79 @@ tccli cbs BindAutoSnapshotPolicy --region <region> \
   --DiskIds '["<disk-id>"]'
 ```
 
-#### 步骤 3：验证绑定结果
+#### Step 3: Verify the binding result
 
 ```bash
 tccli cbs DescribeAutoSnapshotPolicies --region <region> \
   --AutoSnapshotPolicyIds '["<policy-id>"]'
 ```
 
-确认 `DiskIdSet` 中包含目标云硬盘 ID。
+Confirm that `DiskIdSet` contains the target cloud disk ID.
 
 ---
 
-## 常见问题
+## FAQ
 
-| 问题 | 原因与解决 |
+| Problem | Cause and solution |
 |------|-----------|
-| 创建云硬盘报错"可用区不支持" | 确认使用的 `DiskType` 在目标可用区可用，用 `DescribeDiskConfigQuota` 查询 |
-| 挂载报错"可用区不一致" | 云硬盘和实例必须在同一可用区，无法跨可用区挂载 |
-| 挂载后系统中看不到新磁盘 | Linux 执行 `lsblk` 或 `fdisk -l` 查看；Windows 在「磁盘管理」中初始化 |
-| 分区后 `df -h` 看不到 | 需要先 `mount` 挂载到目录才能在 `df` 中显示 |
-| 重启后磁盘未自动挂载 | 检查 `/etc/fstab` 配置是否正确，建议使用 UUID 而非设备名 |
-| Lighthouse 创建云硬盘报错 | Lighthouse 使用专用接口 `lighthouse CreateDisks`，不能用 CBS 的 `CreateDisks` |
-| 挂载数量超限 | CVM 最多 20 块，Lighthouse 最多 5 块，需先卸载不用的盘 |
+| "Availability zone not supported" error when creating a cloud disk | Confirm that the `DiskType` you use is available in the target zone; query it with `DescribeDiskConfigQuota` |
+| "Availability zone mismatch" error when attaching | The cloud disk and the instance must be in the same availability zone; attaching across zones is not possible |
+| The new disk is not visible in the system after attaching | On Linux, run `lsblk` or `fdisk -l` to check; on Windows, initialize it in "Disk Management" |
+| `df -h` does not show the partition | You must `mount` it to a directory first before it appears in `df` |
+| The disk is not mounted automatically after a reboot | Check whether `/etc/fstab` is configured correctly; prefer a UUID over a device name |
+| Lighthouse returns an error when creating a cloud disk | Lighthouse uses the dedicated API `lighthouse CreateDisks`; you cannot use CBS `CreateDisks` |
+| The attachment limit is exceeded | CVM allows at most 20 and Lighthouse at most 5; detach unused disks first |
 
 ---
 
-## API 速查
+## API Quick Reference
 
-### CBS（云硬盘 - 适用于 CVM）
+### CBS (cloud disks - for CVM)
 
-| 功能 | 服务 | 接口 |
+| Function | Service | API |
 |------|------|------|
-| 查询云硬盘 | cbs | `DescribeDisks` |
-| 查询云硬盘配置 | cbs | `DescribeDiskConfigQuota` |
-| 查询价格 | cbs | `InquirePriceCreateDisks` |
-| 创建云硬盘 | cbs | `CreateDisks` |
-| 挂载云硬盘 | cbs | `AttachDisks` |
-| 卸载云硬盘 | cbs | `DetachDisks` |
-| 创建快照 | cbs | `CreateSnapshot` |
-| 创建定期快照策略 | cbs | `CreateAutoSnapshotPolicy` |
-| 绑定快照策略 | cbs | `BindAutoSnapshotPolicy` |
-| 查询快照策略 | cbs | `DescribeAutoSnapshotPolicies` |
-| 扩容云硬盘 | cbs | `ResizeDisk` |
-| 退还云硬盘 | cbs | `TerminateDisks` |
+| Query cloud disks | cbs | `DescribeDisks` |
+| Query cloud disk configurations | cbs | `DescribeDiskConfigQuota` |
+| Query prices | cbs | `InquirePriceCreateDisks` |
+| Create a cloud disk | cbs | `CreateDisks` |
+| Attach a cloud disk | cbs | `AttachDisks` |
+| Detach a cloud disk | cbs | `DetachDisks` |
+| Create a snapshot | cbs | `CreateSnapshot` |
+| Create a scheduled snapshot policy | cbs | `CreateAutoSnapshotPolicy` |
+| Bind a snapshot policy | cbs | `BindAutoSnapshotPolicy` |
+| Query snapshot policies | cbs | `DescribeAutoSnapshotPolicies` |
+| Expand a cloud disk | cbs | `ResizeDisk` |
+| Return a cloud disk | cbs | `TerminateDisks` |
 
-### Lighthouse（轻量应用服务器云硬盘）
+### Lighthouse (Lighthouse cloud disks)
 
-| 功能 | 服务 | 接口 |
+| Function | Service | API |
 |------|------|------|
-| 查询云硬盘 | lighthouse | `DescribeDisks` |
-| 查询云硬盘配置 | lighthouse | `DescribeDiskConfigs` |
-| 创建云硬盘 | lighthouse | `CreateDisks` |
-| 挂载云硬盘 | lighthouse | `AttachDisks` |
-| 卸载云硬盘 | lighthouse | `DetachDisks` |
-| 续费云硬盘 | lighthouse | `RenewDisks` |
-| 退还云硬盘 | lighthouse | `TerminateDisks` |
+| Query cloud disks | lighthouse | `DescribeDisks` |
+| Query cloud disk configurations | lighthouse | `DescribeDiskConfigs` |
+| Create a cloud disk | lighthouse | `CreateDisks` |
+| Attach a cloud disk | lighthouse | `AttachDisks` |
+| Detach a cloud disk | lighthouse | `DetachDisks` |
+| Renew a cloud disk | lighthouse | `RenewDisks` |
+| Return a cloud disk | lighthouse | `TerminateDisks` |
 
-### 通用
+### Common
 
-| 功能 | 服务 | 接口 |
+| Function | Service | API |
 |------|------|------|
-| 查询 CVM 实例 | cvm | `DescribeInstances` |
-| 查询 Lighthouse 实例 | lighthouse | `DescribeInstances` |
-| 远程执行命令 | tat | `RunCommand` |
-| 查询执行结果 | tat | `DescribeInvocationTasks` |
+| Query CVM instances | cvm | `DescribeInstances` |
+| Query Lighthouse instances | lighthouse | `DescribeInstances` |
+| Execute commands remotely | tat | `RunCommand` |
+| Query execution results | tat | `DescribeInvocationTasks` |
 
 ---
 
-## 何时使用
+## When to Use
 
-| 场景 | 建议 |
+| Scenario | Recommendation |
 |------|------|
-| 用户要购买/创建/挂载云硬盘 | 按本文档场景一或场景二执行 |
-| 用户要配置定期快照 | 参考本文档场景三 |
-| 用户只查看云硬盘状态 | 不使用本文档，用 `tccli cbs DescribeDisks` |
-| 用户要做安全检查 | 不使用本文档，用 references/cvm-security-check.md |
-| 用户要部署应用或建站 | 不使用本文档，用对应的部署/建站 reference |
+| The user wants to buy/create/attach a cloud disk | Follow scenario 1 or scenario 2 in this document |
+| The user wants to configure scheduled snapshots | See scenario 3 in this document |
+| The user only wants to view cloud disk status | Do not use this document; use `tccli cbs DescribeDisks` |
+| The user wants a security check | Do not use this document; use references/cvm-security-check.md |
+| The user wants to deploy an application or set up a website | Do not use this document; use the corresponding deployment/website-setup reference |

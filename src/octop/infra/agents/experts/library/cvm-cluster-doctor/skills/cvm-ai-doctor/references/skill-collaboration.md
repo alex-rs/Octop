@@ -19,22 +19,22 @@ This document defines how `cvm-doctor` collaborates with other skills, primarily
 | **Target** | User's **CVM/VM/host** system | **LightClaw platform** itself |
 | **Focus** | Performance bottlenecks | Security + configuration health |
 | **Checks** | CPU/Memory/Disk/Network saturation | Process vitals, logs, auth, config, dependencies |
-| **Trigger** | "慢/卡/CPU高/磁盘满/性能问题" | "自检/体检/安全检查/LightClaw状态" |
+| **Trigger** | "slow/laggy/high CPU/disk full/performance problem" | "self-check/health check/security check/LightClaw status" |
 | **Output** | Performance analysis + optimization | Security score + health report |
 
 ---
 
 ## 🔀 Cross-reference Scenarios
 
-### Scenario 1: User says "检查系统" (ambiguous)
+### Scenario 1: User says "check the system" (ambiguous)
 
 **Decision tree**:
 
 ```yaml
-if user_mentions("LightClaw" or "自检" or "体检" or "安全"):
+if user_mentions("LightClaw" or "self-check" or "health check" or "security"):
   → Use health-check skill
   
-elif user_mentions("慢" or "卡" or "CPU" or "性能"):
+elif user_mentions("slow" or "laggy" or "CPU" or "performance"):
   → Use cvm-doctor skill
   
 else:
@@ -43,7 +43,7 @@ else:
   
   if all_components_ok:
     → Report: "✅ System performance is healthy."
-    → Suggest: "Need LightClaw platform security audit? (say '自检' or '体检')"
+    → Suggest: "Need LightClaw platform security audit? (say 'self-check' or 'health check')"
   
   else:
     → Proceed to Deep Mode for flagged components
@@ -68,7 +68,7 @@ else:
 💡 **Recommended Next Step**:
    Run platform health check for detailed diagnostics:
    
-   User: "自检" or "LightClaw 体检"
+   User: "self-check" or "LightClaw health check"
    
    This will analyze:
    - Process vitals and thread count
@@ -89,28 +89,28 @@ else:
 **Action in Health Check report**:
 
 ```markdown
-## 💾 存储与数据安全 — 3/10 ⚠️
+## 💾 Storage and Data Security — 3/10 ⚠️
 
-**问题**:
-- 磁盘剩余空间仅 8% (24GB / 300GB)
-- LightClaw 日志目录占用 15GB
+**Issues**:
+- Only 8% disk space remaining (24GB / 300GB)
+- LightClaw log directory consuming 15GB
 
-💡 **建议使用 CVM Doctor 进行详细磁盘分析**:
+💡 **Recommend using CVM Doctor for detailed disk analysis**:
    
-   User: "检查磁盘" or "disk 慢"
+   User: "check disk" or "disk slow"
    
-   CVM Doctor 将提供:
-   - 磁盘饱和度分析
-   - 大文件扫描
-   - I/O 性能诊断
-   - 清理建议
+   CVM Doctor will provide:
+   - Disk saturation analysis
+   - Large file scan
+   - I/O performance diagnosis
+   - Cleanup recommendations
 ```
 
 ---
 
 ### Scenario 4: Both skills needed (multi-layered issue)
 
-**Example**: User says "系统最近很慢,还老是报错"
+**Example**: User says "the system has been slow lately and keeps reporting errors"
 
 **Workflow**:
 
@@ -127,10 +127,10 @@ else:
 
 3. **Third**: Cross-reference to Health Check
    ```
-   Suggest: "LightClaw 进程内存占用异常,建议执行'体检'检查:
-   - 日志错误(可能内存泄漏)
-   - 配置问题(heartbeat 过于频繁)
-   - 依赖冲突"
+   Suggest: "LightClaw process memory usage is abnormal; recommend running a 'health check' to look into:
+   - Log errors (possible memory leak)
+   - Configuration issues (heartbeat too frequent)
+   - Dependency conflicts"
    ```
 
 ---
@@ -139,14 +139,14 @@ else:
 
 ### For CVM Doctor
 
-- [x] Update SKILL.md trigger words to avoid "自检/体检/安全检查"
+- [x] Update SKILL.md trigger words to avoid "self-check/health check/security check"
 - [x] Add cross-reference logic in Quick Mode output format
 - [x] Add collaboration section in SKILL.md
 - [x] Create this skill-collaboration.md reference
 
 ### For Health Check (if editing)
 
-- [ ] Add note: "For system performance issues (慢/卡/CPU高), use `cvm-doctor` skill"
+- [ ] Add note: "For system performance issues (slow/laggy/high CPU), use `cvm-doctor` skill"
 - [ ] In host environment section, suggest CVM Doctor for disk/resource deep dive
 
 ---
@@ -161,61 +161,61 @@ else:
 The issue involves a LightClaw service. For platform-specific diagnostics:
 
 **Next Step**: Run health check
-- User says: "自检" or "LightClaw 体检"
+- User says: "self-check" or "LightClaw health check"
 - Checks: Process vitals, logs, config, security
 ```
 
 ### Health Check → CVM Doctor
 
 ```markdown
-💡 **宿主机资源问题**
+💡 **Host Machine Resource Issue**
 
-检测到宿主机{磁盘/内存/CPU}资源异常。建议使用 CVM Doctor 进行详细分析:
+Abnormal host machine {disk/memory/CPU} resource usage detected. Recommend using CVM Doctor for a detailed analysis:
 
-**下一步**: 说 "检查{磁盘/内存/CPU}" 或 "系统性能诊断"
-- 检查项: 资源饱和度、I/O 性能、进程分析
+**Next Step**: say "check {disk/memory/CPU}" or "system performance diagnosis"
+- Checks: resource saturation, I/O performance, process analysis
 ```
 
 ---
 
 ## 🌩️ CVM Doctor ↔ Tencent Cloud Infra
 
-### 适用场景
+### Applicable Scenarios
 
-用户说"检查集群"/"所有CVM"/"批量诊断"/"重启某台云服务器"时，
-需要 cvm-doctor 与 tencentcloud-infra 协同完成任务。
+When the user says "check the cluster"/"all CVMs"/"batch diagnostics"/"restart a cloud server",
+cvm-doctor and tencentcloud-infra must work together to complete the task.
 
-### 职责划分
+### Division of Responsibilities
 
-| 职责 | **CVM Doctor** | **tencentcloud-infra** |
+| Responsibility | **CVM Doctor** | **tencentcloud-infra** |
 |------|--------------|----------------------|
-| 节点发现（API） | ❌ | ✅ DescribeInstances |
-| 云端监控指标 | ❌ | ✅ GetMonitorData |
-| 远程 OS 命令执行 | ❌ | ✅ TAT RunCommand |
-| OS 数据诊断分析 | ✅ | ❌ |
-| 跨节点关联分析 | ✅ | ❌ |
-| 实例生命周期操作 | ❌ | ✅ Reboot/Stop/Start |
-| 集群健康评分 | ✅ | ❌ |
+| Node discovery (API) | ❌ | ✅ DescribeInstances |
+| Cloud monitoring metrics | ❌ | ✅ GetMonitorData |
+| Remote OS command execution | ❌ | ✅ TAT RunCommand |
+| OS data diagnostic analysis | ✅ | ❌ |
+| Cross-node correlation analysis | ✅ | ❌ |
+| Instance lifecycle operations | ❌ | ✅ Reboot/Stop/Start |
+| Cluster health scoring | ✅ | ❌ |
 
-### 快速决策规则
+### Quick Decision Rules
 
 ```yaml
-if user_mentions("集群" or "cluster" or "所有CVM" or "所有节点" or "fleet" or "批量"):
-  → 读取 references/cluster-quick-check.md
-  → 通过 tencentcloud-infra 执行节点发现和 TAT 快照
-  → 使用 references/cluster-health-score.md 生成评分报告
+if user_mentions("cluster" or "clusters" or "all CVMs" or "all nodes" or "fleet" or "batch"):
+  → Read references/cluster-quick-check.md
+  → Perform node discovery and TAT snapshots through tencentcloud-infra
+  → Generate a scoring report using references/cluster-health-score.md
 
-elif user_mentions("重启实例" or "重启云服务器" or "ins-" or "启动停止"):
-  → 读取 references/cluster-remediation.md
-  → 通过 tencentcloud-infra 执行实例生命周期操作（需风险确认）
+elif user_mentions("restart instance" or "restart cloud server" or "ins-" or "start/stop"):
+  → Read references/cluster-remediation.md
+  → Perform instance lifecycle operations through tencentcloud-infra (risk confirmation required)
 
 else:
-  → 继续使用现有单机诊断流程，不需要 tencentcloud-infra
+  → Continue with the existing single-host diagnostic flow; tencentcloud-infra is not needed
 ```
 
-### 完整协作协议
+### Full Collaboration Protocol
 
-所有 API 调用细节（TAT 执行格式、数据结构、降级模式）详见：
+All API call details (TAT execution format, data structures, degradation mode) are documented in:
 `references/skill-collaboration-tencentcloud.md`
 
 ---

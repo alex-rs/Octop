@@ -1,186 +1,186 @@
-# AI 快速场景匹配指南
+# AI Quick Scenario Matching Guide
 
-> **用途**: AI 快速识别用户问题并选择正确的诊断路径
-> **决策时间**: < 3 秒
-
----
-
-## 🎯 一句话匹配规则
-
-**看到用户关键词 → 立即匹配场景 → 运行 Quick Mode → 根据结果决定 Deep**
+> **Purpose**: let the AI quickly identify the user's problem and choose the correct diagnosis path
+> **Decision time**: < 3 seconds
 
 ---
 
-## 🔥 Top 10 高频场景（覆盖 80% 问题）
+## 🎯 One-Line Matching Rule
 
-### 1. 系统慢/卡 ⭐⭐⭐⭐⭐
-**关键词**: 慢、卡、lag、slow、sluggish、响应慢
+**See a user keyword → match the scenario immediately → run Quick Mode → decide on Deep from the results**
+
+---
+
+## 🔥 Top 10 High-Frequency Scenarios (covering 80% of problems)
+
+### 1. Slow/laggy system ⭐⭐⭐⭐⭐
+**Keywords**: slow, laggy, lag, slow, sluggish, slow response
 ```bash
 bash references/resource-saturation.md
-# Quick 10s → 如有异常 → Deep --focus <component>
+# Quick 10s → if anomalies → Deep --focus <component>
 ```
 
-### 2. CPU 高 ⭐⭐⭐⭐⭐
-**关键词**: CPU、CPU 100%、风扇狂转、high CPU
+### 2. High CPU ⭐⭐⭐⭐⭐
+**Keywords**: CPU, CPU 100%, fans spinning hard, high CPU
 ```bash
 bash references/resource-saturation.md --mode deep --focus cpu
 ```
 
-### 3. 内存不足 ⭐⭐⭐⭐⭐
-**关键词**: 内存、memory、OOM、swap、内存不足
+### 3. Insufficient memory ⭐⭐⭐⭐⭐
+**Keywords**: memory, memory, OOM, swap, low memory
 ```bash
 bash references/resource-saturation.md --mode deep --focus memory
 ```
 
-### 4. 磁盘空间满 ⭐⭐⭐⭐⭐
-**关键词**: 磁盘满、disk full、no space、空间不足
+### 4. Disk space full ⭐⭐⭐⭐⭐
+**Keywords**: disk full, disk full, no space, out of space
 ```bash
 df -h && du -sh /* | sort -rh | head -20
-# 然后: commands/optimisation/large-files.md
+# Then: commands/optimisation/large-files.md
 ```
 
-### 5. 磁盘慢/I/O 高 ⭐⭐⭐⭐⭐
-**关键词**: 磁盘慢、I/O wait、disk slow、读写慢
+### 5. Slow disk/high I/O ⭐⭐⭐⭐⭐
+**Keywords**: slow disk, I/O wait, disk slow, slow reads/writes
 ```bash
 bash references/resource-saturation.md --mode deep --focus disk
 bash references/disk-smart.md
 ```
 
-### 6. 网络慢 ⭐⭐⭐⭐⭐
-**关键词**: 网络慢、网速慢、ping 高、network slow
+### 6. Slow network ⭐⭐⭐⭐⭐
+**Keywords**: slow network, slow internet, high ping, network slow
 ```bash
 bash references/resource-saturation.md --mode quick
-# 然后: commands/network/diagnose-network-issues.md
+# Then: commands/network/diagnose-network-issues.md
 ```
 
-### 7. 健康检查 ⭐⭐⭐⭐⭐
-**关键词**: 检查、健康、health、check、状态
+### 7. Health check ⭐⭐⭐⭐⭐
+**Keywords**: check, health, health, check, status
 ```bash
-# 全面 Quick 扫描
+# Full Quick scan
 bash references/resource-saturation.md --mode quick
 bash references/system-logs.md --mode quick
 bash references/disk-smart.md --mode quick
-# 如有异常 → 对应 Deep
+# If anomalies → the corresponding Deep
 ```
 
-### 8. 崩溃/重启 ⭐⭐⭐⭐⭐
-**关键词**: 崩溃、crash、重启、reboot、panic
+### 8. Crash/reboot ⭐⭐⭐⭐⭐
+**Keywords**: crash, crash, reboot, reboot, panic
 ```bash
 bash references/system-logs.md --mode deep --focus crash
-# 然后: commands/debugging/diagnose-crash.md
+# Then: commands/debugging/diagnose-crash.md
 ```
 
-### 9. 错误日志 ⭐⭐⭐⭐⭐
-**关键词**: 错误、error、报错、异常、exception
+### 9. Error logs ⭐⭐⭐⭐⭐
+**Keywords**: error, error, error message, exception, exception
 ```bash
 bash references/system-logs.md --mode quick
-# 如有大量错误 → Deep 分析
+# If there are many errors → Deep analysis
 ```
 
-### 10. 硬件问题 ⭐⭐⭐⭐⭐
-**关键词**: 硬件、温度、传感器、hardware、hot
+### 10. Hardware problems ⭐⭐⭐⭐⭐
+**Keywords**: hardware, temperature, sensors, hardware, hot
 ```bash
 bash references/hardware-other.md
-# SMART 检查: bash references/disk-smart.md
+# SMART check: bash references/disk-smart.md
 ```
 
 ---
 
-## 🎯 AI 3 秒决策流程
+## 🎯 AI 3-Second Decision Flow
 
 ```
-Step 1: 提取关键词
-  用户: "服务器很慢" → 关键词: ["慢"]
+Step 1: Extract keywords
+  User: "the server is very slow" → keywords: ["slow"]
 
-Step 2: 匹配场景
-  "慢" → 场景 #1 (系统慢/卡)
+Step 2: Match a scenario
+  "slow" → scenario #1 (slow/laggy system)
 
-Step 3: 运行 Quick
-  bash resource-saturation.md (10 秒)
+Step 3: Run Quick
+  bash resource-saturation.md (10 seconds)
 
-Step 4: 决策 Deep
-  Quick 结果: Memory WARNING
-  → 运行: bash resource-saturation.md --mode deep --focus memory (20 秒)
+Step 4: Decide on Deep
+  Quick result: Memory WARNING
+  → run: bash resource-saturation.md --mode deep --focus memory (20 seconds)
 
-Step 5: 报告
-  根因: Java 内存泄漏
-  修复: 重启 Java + 增加内存
+Step 5: Report
+  Root cause: Java memory leak
+  Fix: restart Java + add memory
 ```
 
 ---
 
-## 🔄 Quick/Deep 决策规则
+## 🔄 Quick/Deep Decision Rules
 
-### 何时运行 Deep？
+### When to Run Deep?
 
-| Quick 结果 | 用户意图 | 决策 |
+| Quick result | User intent | Decision |
 |-----------|---------|------|
-| **CRITICAL** | 任何 | ✅ 自动 Deep |
-| **WARNING** | 包含"慢/卡/troubleshoot" | ✅ 自动 Deep |
-| **WARNING** | 只是"检查" | ❓ 询问用户 |
-| **OK** | 任何 | ❌ 无需 Deep |
+| **CRITICAL** | any | ✅ Automatic Deep |
+| **WARNING** | contains "slow/laggy/troubleshoot" | ✅ Automatic Deep |
+| **WARNING** | only "check" | ❓ Ask the user |
+| **OK** | any | ❌ No Deep needed |
 
-### Deep 时 focus 选择
+### Choosing focus During Deep
 
-- 单一异常 → `--focus <component>`
-- 多重异常 → 逐个 `--focus`，不要 `--focus all`
-- 用户明确指定 → 直接 Deep 该组件
-
----
-
-## 📊 完整场景索引位置
-
-**详细索引**: `references/00-scenario-index.md`
-- 60+ 场景分类
-- 126 个 Commands 映射
-- 5 个 References 映射
-- 完整决策算法
+- Single anomaly → `--focus <component>`
+- Multiple anomalies → `--focus` one by one, do not use `--focus all`
+- User explicitly specifies → go straight to Deep on that component
 
 ---
 
-## 🚀 使用示例
+## 📊 Where the Complete Scenario Index Lives
 
-### 示例 1: "服务器慢"
+**Detailed index**: `references/00-scenario-index.md`
+- 60+ scenario categories
+- 126 command mappings
+- 5 reference mappings
+- Complete decision algorithm
+
+---
+
+## 🚀 Usage Examples
+
+### Example 1: "The server is slow"
 ```
-1. 匹配 → 场景 #1
+1. Match → scenario #1
 2. Quick: resource-saturation.md (10s)
-3. 结果: CPU OK, Memory WARNING, Disk OK
+3. Result: CPU OK, Memory WARNING, Disk OK
 4. Deep: --mode deep --focus memory (20s)
-5. 报告: MySQL 占用 8GB，建议优化查询
+5. Report: MySQL is using 8GB; consider optimizing the queries
 ```
 
-### 示例 2: "磁盘坏了"
+### Example 2: "The disk is broken"
 ```
-1. 匹配 → 场景 #10 (硬件) → #5.2 (磁盘故障)
+1. Match → scenario #10 (hardware) → #5.2 (disk failure)
 2. Quick: disk-smart.md --mode quick (5s)
-3. 结果: SMART CRITICAL
+3. Result: SMART CRITICAL
 4. Deep: disk-smart.md --mode deep (15s)
-5. 报告: Reallocated sectors 100+，立即备份
+5. Report: Reallocated sectors 100+; back up immediately
 ```
 
-### 示例 3: "检查系统"
+### Example 3: "Check the system"
 ```
-1. 匹配 → 场景 #7 (健康检查)
-2. 批量 Quick:
+1. Match → scenario #7 (health check)
+2. Batch Quick:
    - resource-saturation.md (10s)
    - system-logs.md (5s)
    - disk-smart.md (5s)
-3. 结果: 全部 OK
-4. 报告: 系统健康，无需 Deep
+3. Result: everything OK
+4. Report: the system is healthy, no Deep needed
 ```
 
 ---
 
-## ⚡ 性能提示
+## ⚡ Performance Tips
 
-- **Quick 优先**: 永远先运行 Quick
-- **按需 Deep**: 只在 Quick 发现异常时 Deep
-- **Token 优化**: Quick 200 tokens, Deep 500-700 tokens
-- **时间控制**: Quick 10s, Deep 20-60s
-- **批量 Quick**: 健康检查可并行运行多个 Quick
+- **Quick first**: always run Quick first
+- **Deep on demand**: run Deep only when Quick finds an anomaly
+- **Token optimization**: Quick 200 tokens, Deep 500-700 tokens
+- **Time control**: Quick 10s, Deep 20-60s
+- **Batch Quick**: a health check can run several Quick checks in parallel
 
 ---
 
-**快速参考版本**: 1.0
-**完整索引**: references/00-scenario-index.md
-**最后更新**: 2026-03-24
+**Quick reference version**: 1.0
+**Full index**: references/00-scenario-index.md
+**Last updated**: 2026-03-24

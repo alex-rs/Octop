@@ -1,13 +1,13 @@
-# 60s API 响应格式参考
+# 60s API Response Format Reference
 
-基础 URL：`https://60s.viki.moe/v2`
+Base URL: `https://60s.viki.moe/v2`
 
-## 通用参数
+## Common Parameters
 
-- `encoding`：响应格式，可选 `json`（默认）/ `text` / `markdown`
-- 部分端点支持额外参数（如 `date`、`query`、`currency`），详见 `sources.md` 对应条目
+- `encoding`: response format, one of `json` (default) / `text` / `markdown`
+- Some endpoints support extra parameters (such as `date`, `query`, `currency`); see the corresponding entry in `sources.md`
 
-## 通用响应结构
+## Common Response Structure
 
 ```json
 {
@@ -17,33 +17,33 @@
 }
 ```
 
-## 热榜类响应（微博/知乎/百度/抖音等）
+## Hot-List Responses (Weibo/Zhihu/Baidu/Douyin, etc.)
 
 ```json
 {
   "code": 200,
   "data": [
-    { "title": "话题标题", "url": "https://...", "hot": "1234567", "rank": 1 }
+    { "title": "Topic title", "url": "https://...", "hot": "1234567", "rank": 1 }
   ]
 }
 ```
 
-## 60s 每日新闻
+## 60s Daily News
 
 ```json
 {
   "code": 200,
   "data": {
-    "date": "2025年3月13日",
+    "date": "2025-03-13",
     "news": [
-      { "title": "新闻标题", "link": "https://..." }
+      { "title": "News headline", "link": "https://..." }
     ],
-    "tip": "每日一言内容"
+    "tip": "daily quote content"
   }
 }
 ```
 
-## 黄金价格
+## Gold Price
 
 ```json
 {
@@ -51,22 +51,22 @@
   "data": {
     "date": "2025-03-13",
     "metals": [
-      { "name": "黄金_9999", "sell_price": "680.50", "today_price": "679.00", "high_price": "682.00", "low_price": "677.00", "unit": "元/克" }
+      { "name": "Gold_9999", "sell_price": "680.50", "today_price": "679.00", "high_price": "682.00", "low_price": "677.00", "unit": "CNY/gram" }
     ],
     "stores": [
-      { "brand": "周大福", "product": "足金", "price": "750", "unit": "元/克" }
+      { "brand": "Chow Tai Fook", "product": "pure gold", "price": "750", "unit": "CNY/gram" }
     ],
     "banks": [
-      { "bank": "工商银行", "product": "如意金条", "price": "695.00", "unit": "元/克" }
+      { "bank": "ICBC", "product": "Ruyi gold bar", "price": "695.00", "unit": "CNY/gram" }
     ],
     "recycle": [
-      { "type": "黄金回收", "price": "670.00", "unit": "元/克", "purity": "Au9999" }
+      { "type": "Gold recycling", "price": "670.00", "unit": "CNY/gram", "purity": "Au9999" }
     ]
   }
 }
 ```
 
-## 汇率
+## Exchange Rate
 
 ```json
 {
@@ -82,24 +82,24 @@
 }
 ```
 
-## 调用示例
+## Request Examples
 
 ```
-# 微博热搜
+# Weibo trending searches
 GET https://60s.viki.moe/v2/weibo
 
-# 每日新闻（指定日期，markdown 格式）
+# Daily news (specific date, markdown format)
 GET https://60s.viki.moe/v2/60s?date=2025-03-13&encoding=markdown
 
-# 黄金价格
+# Gold price
 GET https://60s.viki.moe/v2/gold-price
 
-# 人民币汇率
+# CNY exchange rate
 GET https://60s.viki.moe/v2/exchange-rate?currency=CNY
 
-# 北京天气
-GET https://60s.viki.moe/v2/weather/realtime?query=北京
+# Beijing weather
+GET https://60s.viki.moe/v2/weather/realtime?query=Beijing
 
-# Hacker News 热帖
+# Hacker News popular posts
 GET https://60s.viki.moe/v2/hacker-news/top
 ```

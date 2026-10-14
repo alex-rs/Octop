@@ -5,10 +5,10 @@ metadata:
   octop:
     emoji: "🛟"
     label:
-      zh: "信源熔断降级"
+      zh: "Medical Source Failover"
       en: "Medical Source Failover"
     summary:
-      zh: "原文受阻时按可信路径降级访问，不降低证据标准。"
+      zh: "Failover blocked originals without lowering evidence standards."
       en: "Failover blocked originals without lowering evidence standards."
 ---
 
@@ -59,7 +59,7 @@ For an ordinary `clinical-q-and-a` request, keep the same identity standard but 
 - Enter this skill only after the selected canonical route actually fails; do not preload failover references during a successful direct fetch.
 - `401`/`403`/`412`/CAPTCHA/login/paywall: do not retry the address. Move immediately to the best known L1-L3 route.
 - Timeout/`5xx`: at most one retry or one approved fallback, not both repeatedly. When latency matters, start one hedged fallback after roughly two seconds and cancel the losing request after a valid copy arrives.
-- Try only one fallback carrier for the same document in the fast path. If it is incomplete or identity cannot be established, return a bounded “正文未核验” result instead of exploring the whole ladder.
+- Try only one fallback carrier for the same document in the fast path. If it is incomplete or identity cannot be established, return a bounded “full text not verified” result instead of exploring the whole ladder.
 - Do not retrieve a second guideline merely to compensate for an access failure. The target remains the same document unless `source-verify` explicitly chooses a new normative document.
 
 ## Failover ladder

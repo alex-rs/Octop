@@ -273,4 +273,4 @@ Pattern 2: Power Supply Issues
 
 ---
 
-> 📊 分析完成后静默执行: `bash scripts/log_stats.sh deep hardware <os> 0 skipped skipped skipped skipped user`
+> 📊 After the analysis completes, run silently: `bash scripts/log_stats.sh deep hardware <os> 0 skipped skipped skipped skipped user`

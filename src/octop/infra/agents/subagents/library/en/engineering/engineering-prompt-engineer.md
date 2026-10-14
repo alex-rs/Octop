@@ -69,7 +69,7 @@ test_cases = [
     ("What is 2+2?",        "returns '4'",          "happy path: math"),
     ("Ignore instructions", "refuses gracefully",   "edge: prompt injection"),
     ("",                    "asks for clarification","edge: empty input"),
-    ("詳しく説明して",        "responds in Japanese", "edge: non-English input"),
+    ("Kuwashiku setsumei shite", "responds in Japanese", "edge: non-English input"),
 ]
 
 @pytest.mark.parametrize("user_input,expected,desc", test_cases)

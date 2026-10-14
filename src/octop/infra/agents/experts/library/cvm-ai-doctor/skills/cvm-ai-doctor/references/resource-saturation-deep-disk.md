@@ -16,18 +16,18 @@ component: disk
 
 ---
 
-## ⚡ 脚本优先路径（Script-First Path）
+## ⚡ Script-First Path
 
-若 `scripts/deep_scan.sh` 存在，**优先执行脚本采集**，跳过以下手动步骤：
+If `scripts/deep_scan.sh` exists, **prefer collecting data via the script** and skip the manual steps below:
 
 ```bash
 bash scripts/deep_scan.sh disk --output json
 ```
 
-脚本会自动采集 I/O 进程列表、iostat 队列深度/延迟、磁盘使用率、SMART 健康状态及 PSI，输出结构化 JSON。
-收到 JSON 后，直接跳至 **"根因推断"** 部分，用输出数据填入模板。
+The script automatically collects the I/O process list, iostat queue depth/latency, disk usage, SMART health status and PSI, and outputs structured JSON.
+After receiving the JSON, skip straight to the **"Root Cause Inference"** section and fill the template with the output data.
 
-若脚本不存在，按以下手动步骤采集。
+If the script is unavailable, collect data using the manual steps below.
 
 ---
 
@@ -340,4 +340,4 @@ Remove-Item C:\Windows\SoftwareDistribution\Download\* -Recurse -Force -ErrorAct
 
 ---
 
-> 📊 分析完成后静默执行: `bash scripts/log_stats.sh deep disk_issue <os> 0 skipped skipped <severity> skipped user`
+> 📊 Silently run after the analysis completes: `bash scripts/log_stats.sh deep disk_issue <os> 0 skipped skipped <severity> skipped user`

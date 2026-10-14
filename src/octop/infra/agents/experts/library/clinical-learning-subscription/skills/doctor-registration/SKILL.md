@@ -1,97 +1,97 @@
 ---
 name: doctor-registration
-description: 当医生提供或更新称谓、地区、医院、科室、职称这5项登记信息，变更科室/地区/职称，或要求停用、删除订阅数据时使用。本技能只管登记的写入/更新/清除；登记完成后的订阅任务创建由 subscription-setup skill 负责。不启用诊断、治疗、疾病SOP、急诊行动卡、个体患者建议、药物剂量、HIS决策支持或医保报销结论能力。
+description: Use when a doctor provides or updates the five registration items (title, region, hospital, department, rank), changes department/region/rank, or asks to deactivate or delete subscription data. This skill only covers writing/updating/clearing registration data; creating subscription tasks after registration is handled by the subscription-setup skill. It does not enable diagnosis, treatment, disease SOPs, emergency action cards, individual patient advice, drug dosage, HIS decision support, or insurance reimbursement conclusions.
 metadata:
   octop:
     emoji: "🪪"
     label:
-      zh: "医生登记"
+      zh: "Doctor Registration"
       en: "Doctor Registration"
     summary:
-      zh: "登记或更新称谓、地区、医院、科室与职称五项信息。"
+      zh: "Register or update the five items: title, region, hospital, department, and rank."
       en: "Register or update title, region, hospital, department, and rank."
 ---
 
-# 医生登记、更新与停用
+# Doctor Registration, Update, and Deactivation
 
-## 必读边界
+## Required Reading Boundaries
 
-登记、更新或清除前，必须先阅读并遵守：
+Before registering, updating, or clearing registration, you must read and comply with:
 
-- ../../USER.md（脚本生成的只读摘要，如果存在）
+- ../../USER.md (script-generated read-only summary, if present)
 - ../../references/compliance-boundary.md
 
-登记、更新、清除都必须调用 ../../scripts/clinical_profile.py。不得直接编辑 USER.md，也不得自行寻找其他 USER.md。订阅任务创建不在本技能范围内，由 `subscription-setup` skill 负责。
+Registration, updating, and clearing must all call ../../scripts/clinical_profile.py. Do not edit USER.md directly, and do not look for any other USER.md on your own. Creating subscription tasks is outside the scope of this skill and is handled by the `subscription-setup` skill.
 
-## 登记字段
+## Registration Fields
 
-只收集以下 5 项医生信息：
+Collect only the following 5 items of doctor information:
 
-- 称谓：可用姓氏、昵称或某医生，不要求真实姓名。
-- 所在地区：省 / 市 / 区县。
-- 所在医院。
-- 所在科室。
-- 当前职称。
+- Title: a surname, nickname, or "Dr. X" is acceptable; a real name is not required.
+- Region: province / city / district or county.
+- Hospital.
+- Department.
+- Current rank.
 
-不得索取患者信息。不得把医院能力、设备条件、床位规模等问题变成强制登记表。
+Do not request patient information. Do not turn questions about hospital capabilities, equipment availability, or bed capacity into a mandatory registration form.
 
-学习目标、学习诊断摘要和学习轨道可在用户确认后单独保存；它们不要求这 5 项信息。只有用户需要按地区、医院、科室、职称定制或开启订阅推送时才登记。
+Learning goals, learning diagnosis summaries, and learning tracks may be saved separately after the user confirms; they do not require these 5 items. Register only when the user needs subscriptions customized or enabled by region, hospital, department, or rank.
 
-## 同意与隐私
+## Consent and Privacy
 
-在保存登记信息前，必须获得医生对这 5 项信息处理的明确同意。若用户已经给出字段但没有明确同意，先要求确认，不得直接写入状态或生成回执。
+Before saving registration information, you must obtain the doctor's explicit consent to process these 5 items. If the user has already supplied the fields but has not explicitly consented, ask for confirmation first; do not write to state or generate a receipt directly.
 
-登记信息通过档案脚本写入结构化状态，再由脚本自动生成 USER.md。如果脚本拒绝写入，不得向用户宣称登记已完成。不得把患者信息写入任何档案。
+Registration information is written to structured state through the profile script, which then automatically generates USER.md. If the script refuses to write, do not tell the user that registration is complete. Do not write patient information into any profile.
 
-推荐命令：
+Recommended commands:
 
     python ../../scripts/clinical_profile.py get
-    python ../../scripts/clinical_profile.py register --display-name <称谓> --region <地区> --hospital <医院> --department <科室> --title <职称> --consent-confirmed true
+    python ../../scripts/clinical_profile.py register --display-name <title> --region <region> --hospital <hospital> --department <department> --title <rank> --consent-confirmed true
     python ../../scripts/clinical_profile.py clear --confirm true
 
-如果当前工作目录不是 skill 目录，使用专家包根目录下的脚本；不要传入文件路径参数。
+If the current working directory is not the skill directory, use the script at the root of the expert package; do not pass file path arguments.
 
-## 渐进式补齐规则
+## Progressive Completion Rules
 
-登记可能跨多轮完成。每轮只问一个缺失字段，不要一次性列出完整表格，除非用户主动要求一次性补齐。
+Registration may be completed over multiple turns. Ask about only one missing field per turn; do not list the full table at once unless the user explicitly asks to complete everything in one go.
 
-推荐顺序：
+Recommended order:
 
-1. 称谓：后续怎么称呼您？可以用姓氏、昵称或某医生，不需要真实姓名。
-2. 地区：您主要关注哪个地区的医保政策？请按省 / 市 / 区县说即可。
-3. 医院：您所在医院怎么记录？可以用医院简称。
-4. 科室：您现在主要在哪个科室？
-5. 职称：您当前职称是？例如住院医师、主治、副高、正高，或质控/医保/病案等岗位。
+1. Title: How should I address you going forward? A surname, nickname, or "Dr. X" works; a real name is not needed.
+2. Region: Which region's insurance policies do you mainly follow? Just give the province / city / district or county.
+3. Hospital: How is your hospital recorded? An abbreviation is fine.
+4. Department: Which department do you mainly work in now?
+5. Rank: What is your current rank? For example resident, attending, associate chief, chief, or roles such as quality control / insurance / medical records.
 
-处理规则：
+Handling rules:
 
-- 先调用脚本 get 或读取脚本生成的 USER.md 判断已有状态；如果已经有同意状态和完整 5 项信息，直接进入变更处理，不重复追问。
-- 如果用户尚未明确同意处理 5 项信息，先只问是否同意，不追问其他字段。
-- 如果用户已经同意但信息不完整，只追问下一个缺失字段。
-- 如果用户一次性提供多项信息，提取已知字段，并只追问下一个缺失字段或确认同意。
-- 如果用户提供患者信息，忽略患者信息并提示本助手不保存患者个人信息。
+- First call the script's get command or read the script-generated USER.md to determine the existing state; if consent state and all 5 items are already complete, go directly to change handling and do not ask again.
+- If the user has not yet explicitly consented to processing the 5 items, ask only about consent first and do not ask about other fields.
+- If the user has consented but the information is incomplete, ask only about the next missing field.
+- If the user provides several items at once, extract the known fields and ask only about the next missing field or confirm consent.
+- If the user provides patient information, ignore it and note that this assistant does not store patient personal information.
 
-## 登记完成后
+## After Registration Is Complete
 
-5 项齐全且用户明确同意后，调用 `register`。脚本负责地区规范化、科室系统识别、职称深度映射和 USER.md 生成；不要在回复中暴露脚本输出 JSON。
+Once all 5 items are complete and the user has explicitly consented, call `register`. The script handles region normalization, department system identification, rank depth mapping, and USER.md generation; do not expose the script's output JSON in your reply.
 
-登记回执给出后，按用户意图分流（由 `intent-routing` skill 路由）：
+After the registration receipt is given, route according to the user's intent (routed by the `intent-routing` skill):
 
-- 用户要开启订阅任务（每日指南学习/指南更新提醒/医保学习）→ 转交 `subscription-setup` skill 创建。
-- 用户要学习诊断、章节展开、备考选材、医保问答等其他意图 → 由 `intent-routing` 路由到对应 skill。
-- 后续推送默认从脚本生成的 USER.md 读取地区、医院、科室和职称深度，不反复询问 5 项登记信息。
+- The user wants to enable a subscription task (daily guideline learning / guideline update reminders / insurance learning) → hand off to the `subscription-setup` skill for creation.
+- The user wants learning diagnosis, section expansion, exam material selection, insurance Q&A, or other intents → `intent-routing` routes to the corresponding skill.
+- Subsequent delivery reads region, hospital, department, and rank depth from the script-generated USER.md by default; do not repeatedly ask for the 5 registration items.
 
-## 禁止项
+## Prohibitions
 
-不得创建、暗示或宣称已经启用以下能力：
+Do not create, imply, or claim to have enabled the following capabilities:
 
-- 疾病诊治 SOP。
-- 急诊行动卡。
-- 患者问诊或个体患者建议。
-- 药物剂量、给药途径、频次、疗程生成。
-- HIS 决策支持或弹窗规则。
-- 医保报销结论、支付比例承诺或医院可报销判断。
+- Disease diagnosis and treatment SOPs.
+- Emergency action cards.
+- Patient consultations or individual patient advice.
+- Drug dosage, route of administration, frequency, or course-of-treatment generation.
+- HIS decision support or pop-up rules.
+- Insurance reimbursement conclusions, payment ratio commitments, or judgments about whether a hospital can reimburse.
 
-## 输出要求
+## Output Requirements
 
-登记回执使用 ../../references/output-templates.md 中的模板。只有 register 返回 ok: true 后，才能输出已记录。每次回执都必须包含医学学习边界说明：基于权威指南做学习与政策摘要，不提供个体诊疗、处方剂量；急诊处置与医保报销只提供指南/政策层面的学习性建议，不作为执行或报销依据；用户的普通通用任务可直接处理，不需要登记。
+The registration receipt uses the template in ../../references/output-templates.md. Only after register returns ok: true may you output "recorded". Every receipt must include the medical learning boundary statement: learning and policy summaries are based on authoritative guidelines and do not provide individual diagnosis or treatment or prescription dosages; emergency management and insurance reimbursement are only educational suggestions at the guideline/policy level and are not grounds for action or reimbursement; the user's ordinary general tasks can be handled directly and do not require registration.

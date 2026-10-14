@@ -1,117 +1,117 @@
-# 指南学习操作细则
+# Guideline Learning Operations Guide
 
-本文件承载学习轨道创建、预览投递、重复漏发排查与新版本迁移的脚本命令与约束。流程入口与分流见 `skills/guideline-learning/SKILL.md`。
+This file carries the script commands and constraints for learning track creation, preview delivery, duplicate/missed-delivery troubleshooting, and new-version migration. For the process entry point and routing, see `skills/guideline-learning/SKILL.md`.
 
-## 轨道创建
+## Track creation
 
-先核验权威文件完整名称、发布机构、版本、来源链接和来源修订标识。没有原文时只给候选学习地图，不能建成可正式投递的轨道。
+First verify the complete name, issuing body, version, source link, and source revision identifier of the authoritative file. When the original text is unavailable, provide only a candidate learning map; a track that can be formally delivered cannot be built.
 
-### 1. 保存学习目标（可选）
+### 1. Save the learning goal (optional)
 
-先复述目标、每日可投入时间、目标日期和用途；用户确认后调用：
+First restate the objective, the daily time that can be invested, the target date, and the purpose; call the following after the user confirms:
 
     python ../../scripts/clinical_profile.py learning-goal-save \
-      --label <学习目标> --kind <exam|work_review|update_tracking|teaching|custom> \
-      --daily-minutes <5-240> --target-date <YYYY-MM-DD，可省略> \
-      --priority <0-100> --goal-id <稳定slug，可省略> --confirm true
+      --label <learning objective> --kind <exam|work_review|update_tracking|teaching|custom> \
+      --daily-minutes <5-240> --target-date <YYYY-MM-DD, may be omitted> \
+      --priority <0-100> --goal-id <stable slug, may be omitted> --confirm true
 
-### 2. 创建草稿轨道
+### 2. Create the draft track
 
-用户确认选择该指南后调用：
+Call the following after the user confirms the choice of this guideline:
 
     python ../../scripts/clinical_profile.py learning-track-create \
-      --label <指南完整名称> --publisher <发布机构> --version <版本/年份> \
-      --source-url <权威原文URL> --source-revision <版本或发布日期> \
-      --goal-id <已保存目标ID，可重复> --track-id <稳定slug，可省略> --confirm true
+      --label <full guideline name> --publisher <issuing body> --version <version/year> \
+      --source-url <authoritative original URL> --source-revision <version or publication date> \
+      --goal-id <saved goal ID, repeatable> --track-id <stable slug, may be omitted> --confirm true
 
-创建轨道不等于立即推送，也不等于已启用。
+Creating a track does not mean an immediate push, nor does it mean the track is enabled.
 
-### 3. 保存固定章节单元
+### 3. Save the fixed section units
 
-把已核验的章节拆为连续编号单元。每个单元必须有：ordinal、title、source_anchor、至少一个 objectives、可选 topic_tags、estimated_minutes。只保存课程结构和来源锚点，不复制指南全文。
+Split the verified sections into consecutively numbered units. Each unit must have: ordinal, title, source_anchor, at least one objectives, optional topic_tags, estimated_minutes. Save only the course structure and the source anchors; do not copy the full guideline text.
 
-调用 learning-track-lessons-replace 前先向用户展示候选章节顺序并取得确认。该命令保留已确认送达单元，不能改写发送中/状态不明/已送达单元。
+Before calling learning-track-lessons-replace, first show the user the candidate section order and obtain confirmation. That command preserves units whose delivery is confirmed and cannot rewrite units that are sending/unknown-status/delivered.
 
     python ../../scripts/clinical_profile.py learning-track-lessons-replace \
-      --track-id <轨道ID> --replace-pending true --confirm true \
-      --lesson-json '{"id":"<单元ID>","ordinal":1,"title":"<章节主题>","source_anchor":{"section":"<章节>","locator":"<小节>"},"objectives":["<学习目标>"],"topic_tags":["<主题>"],"estimated_minutes":10}'
+      --track-id <track ID> --replace-pending true --confirm true \
+      --lesson-json '{"id":"<unit ID>","ordinal":1,"title":"<section topic>","source_anchor":{"section":"<section>","locator":"<subsection>"},"objectives":["<learning objective>"],"topic_tags":["<topic>"],"estimated_minutes":10}'
 
-为每个单元重复追加一个 --lesson-json。编号从 1 连续，同一轨道内不能重复章节单元。
+Repeat by appending one more --lesson-json for each unit. Numbering is consecutive from 1, and the same section unit cannot repeat within one track.
 
-### 4. 启用/暂停
+### 4. Enable/Pause
 
-用户确认计划和节奏后启用：
+Enable after the user confirms the plan and cadence:
 
-    python ../../scripts/clinical_profile.py learning-track-activate --track-id <轨道ID> --confirm true
+    python ../../scripts/clinical_profile.py learning-track-activate --track-id <track ID> --confirm true
 
-多条活跃轨道先让用户选择，不用默认猜测抢占。暂停/归档保留历史：
+When several tracks are active, let the user choose first; do not let a default guess take precedence. Pausing/archiving preserves history:
 
-    python ../../scripts/clinical_profile.py learning-track-set-status --track-id <轨道ID> --status <paused|archived> --confirm true
+    python ../../scripts/clinical_profile.py learning-track-set-status --track-id <track ID> --status <paused|archived> --confirm true
 
-## 预览与投递
+## Preview and delivery
 
-### 预览（不计进度）
+### Preview (does not count toward progress)
 
-读取下一单元但不写状态：
+Read the next unit without writing any state:
 
-    python ../../scripts/clinical_profile.py learning-next-lesson --track-id <轨道ID>
+    python ../../scripts/clinical_profile.py learning-next-lesson --track-id <track ID>
 
-响应必须直接以【格式预览｜不计入学习进度】开头，该标记前不得添加任何文字，包括“校验通过”“为您推送预览内容”等过程说明。预览不调用投递领取、定时任务手动触发、送达确认或 guideline-advance。
+The response must begin directly with [Format Preview | Not Counted Toward Progress], and no text may be added before that marker, including process explanations such as "validation passed" or "pushing preview content for you". A preview does not call delivery claim, manual trigger of the scheduled task, delivery confirmation, or guideline-advance.
 
-### 正式投递（弱投递防重协议）
+### Formal delivery (weak-delivery dedup protocol)
 
-当前用通用 agent cron 投递，必须严格按顺序，任何一步失败即停止且不输出正文：
+Delivery currently uses the generic agent cron and must follow the order strictly; if any step fails, stop and do not output the body:
 
-1. 取今天日期（Asia/Shanghai，YYYY-MM-DD），运行 `python3 scripts/clinical_profile.py delivery-check --logical-date <今天>`。`already_sent` 为 true 时回复"今日学习内容已推送"并停止，不得重复生成。
-2. 运行 `python3 scripts/clinical_profile.py learning-next-lesson` 读取下一固定单元。无已启用轨道或无下一单元时如实说明并停止，不得编造内容。
-3. 按 daily-learning-template.md 生成该单元（恰好 3 个编号要点、来源行）。用 `lesson.ordinal` 与 `track.progress.planned_units` 判断是否为最后一个单元：非最后单元预告下一固定单元主题与学习目标；最后单元给出 2-3 个已核验的正式指南/共识/规范候选，等待用户确认下一阶段。再运行 `python3 scripts/validate_output.py --module daily_guideline_learning` 校验；不通过先修正再校验一次，仍不通过则停止并说明原因。
-4. 校验通过后运行 `python3 scripts/clinical_profile.py delivery-record --logical-date <今天> --confirm true` 记账（同时标记该单元已投、推进到下一单元），然后输出正文。正文首行 `【每日指南学习｜{主题}】（第 {ordinal}/{total} 单元）`。
+1. Get today's date (Asia/Shanghai, YYYY-MM-DD) and run `python3 scripts/clinical_profile.py delivery-check --logical-date <today>`. When `already_sent` is true, reply "today's learning content has already been pushed" and stop; do not regenerate it.
+2. Run `python3 scripts/clinical_profile.py learning-next-lesson` to read the next fixed unit. When there is no enabled track or no next unit, state that honestly and stop; do not fabricate content.
+3. Generate that unit per daily-learning-template.md (exactly 3 numbered points and a source line). Use `lesson.ordinal` and `track.progress.planned_units` to decide whether it is the final unit: for a non-final unit, preview the next fixed unit's topic and learning objective; for the final unit, give 2-3 verified formal guideline/consensus/standard candidates and wait for the user to confirm the next stage. Then run `python3 scripts/validate_output.py --module daily_guideline_learning` to validate; if it fails, fix it and validate once more, and if it still fails, stop and explain why.
+4. After validation passes, run `python3 scripts/clinical_profile.py delivery-record --logical-date <today> --confirm true` to record it (which also marks that unit as delivered and advances to the next unit), then output the body. The first line of the body is `[Daily Guideline Learning | {topic}] (unit {ordinal}/{total})`.
 
-诚实口径：账本只防重复，不代表通道真的受理——不得对用户说"已确认送达"。创建任务时用 cron-presets.json 中"每日指南连续学习"预设的 prompt（已内嵌以上规程）。
+Honest stance: the ledger only prevents duplication and does not mean the channel really accepted the content — never tell the user "delivery confirmed". When creating the task, use the prompt of the "Daily Guideline Continuous Learning" preset in cron-presets.json (the above protocol is already embedded there).
 
-### 强回执状态机（迁移目标）
+### Strong-receipt state machine (migration target)
 
-具备真实通道回执的平台投递适配器上线后，正式投递必须遵守状态机：读取轨道 → 原子领取下一单元 → 生成并安全校验 → 通道实际发送 → 收到通道回执 → 确认送达并解锁下一单元。
+After a platform delivery adapter with real channel receipts goes live, formal delivery must obey the state machine: read the track → atomically claim the next unit → generate and validate safely → the channel actually sends → receive the channel receipt → confirm delivery and unlock the next unit.
 
-- 平台投递服务必须原子领取固定单元，按任务标识/逻辑日期/目标通道去重；模型不能提供或伪造这些输入。
-- 只有具备真实通道回执的发送适配器才能把投递标为已受理并解锁下一单元；专家包工作区不保存可信送达账本，也不向模型暴露投递生命周期命令。
-- 不得由模型/普通 cron/内容已生成自行确认送达；不得再调用 guideline-advance。
-- 发送失败可记录为可重试；发送中断或回执不明必须标 unknown 并先对账，不能盲目重发或跳过。
-- 已确认送达只表示内容被通道受理，不表示用户已阅读/掌握/具备临床胜任力。
+- The platform delivery service must atomically claim the fixed unit and deduplicate by task identifier/logical date/target channel; the model cannot supply or forge these inputs.
+- Only a sending adapter with real channel receipts may mark a delivery as accepted and unlock the next unit; the expert package workspace does not store a trusted delivery ledger, nor does it expose delivery lifecycle commands to the model.
+- Delivery must not be self-confirmed by the model/an ordinary cron/the fact that content was generated; guideline-advance must not be called again.
+- A failed send may be recorded as retryable; an interrupted send or an unclear receipt must be marked unknown and reconciled first, and must not be blindly resent or skipped.
+- Confirmed delivery only means the content was accepted by the channel; it does not mean the user has read/mastered it or has clinical competence.
 
-当前弱投递模式只防重复、不代表送达回执，是强回执上线前的过渡方案。
+The current weak-delivery mode only prevents duplication and does not represent a delivery receipt; it is a transitional scheme before strong receipts go live.
 
-### 周期末下一阶段推荐
+### Next-stage recommendation at the end of a cycle
 
-最后一个固定单元应在同一条正文中给出下一阶段建议，避免单元推进后下一次 cron 因“无下一单元”而无法再推荐：
+The last fixed unit should give the next-stage suggestion in the same body, so that after the unit advances the next cron run is not unable to recommend anything because of "no next unit":
 
-1. 静默检索并核验 2-3 个与当前轨道有明确衔接的正式指南/共识/规范，写完整名称、年份/版本、发布机构、权威原文链接和推荐衔接。
-2. 所有综述（含系统综述、Meta 分析、叙述性、范围、伞状、快速、专家和其他文献综述）以及研究论文，只能用于内部发现正式指南，不得成为当前单元来源、下一阶段候选或新轨道来源。
-3. 候选只标记“待确认”。用户回复 A/B/C 或提出其他方向后，仍须按“轨道创建”流程展示候选章节并取得确认；不得在最后单元中自动创建或启用轨道。
-4. 没有至少 2 个可核验正式指南时，如实说明“未取得足够的可核验正式指南”，询问用户希望继续的学习方向，不用综述或研究论文凑数。
+1. Silently search for and verify 2-3 formal guidelines/consensus statements/standards that clearly connect to the current track, and write the full name, year/version, issuing body, authoritative original link, and recommended connection.
+2. All review articles (including systematic reviews, meta-analyses, narrative, scoping, umbrella, rapid, expert, and other literature reviews) as well as research papers may only be used internally to discover formal guidelines, and must not become the current unit's source, a next-stage candidate, or a new track's source.
+3. Candidates are marked only as "pending confirmation". After the user replies A/B/C or proposes another direction, the candidate sections must still be shown and confirmed following the "track creation" process; tracks must not be created or enabled automatically in the final unit.
+4. When there are not at least 2 verifiable formal guidelines, state honestly that "not enough verifiable formal guidelines were obtained", ask the user which learning direction they wish to continue, and do not pad the list with review articles or research papers.
 
-## 重复/漏发排查与新版本迁移
+## Duplicate/missed-delivery troubleshooting and new-version migration
 
-### 内容重复
+### Duplicate content
 
-重复根因几乎总是没有按固定单元推进，而是重新生成了内容。处理顺序：
+The root cause of duplication is almost always that the fixed unit was not advanced and the content was regenerated instead. Handling order:
 
-1. 运行 `python ../../scripts/clinical_profile.py get`，读取该轨道单元列表、每个单元 ordinal 与状态。
-2. 核对是否存在 ordinal 重复、同一 source_anchor 被拆成多个单元、或多条活跃轨道绑定同一份指南。
-3. 向用户说明当前进度（第几单元/共几单元）和已完成单元，指出重复出现在哪里。
-4. 需要调整时用 learning-track-lessons-replace 修正未送达单元，保留已确认送达单元；不得改写发送中/状态不明/已送达单元。
+1. Run `python ../../scripts/clinical_profile.py get` and read the track's unit list, each unit's ordinal, and its status.
+2. Check whether there are duplicate ordinals, whether the same source_anchor was split into several units, or whether several active tracks are bound to the same guideline.
+3. Explain the current progress to the user (which unit out of how many) and the completed units, and point out where the duplication occurs.
+4. When adjustment is needed, use learning-track-lessons-replace to correct undelivered units and preserve units whose delivery is confirmed; units that are sending/unknown-status/delivered must not be rewritten.
 
-绝不能用"换一个单元补发"掩盖重复。同一单元未确认送达前不得当新内容重发。
+Never use "resend a different unit" to cover up duplication. Until delivery of the same unit is confirmed, it must not be resent as new content.
 
-### 漏发
+### Missed delivery
 
-当前每日指南学习是弱投递（通用 cron 执行即视为已投，无通道回执）。用户反馈漏发时：
+Daily guideline learning currently uses weak delivery (a generic cron run counts as delivered, with no channel receipt). When the user reports a missed delivery:
 
-- 先运行 `python3 scripts/clinical_profile.py delivery-check --logical-date <当天>` 核对账本：有记录而用户没收到，说明 cron 执行了但通道未送达——如实说明这是弱投递限制；无记录则说明当天未执行。
-- 可为用户补发当日单元：在当前对话按模板生成当天单元（账本已有记录，不要再调 delivery-record 重复记账；补发正文首行标注【每日学习补发】）。
-- 不要归因为"已发送但用户没看到"，也不要调用 guideline-advance 推进。
-- 反复漏发时如实告知：等具备通道回执的平台投递适配器上线后才能保证送达。
+- First run `python3 scripts/clinical_profile.py delivery-check --logical-date <that day>` to check the ledger: if there is a record but the user did not receive it, the cron ran but the channel did not deliver — state honestly that this is a limitation of weak delivery; if there is no record, the run did not happen that day.
+- You may resend that day's unit for the user: generate the day's unit in the current conversation per the template (the ledger already has a record, so do not call delivery-record again to double-record; mark the first line of the resent body with [Daily Learning Resend]).
+- Do not attribute it to "it was sent but the user did not see it", and do not call guideline-advance to advance.
+- When missed deliveries recur, state honestly that delivery can only be guaranteed once a platform delivery adapter with channel receipts is live.
 
-### 新版本指南迁移
+### Migrating to a new guideline version
 
-发现新版本指南时，不得静默覆盖旧轨道、旧学习单元或既有投递账本。先给出旧/新版本、已送达单元、受影响章节和新增规划需求；用户确认后创建新的草稿轨道，保留旧轨道历史，再重新核验和规划新单元。
+When a new version of a guideline is found, do not silently overwrite the old track, the old learning units, or the existing delivery ledger. First give the old/new versions, the delivered units, the affected sections, and the new planning needs; after the user confirms, create a new draft track, preserve the old track's history, and then re-verify and plan the new units.

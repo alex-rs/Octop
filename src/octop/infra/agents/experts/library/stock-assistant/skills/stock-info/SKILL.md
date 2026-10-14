@@ -1,163 +1,163 @@
 ---
 name: akshare-data
-description: 使用 akshare-cli 获取中国及全球金融市场数据（1090+ 个函数）。覆盖股票、基金、期货、债券、外汇、宏观经济、指数、期权、新闻等全领域。当用户需要以下任何一种数据时触发此 skill：股票行情、历史K线、实时报价、涨停跌停池、龙虎榜、板块资金流向、基金/ETF净值、期货行情、债券/可转债、外汇汇率、宏观经济指标（GDP/CPI/PMI）、指数数据、期权数据、财经新闻。关键词触发：akshare、股票、行情、K线、基金、期货、外汇、宏观、国债、可转债、涨停、龙虎榜、板块、资金流向、stock data、market data、financial data、A股、港股、美股。即使用户只是随口提到"看看某个股票"或"最近市场怎么样"，也应触发。
+description: Fetch Chinese and global financial-market data with akshare-cli (1090+ functions). Covers the full range of stocks, funds, futures, bonds, forex, macroeconomics, indexes, options, and news. Trigger this skill whenever the user needs any of the following data — stock quotes, historical candlesticks, real-time quotes, limit-up/limit-down pools, dragon-tiger list, sector capital flows, fund/ETF NAV, futures quotes, bonds/convertible bonds, forex rates, macroeconomic indicators (GDP/CPI/PMI), index data, options data, financial news. Keyword triggers — akshare, stock, quotes, candlestick, fund, futures, forex, macro, treasury bonds, convertible bonds, limit-up, dragon-tiger list, sector, capital flows, stock data, market data, financial data, A-shares, Hong Kong stocks, US stocks. Even if the user merely mentions "take a look at some stock" or "how has the market been lately" in passing, it should trigger.
 metadata:
   octop:
     emoji: "📈"
     label:
-      zh: "金融行情"
+      zh: "Market Data"
       en: "Market Data"
     summary:
-      zh: "用 akshare-cli 查询股票、基金、期货、宏观与财经新闻。"
+      zh: "Fetch stocks, funds, futures, macro, and financial news via akshare-cli."
       en: "Fetch stocks, funds, futures, macro, and financial news via akshare-cli."
 ---
 
-# AKShare 金融数据获取
+# AKShare Financial Data Retrieval
 
-`akshare-cli` 封装了 AKShare（1090+ 个函数），覆盖中国几乎所有金融数据及部分全球数据。
+`akshare-cli` wraps AKShare (1090+ functions), covering almost all of China's financial data plus some global data.
 
-## 核心原则
+## Core Principles
 
-1. **轻量优先** — 查单只股票用 `stock_individual_info_em`(0.1s)，不要用 `stock_zh_a_spot_em`(59s)。详见 `references/known-issues.md`。
-2. **先查后调** — 不熟悉的函数先 `--full-help` 看参数，再 call。
-3. **失败必降级** — 不要在第一次失败后就告诉用户"查不到"，走完三级降级。
-4. **控制输出量** — 全量接口加 `--limit N --sort desc`，确保拿到最新数据而非最旧数据。
+1. **Prefer the lightweight path** — query a single stock with `stock_individual_info_em`(0.1s), not `stock_zh_a_spot_em`(59s). See `references/known-issues.md`.
+2. **Inspect before you call** — for an unfamiliar function, run `--full-help` to see the parameters first, then call it.
+3. **Always fall back on failure** — do not tell the user "cannot find it" after the first failure; go through all three fallback levels.
+4. **Control the output size** — add `--limit N --sort desc` to full-range interfaces so you get the newest data rather than the oldest.
 
 ---
 
-## 工作流程：发现 → 查看 → 调用 → 降级
+## Workflow: discover → inspect → call → fall back
 
-严格按以下步骤顺序执行，不要跳步。
+Follow these steps strictly in order; do not skip any.
 
-### 第一步：发现函数
+### Step 1: discover functions
 
-三种方式，按场景选一种：
+Three ways; pick one for the situation:
 
-**A. 快捷命令**（常用场景直接用，不需要搜索）：
+**A. Shortcut commands** (use directly for common cases, no search needed):
 ```bash
-akshare-cli stock hist <代码> [--period daily|weekly|monthly] [--adjust qfq|hfq]
+akshare-cli stock hist <code> [--period daily|weekly|monthly] [--adjust qfq|hfq]
 akshare-cli stock spot [--market all|sh|sz|bj|hk|us]
-akshare-cli fund etf [代码]
-akshare-cli futures hist <合约>
+akshare-cli fund etf [code]
+akshare-cli futures hist <contract>
 akshare-cli bond convertible
 akshare-cli macro gdp | macro cpi
-akshare-cli forex spot | forex hist [货币对]
+akshare-cli forex spot | forex hist [currency pair]
 akshare-cli index spot [--market global|cn]
 ```
 
-**B. 关键词搜索**（知道大致方向时用）：
+**B. Keyword search** (use when you know the rough direction):
 ```bash
-akshare-cli search <关键词>    # 支持中英文
+akshare-cli search <keyword>    # supports Chinese and English
 ```
-英文匹配函数名（结果更全），中文匹配描述和分类路径。
+English matches function names (fuller results); Chinese matches descriptions and category paths.
 
-| 用户意图 | 英文关键词（推荐） | 中文关键词 |
+| User intent | English keyword (recommended) | Chinese keyword (pinyin) |
 |---------|-------------------|-----------|
-| 新闻 | `news` | `新闻` |
-| 股票 | `stock` | `股票` |
-| 涨停/跌停 | `stock_zt` | `涨停` |
-| 龙虎榜 | `stock_lhb` | `龙虎榜` |
-| 板块/概念 | `stock_board` | `板块` |
-| 资金流向 | `fund_flow` | `资金流向` |
-| 基金/ETF | `fund` | `基金` |
-| 期货 | `futures` | `期货` |
-| 债券 | `bond` | `债券` |
-| 外汇 | `forex` | `外汇` |
-| 宏观 | `macro` | `宏观` |
-| 指数 | `index` | `指数` |
+| News | `news` | `xinwen` |
+| Stocks | `stock` | `gupiao` |
+| Limit-up/limit-down | `stock_zt` | `zhangting` |
+| Dragon-tiger list | `stock_lhb` | `longhubang` |
+| Sector/concept | `stock_board` | `bankuai` |
+| Capital flows | `fund_flow` | `zijin liuxiang` |
+| Funds/ETFs | `fund` | `jijin` |
+| Futures | `futures` | `qihuo` |
+| Bonds | `bond` | `zhaiquan` |
+| Forex | `forex` | `waihui` |
+| Macro | `macro` | `hongguan` |
+| Indexes | `index` | `zhishu` |
 
-**C. 按分类浏览**（不确定关键词时用，按中文目录逐级查找）：
+**C. Browse by category** (use when the keyword is uncertain; walk the category tree level by level):
 ```bash
-akshare-cli browse                                # 30 个顶级分类
-akshare-cli browse 股票数据/A股/历史行情数据          # 逐级深入
-akshare-cli browse --func stock_zh_a_hist         # 反查函数归属
+akshare-cli browse                                # 30 top-level categories
+akshare-cli browse Stock Data/A-shares/Historical Quotes          # drill down level by level
+akshare-cli browse --func stock_zh_a_hist         # reverse-lookup a function's category
 ```
 
-### 第二步：查看参数（用快捷命令时可跳过）
+### Step 2: inspect the parameters (skippable when using shortcut commands)
 
 ```bash
-akshare-cli call --full-help <函数名>
-akshare-cli call --full-help fn1,fn2,fn3       # 批量查询
+akshare-cli call --full-help <function name>
+akshare-cli call --full-help fn1,fn2,fn3       # batch lookup
 ```
 
-输出包括：说明、数据源、目标地址、参数（含可选值枚举）、用法示例。
+The output includes: description, data source, target address, parameters (with enum options), and usage examples.
 
-仔细看参数：不同函数参数名不同（`symbol`/`code`/`indicator`），有些有枚举约束，日期一般是 `YYYYMMDD`。
+Watch the parameters closely: parameter names differ between functions (`symbol`/`code`/`indicator`), some have enum constraints, and dates are generally `YYYYMMDD`.
 
-### 第三步：调用
+### Step 3: call
 
 ```bash
-akshare-cli call <函数名> [--参数 值 ...] [--json] [--limit N] [--sort desc]
+akshare-cli call <function name> [--param value ...] [--json] [--limit N] [--sort desc]
 ```
 
-查最新数据时加 `--sort desc --limit N`，否则 `--limit` 会截取最旧的数据。
+When querying the latest data, add `--sort desc --limit N`; otherwise `--limit` cuts off the oldest data.
 
-### 第四步：失败时三级降级
+### Step 4: three-level fallback on failure
 
-AKShare 底层爬取第三方网站，上游随时可能挂。失败后必须依次尝试：
+AKShare scrapes third-party websites under the hood, and the upstream can go down at any time. After a failure, try these in order:
 
-**第一级：换数据源后缀**
-`_em`（东方财富）失败 → 搜索 `_ths`（同花顺）或 `_sina`（新浪）同类函数：
+**Level 1: switch the data-source suffix**
+`_em` (Eastmoney) fails → search for the same kind of function under `_ths` (Tonghuashun) or `_sina` (Sina):
 ```bash
-akshare-cli search <相似关键词>
+akshare-cli search <similar keyword>
 ```
 
-**第二级：browser_use 打开目标地址抓取网页数据**
-`--full-help` 输出中有「目标地址」字段，这就是数据来源的网页 URL。用 browser_use 工具打开这个 URL，直接从网页上提取数据：
+**Level 2: open the target address with browser_use and scrape the page data**
+The `--full-help` output has a "target address" field, which is the web page URL the data comes from. Open this URL with the browser_use tool and extract the data straight from the page:
 ```bash
-# 先获取目标地址
+# first get the target address
 akshare-cli call --full-help stock_zh_a_hist
-# 输出中会显示: 目标地址: https://quote.eastmoney.com/concept/sh603777.html
-# 然后用 browser_use 打开该 URL，从页面中提取所需数据
+# the output shows: target address: https://quote.eastmoney.com/concept/sh603777.html
+# then open that URL with browser_use and extract the needed data from the page
 ```
 
-**第三级：WebSearch 兜底**
-用搜索引擎查数据：
+**Level 3: WebSearch as the last resort**
+Look the data up with a search engine:
 ```bash
-# WebSearch "贵州茅台 财务数据 site:eastmoney.com"
+# WebSearch "Kweichow Moutai financial data site:eastmoney.com"
 ```
 
-触发条件：非零退出码、空数据（0 行）、网络错误。
+Trigger conditions: non-zero exit code, empty data (0 rows), network error.
 
 ---
 
-## 股票代码识别
+## Stock Code Recognition
 
-| 格式 | 含义 | 处理 |
+| Format | Meaning | Handling |
 |------|------|------|
-| 6 位数字 | A 股 | 直接用 |
-| 5 位数字 | 港股 | 直接用 |
-| 字母开头 | 美股 | 直接用 |
-| sh/sz 前缀 | 去前缀 | `sh600519` → `600519` |
-| 股票名称 | 查代码 | `stock_info_sh_name_code` / `stock_info_sz_name_code` |
+| 6 digits | A-shares | Use directly |
+| 5 digits | Hong Kong stocks | Use directly |
+| Starts with a letter | US stocks | Use directly |
+| sh/sz prefix | Strip the prefix | `sh600519` → `600519` |
+| Stock name | Look up the code | `stock_info_sh_name_code` / `stock_info_sz_name_code` |
 
 ---
 
-## 输出选项
+## Output Options
 
-| 选项 | 效果 |
+| Option | Effect |
 |------|------|
-| `--json` | JSON 格式（推荐） |
-| `--csv` | CSV 格式 |
-| `--output FILE` | 保存文件（.csv/.json/.xlsx/.md） |
-| `--limit N` | 限制行数 |
-| `--sort desc\|asc` | 排序：`desc` 最新在前（默认），`asc` 最旧在前 |
-| `--no-cache` | 跳过缓存 |
+| `--json` | JSON format (recommended) |
+| `--csv` | CSV format |
+| `--output FILE` | Save to a file (.csv/.json/.xlsx/.md) |
+| `--limit N` | Limit the number of rows |
+| `--sort desc\|asc` | Sort: `desc` newest first (default), `asc` oldest first |
+| `--no-cache` | Skip the cache |
 
-**获取最新数据的关键：** 很多历史数据接口默认返回从最早开始的数据。如果你只取 `--limit 10` 而不加 `--sort desc`，拿到的是最旧的 10 条而不是最新的。查最新数据时务必加 `--sort desc`：
+**The key to getting the latest data:** many historical-data interfaces return rows starting from the earliest by default. If you take only `--limit 10` without `--sort desc`, you get the oldest 10 rows instead of the newest. Always add `--sort desc` when querying the latest data:
 ```bash
-akshare-cli call stock_zh_a_hist --symbol 000001 --json --limit 10 --sort desc   # 最近 10 天
+akshare-cli call stock_zh_a_hist --symbol 000001 --json --limit 10 --sort desc   # the last 10 days
 ```
 
-默认缓存 30 分钟（宏观 24 小时），实时行情不缓存。
+The cache is 30 minutes by default (24 hours for macro data); real-time quotes are not cached.
 
 ---
 
-## 注意事项
+## Cautions
 
-- **已知损坏接口**：调用前先查 `references/known-issues.md`，命中直接用替代方案
-- **盘中 vs 盘后**：非交易时段优先用历史接口（`stock_zh_a_hist`），更快更稳定
-- **日期自动填充**：未指定 `date` 参数时 CLI 自动填充当天日期
-- **名称查代码**：用 `stock_info_sh_name_code` / `stock_info_sz_name_code`，禁止用全量 spot 遍历
+- **Known broken interfaces**: check `references/known-issues.md` before calling; if it is listed there, go straight to the alternative
+- **Intraday vs after close**: outside trading hours prefer the historical interface (`stock_zh_a_hist`) — faster and more stable
+- **Automatic date fill**: when no `date` parameter is given, the CLI fills in today's date automatically
+- **Name-to-code lookup**: use `stock_info_sh_name_code` / `stock_info_sz_name_code`; never iterate the full spot list
 
-> 更多工作流示例见 `references/examples.md`
+> More workflow examples in `references/examples.md`

@@ -15,9 +15,9 @@
 
 ## Performance Issues
 
-### 服务器慢/卡 (System Slow)
+### Server Slow/Lagging (System Slow)
 ```yaml
-Keywords: [慢, 卡, slow, lag, sluggish, 响应慢, latency]
+Keywords: [slow, lag, sluggish, slow response, latency]
 Workflow:
   step1: Read resource-saturation-quick.md
   step2: Execute Quick checks (10s)
@@ -29,27 +29,27 @@ Workflow:
 Reason: Quick triage identifies bottleneck, then Deep analysis on specific component
 ```
 
-### CPU 高 (High CPU)
+### High CPU
 ```yaml
-Keywords: [CPU, cpu高, CPU 100%, 进程卡死, high cpu]
+Keywords: [CPU, high cpu, CPU 100%, process hung]
 Workflow:
   step1: Skip Quick, go directly to:
     - resource-saturation-deep-cpu.md
 Reason: User already identified CPU as bottleneck
 ```
 
-### 内存不足 (Memory Issues)
+### Memory Issues
 ```yaml
-Keywords: [内存, memory, OOM, swap, 内存满, out of memory]
+Keywords: [memory, OOM, swap, memory full, out of memory]
 Workflow:
   step1: Skip Quick if issue is clear
   step2: Read resource-saturation-deep-memory.md
 Reason: Focus on memory component only
 ```
 
-### 磁盘问题 (Disk Issues)
+### Disk Issues
 ```yaml
-Keywords: [磁盘, disk, 磁盘满, disk full, 磁盘慢, I/O slow]
+Keywords: [disk, disk full, disk slow, I/O slow]
 Workflow:
   step1: Determine if "full" or "slow"
   step2a: If "full" → Direct commands (du, df)
@@ -57,9 +57,9 @@ Workflow:
 Reason: Disk full needs space check, disk slow needs I/O analysis
 ```
 
-### 网络慢 (Network Issues)
+### Network Slow (Network Issues)
 ```yaml
-Keywords: [网络, network, 网络慢, network slow, 丢包, packet loss]
+Keywords: [network, network slow, packet loss]
 Workflow:
   step1: Read resource-saturation-quick.md
   step2: If network issue confirmed → resource-saturation-deep-network.md
@@ -70,9 +70,9 @@ Reason: Network diagnostics need baseline first
 
 ## System Errors
 
-### 健康检查 (Health Check)
+### Health Check
 ```yaml
-Keywords: [检查, 健康, health, check, 体检]
+Keywords: [check, health, health check]
 Workflow:
   step1: Read resource-saturation-quick.md
   step2: Read system-logs-quick.md
@@ -80,9 +80,9 @@ Workflow:
 Reason: Health check only needs Quick scan
 ```
 
-### 崩溃/错误 (Crash/Errors)
+### Crash/Errors
 ```yaml
-Keywords: [崩溃, crash, 错误, error, 异常, exception, killed, panic]
+Keywords: [crash, error, exception, killed, panic]
 Workflow:
   step1: Read system-logs-quick.md
   step2: Based on results, conditionally read:
@@ -94,9 +94,9 @@ Workflow:
 Reason: Quick error count identifies problem categories, then Deep analysis
 ```
 
-### OOM 问题 (OOM Killer)
+### OOM Issues (OOM Killer)
 ```yaml
-Keywords: [OOM, Out of Memory, killed process, 内存杀手, oom killer]
+Keywords: [OOM, Out of Memory, killed process, oom killer]
 Workflow:
   step1: Skip system-logs-quick.md
   step2: Read system-logs-deep-oom.md directly
@@ -105,34 +105,34 @@ Reason: OOM explicitly mentioned, direct to Deep analysis
 
 ### Kernel Panic/Crash
 ```yaml
-Keywords: [kernel panic, kernel crash, 内核崩溃, kernel oops]
+Keywords: [kernel panic, kernel crash, kernel oops]
 Workflow:
   step1: Skip Quick
   step2: Read system-logs-deep-kernel.md
 Reason: Critical issue, immediate Deep analysis needed
 ```
 
-### 认证失败 (Auth Failures)
+### Auth Failures
 ```yaml
-Keywords: [认证, authentication, SSH, 登录失败, login failed, brute force]
+Keywords: [authentication, SSH, login failed, brute force]
 Workflow:
   step1: Skip system-logs-quick.md
   step2: Read system-logs-deep-auth.md directly
 Reason: Auth issues need immediate analysis
 ```
 
-### 文件系统错误 (Filesystem Errors)
+### Filesystem Errors
 ```yaml
-Keywords: [文件系统, filesystem, fs error, read-only, 只读, I/O error]
+Keywords: [filesystem, fs error, read-only, I/O error]
 Workflow:
   step1: Skip Quick
   step2: Read system-logs-deep-fs.md
 Reason: FS errors are critical, direct Deep analysis
 ```
 
-### 服务失败 (Service Failures)
+### Service Failures
 ```yaml
-Keywords: [服务, service, systemd, 服务启动失败, service failed]
+Keywords: [service, systemd, service failed]
 Workflow:
   step1: system-logs-quick.md (check if systemic)
   step2: If service-specific → system-logs-deep-service.md
@@ -143,54 +143,54 @@ Reason: Differentiate between systemic vs. single service issue
 
 ## Hardware Issues
 
-### 磁盘健康 (Disk Health)
+### Disk Health
 ```yaml
-Keywords: [磁盘健康, disk health, SMART, 坏道, bad sector]
+Keywords: [disk health, SMART, bad sector]
 Workflow:
   step1: Read disk-smart-quick.md (10s check)
   step2: If any disk = FAILED or UNKNOWN → disk-smart-deep.md
 Reason: Quick health check sufficient if all PASSED
 ```
 
-### 磁盘故障 (Disk Failure)
+### Disk Failure
 ```yaml
-Keywords: [磁盘故障, disk failure, 磁盘坏了, FAILED, disk failed]
+Keywords: [disk failure, FAILED, disk failed]
 Workflow:
   step1: Skip disk-smart-quick.md
   step2: Read disk-smart-deep.md directly
 Reason: Explicit failure mentioned, detailed SMART analysis needed
 ```
 
-### 硬件问题 (Hardware Issues)
+### Hardware Issues
 ```yaml
-Keywords: [硬件, hardware, 温度, temperature, hot, 过热, overheating]
+Keywords: [hardware, temperature, hot, overheating]
 Workflow:
   step1: Read hardware-health-quick.md
   step2: If issues found → hardware-health-deep.md
 Reason: Quick hardware health scan across all components
 ```
 
-### CPU 过热 (CPU Overheating)
+### CPU Overheating
 ```yaml
-Keywords: [CPU温度, CPU过热, CPU hot, CPU temperature, throttling]
+Keywords: [CPU temperature, CPU overheating, CPU hot, throttling]
 Workflow:
   step1: Skip Quick
   step2: Read hardware-health-deep.md (focus: CPU temperature)
 Reason: Temperature issues need immediate deep analysis
 ```
 
-### 内存硬件故障 (Memory Hardware)
+### Memory Hardware Failure (Memory Hardware)
 ```yaml
-Keywords: [内存故障, memory error, ECC, memory hardware, 坏内存]
+Keywords: [memory error, ECC, memory hardware, bad memory]
 Workflow:
   step1: Skip Quick
   step2: Read hardware-health-deep.md (focus: ECC errors)
 Reason: Hardware memory errors need detailed analysis
 ```
 
-### RAID 问题 (RAID Issues)
+### RAID Issues
 ```yaml
-Keywords: [RAID, raid degraded, 阵列, array, 硬盘阵列]
+Keywords: [RAID, raid degraded, array, disk array]
 Workflow:
   step1: Read hardware-health-quick.md
   step2: If RAID degraded → hardware-health-deep.md
@@ -201,27 +201,27 @@ Reason: RAID issues need component-level analysis
 
 ## Time & Clock
 
-### 时间问题 (Time Issues)
+### Time Issues
 ```yaml
-Keywords: [时间, time, NTP, ntp, 时钟, clock, 时间不对]
+Keywords: [time, NTP, ntp, clock, wrong time]
 Workflow:
   step1: Read time-sync.md (Quick section)
   step2: If not synced → time-sync.md (Deep section)
 Reason: Quick NTP sync check, then Deep if issues
 ```
 
-### 时间偏移 (Time Drift)
+### Time Drift
 ```yaml
-Keywords: [时间偏移, time drift, clock offset, Kerberos失败]
+Keywords: [time drift, clock offset, Kerberos failure]
 Workflow:
   step1: Skip Quick
   step2: Read time-sync.md (Deep section)
 Reason: Time drift explicitly mentioned, immediate Deep analysis
 ```
 
-### Kerberos 认证失败 (Kerberos Auth)
+### Kerberos Auth Failure (Kerberos Auth)
 ```yaml
-Keywords: [Kerberos, kerberos失败, clock skew]
+Keywords: [Kerberos, kerberos failure, clock skew]
 Workflow:
   step1: Read time-sync.md (check time first)
   step2: If time OK → system-logs-deep-auth.md
@@ -232,27 +232,27 @@ Reason: Kerberos failures often caused by time drift (>5s threshold)
 
 ## Low-Frequency Scenarios
 
-### 系统启动慢 (Slow Boot)
+### Slow Boot
 ```yaml
-Keywords: [启动慢, slow boot, boot time, systemd-analyze]
+Keywords: [slow boot, boot time, systemd-analyze]
 Workflow:
   - Run: systemd-analyze blame
   - Identify slow services
   - Check: system-logs-deep-service.md for service issues
 ```
 
-### 进程僵尸 (Zombie Processes)
+### Zombie Processes
 ```yaml
-Keywords: [僵尸进程, zombie, defunct, Z state]
+Keywords: [zombie process, zombie, defunct, Z state]
 Workflow:
   - Run: ps aux | grep defunct
   - Identify parent process
   - Check if parent is hung (resource-saturation-deep-cpu.md)
 ```
 
-### 负载高但 CPU 低 (High Load, Low CPU)
+### High Load but Low CPU (High Load, Low CPU)
 ```yaml
-Keywords: [load average high, cpu not high, 负载高 CPU低]
+Keywords: [load average high, cpu not high, high load low cpu]
 Workflow:
   - Read: resource-saturation-quick.md
   - Focus on: Disk I/O wait, Network wait
@@ -260,17 +260,17 @@ Workflow:
 Reason: High load with low CPU indicates I/O or network bottleneck
 ```
 
-### 上下文切换过多 (High Context Switches)
+### Excessive Context Switches (High Context Switches)
 ```yaml
-Keywords: [context switch, 上下文切换, cs rate]
+Keywords: [context switch, cs rate]
 Workflow:
   - Read: resource-saturation-deep-cpu.md
   - Focus on: vmstat cs column, process scheduling
 ```
 
-### 文件描述符耗尽 (File Descriptor Exhaustion)
+### File Descriptor Exhaustion
 ```yaml
-Keywords: [too many open files, 文件描述符, ulimit, fd limit]
+Keywords: [too many open files, file descriptor, ulimit, fd limit]
 Workflow:
   - Check: lsof -p <pid> | wc -l
   - Check: ulimit -n
@@ -293,7 +293,7 @@ Workflow:
 - ✅ Built-in scenarios in SKILL.md don't match
 - ✅ User mentions specific technical terms (Kerberos, RAID, ECC)
 - ✅ Low-frequency issues (zombie processes, fd exhaustion)
-- ❌ Common issues (慢, CPU高, 内存不足) - Use SKILL.md instead
+- ❌ Common issues (slow, high CPU, out of memory) - Use SKILL.md instead
 
 ---
 

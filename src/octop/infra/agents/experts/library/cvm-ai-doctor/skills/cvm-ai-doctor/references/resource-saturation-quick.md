@@ -53,7 +53,7 @@ special_cases:
     suggest: "Detected LightClaw process anomaly. Consider running 'health-check' skill for platform diagnostics."
   
   if_all_ok_and_user_asked_generic_health:
-    # If user said "检查系统" without specific symptoms and all Quick checks pass
+    # If user said "check the system" without specific symptoms and all Quick checks pass
     suggest: "System performance is healthy. Need LightClaw platform security audit?"
 ```
 

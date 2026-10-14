@@ -60,7 +60,7 @@ Prefer identity-bearing queries over broad topic queries:
 "exact title" issuer
 "exact title" year DOI
 "document number" PDF
-"exact title" 更新 OR 更正 OR 撤回 OR 废止
+"exact title" update OR correction OR withdrawal OR repeal
 site:approved-domain "distinctive title phrase"
 ```
 

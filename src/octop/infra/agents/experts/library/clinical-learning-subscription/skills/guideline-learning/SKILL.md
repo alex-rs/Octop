@@ -1,58 +1,58 @@
 ---
 name: guideline-learning
-description: 指南学习流程约束。判断请求类型→读取状态→按流程创建轨道/预览/投递/排查迁移；操作命令与细则见 references/learning-operations.md。选题用权威信源，输出前经 output-format 校验。不生成诊疗/处方/急诊SOP/个体患者建议。
+description: Guideline learning process constraints. Determine the request type → read state → create a track/preview/deliver/troubleshoot migration per the process; for the operation commands and detailed rules see references/learning-operations.md. Use authoritative sources for topic selection, and pass output-format validation before output. Does not generate diagnosis and treatment/prescription/emergency SOP/individual patient advice.
 metadata:
   octop:
     emoji: "📘"
     label:
-      zh: "指南学习"
+      zh: "Guideline Learning"
       en: "Guideline Learning"
     summary:
-      zh: "按轨道创建、预览与投递权威指南学习内容。"
+      zh: "Create, preview, and deliver authoritative guideline learning content by track."
       en: "Create, preview, and deliver guideline learning tracks."
 ---
 
-# 指南学习流程
+# Guideline Learning Process
 
-## 必读
+## Required reading
 
 - ../../USER.md
 - ../../references/source-policy.yaml
 - ../../references/output-templates.md
 - ../../references/daily-learning-template.md
 
-执行轨道创建/预览投递/重复漏发排查/新版本迁移时，再读 `../../references/learning-operations.md`（操作命令与细则，非每次必读）。
+When performing track creation/preview delivery/duplicate or missed delivery troubleshooting/new-version migration, also read `../../references/learning-operations.md` (the operation commands and detailed rules; not required reading every time).
 
-## 请求分流
+## Request routing
 
-- 评估掌握/教育性小测/学习地图/诊断标准学习 → `guideline-learning-diagnosis`
-- 展开章节/学习顺序/路径图 → `guideline-section-expansion`
-- 备考选材 → `exam-material-recommendation`
-- 学习轨道/预览/投递/重复漏发/新版本迁移 → 本 skill，按 learning-operations.md 对应流程执行
+- Assess mastery/educational quizzes/learning maps/diagnostic-criteria learning → `guideline-learning-diagnosis`
+- Expand a section/learning order/pathway map → `guideline-section-expansion`
+- Exam material selection → `exam-material-recommendation`
+- Learning track/preview/delivery/duplicate or missed delivery/new-version migration → this skill, executed per the corresponding process in learning-operations.md
 
-## 读取状态
+## Reading state
 
-任何保存/领取/发送/状态判断先调用：
+Before any save/claim/send/status decision, first call:
 
     python ../../scripts/clinical_profile.py get
 
-不把第几天、聊天摘要或旧的 current_guideline 当真实进度。读取 learning.tracks、learning.goals、delivery_ledger；只向用户展示轨道/版本/下一单元/可理解进度，不展示账本 ID/令牌/哈希/通道会话信息。个性化目标轨道可确认后保存，不必强制登记；只有按科室/地区/职称定制或开启订阅才登记。
+Do not treat which day it is, a chat summary, or an old current_guideline as real progress. Read learning.tracks, learning.goals, and delivery_ledger; show the user only the track/version/next unit/understandable progress, and do not show ledger IDs/tokens/hashes/channel session information. A personalized goal track may be saved after confirmation and does not require mandatory registration; registration is required only for customization by department/region/professional title or for enabling a subscription.
 
-## 流程约束
+## Process constraints
 
-1. **创建轨道**：先核验指南完整名称/机构/版本/来源链接/来源修订；用户确认后才保存目标→草稿轨道→固定章节单元→启用。命令与细则见 learning-operations.md。
-2. **预览**：读下一单元不写状态；响应必须直接以【格式预览｜不计入学习进度】开头，该标记前不得添加任何文字；不调用投递领取/手动触发/guideline-advance。
-3. **正式投递**：弱投递防重协议（delivery-check 查重→读取单元→校验→delivery-record 记账→输出）；账本只防重复不代表送达，不得宣称已确认送达。强回执状态机为迁移目标。细则见 learning-operations.md。
-4. **重复/漏发/迁移**：先读真实状态再处理，不凭印象补发；新版本先给迁移方案，确认前不覆盖旧轨道。细则见 learning-operations.md。
+1. **Create a track**: first verify the guideline's full name/body/version/source link/source revision; only after the user confirms, save the goal → draft track → fixed section units → enable. For the commands and detailed rules see learning-operations.md.
+2. **Preview**: read the next unit without writing state; the response must begin directly with [Format Preview | Not Counted Toward Progress], and no text may be added before that marker; do not call delivery claim/manual trigger/guideline-advance.
+3. **Formal delivery**: weak-delivery dedup protocol (delivery-check for dedup → read the unit → validate → delivery-record to book it → output); the ledger only prevents duplication and does not represent delivery, so never claim that delivery is confirmed. The strong-receipt state machine is the migration target. For detailed rules see learning-operations.md.
+4. **Duplicates/missed delivery/migration**: read the real state first and then handle it; do not resend based on an impression; for a new version, give the migration plan first and do not overwrite the old track before confirmation. For detailed rules see learning-operations.md.
 
-## 选题与来源边界
+## Topic selection and source boundaries
 
-选题优先级：本科室常见高频基层需要 > 高风险识别与转诊知识（只作学习内容，不写行动卡）> 检查/报告/质控/慢病/规范 > 经核验近期更新。
+Topic selection priority: common high-frequency primary-care needs of this department > high-risk recognition and referral knowledge (learning content only, no action cards) > examination/reporting/quality control/chronic disease/standards > verified recent updates.
 
-最终依据只用 source-policy.yaml 允许的权威信源；用户明确指定国际指南或国内无覆盖时，按 `international-guideline-source-routes.yaml` 使用国际 A 级正式指南，不得静默覆盖国内现行规范。学习内容必须含至少一个权威原文链接 `来源：名称：[链接](URL)`；A/B 均找不到时可按 `source-verify` 规则披露一次 C 级全网转述，但只能作为待核验背景，不能据此创建正式指南轨道、展开原文或生成精确推荐。允许讲适用范围/学习目标/核心概念/风险意识/质控/报告随访的学习性说明；禁止个体诊疗/药物剂量/急诊行动卡/疾病 SOP/医院流程/HIS。
+The final basis uses only authoritative sources allowed by source-policy.yaml; when the user explicitly specifies an international guideline or there is no domestic coverage, use a tier-A international formal guideline per `international-guideline-source-routes.yaml`, and do not silently override current domestic standards. The learning content must include at least one authoritative original-text link `Source: name: [link](URL)`; when neither A nor B can be found, one tier-C whole-web paraphrase may be disclosed per the `source-verify` rules, but it can only serve as background pending verification and must not be used to create a formal guideline track, expand the original text, or generate precise recommendations. Educational explanations of the scope of application/learning objectives/core concepts/risk awareness/quality control/reporting and follow-up are allowed; individual diagnosis and treatment/drug dosages/emergency action cards/disease SOPs/hospital processes/HIS are forbidden.
 
-## 输出语言与校验
+## Output language and validation
 
-**输出语言与格式**：全程使用简体中文；只输出最终正文，不输出思考、推理、检索或执行过程（禁止出现 I'll、Let me、Now running、Validation passed、Here is the answer.、搜索过程、检索日志等过程语句）。执行检索、读 skill、跑脚本和校验时静默；需要向用户确认选项时，也只用简体中文提问，问完即停，不要夹带工具过程句。
+**Output language and format**: use Simplified Chinese throughout; output only the final body, not the thinking, reasoning, retrieval, or execution process (process statements such as I'll, Let me, Now running, Validation passed, Here is the answer., search narration, and retrieval logs are forbidden). Perform retrieval, skill reading, script runs, and validation silently; when you need to confirm options with the user, also ask only in Simplified Chinese, stop immediately after asking, and do not carry tool process sentences.
 
-发送或提供正式草稿前运行 `python ../../scripts/validate_output.py --module daily_guideline_learning`，失败先修正，不得绕过。校验结果仅供内部控制；通过后直接输出正文，不得向用户输出“校验通过”“为您推送预览内容”等过程说明。四条硬格式与校验流程见 `output-format` skill。
+Before sending or providing a formal draft, run `python ../../scripts/validate_output.py --module daily_guideline_learning`, and fix failures first without bypassing them. The validation result is for internal control only; after it passes, output the body directly, and do not output process explanations such as "validation passed" or "pushing preview content for you" to the user. The four hard format rules and the validation process are in the `output-format` skill.

@@ -1,127 +1,127 @@
-# Heartbeat — 育儿管家定时任务
+# Heartbeat — Parenting Companion Scheduled Tasks
 
-> 这里定义所有"AI 自己醒来主动做的事"。
-> 任何主动联系**必须先通过** `PROACTIVE.md`「开口前必做的核对」——不在用户偏好窗口内 → `[SKIP]`。
+> This file defines everything the "AI wakes up and does on its own".
+> Any proactive contact **must first pass** the "checks to complete before speaking" in `PROACTIVE.md` — if it is outside the user's preferred window → `[SKIP]`.
 
-## 任务清单
+## Task List
 
-| 触发条件 | 频率 | 动作 | 是否打扰用户 |
+| Trigger condition | Frequency | Action | Does it disturb the user |
 |---------|------|------|-------------|
-| 每日 0:00 | 每日 1 次 | 跑 `scripts/check_memory_freshness.sh` 对账 | 仅在发现差异时静默修复，**不发消息** |
-| 每月 X 日（X = 孩子的"月龄日"） | 每月 1 次 | 汇总当月发育情况、对照 WHO 曲线 | 打扰，但仅在用户偏好窗口内 |
-| 疫苗后 24 小时 | 满足时触发一次 | 询问反应 | 打扰（窗口内） |
-| 发烧未结案 ≥6 小时无新读数 | 满足时触发一次 | 询问最新体温 | 打扰（窗口内） |
-| 排敏第 3 天无过敏标记 | 满足时触发一次 | 提示"可以纳入安全清单" | 打扰（窗口内） |
-| 距离下次疫苗 ≤7 天 | 一次提醒 | 提醒预约 | 打扰（窗口内） |
+| Daily 0:00 | Once daily | Run `scripts/check_memory_freshness.sh` to reconcile | Fix silently only when discrepancies are found, **send no message** |
+| Xth day of each month (X = the child's "monthly age day") | Once monthly | Summarize the month's development, compare against WHO curves | Disturbs, but only inside the user's preferred window |
+| 24 hours after a vaccine | Triggers once when met | Ask about the reaction | Disturbs (inside the window) |
+| Fever case still open, ≥6 hours with no new reading | Triggers once when met | Ask for the latest temperature | Disturbs (inside the window) |
+| Day 3 of an allergen trial with no allergy flag | Triggers once when met | Prompt "this can go on the safe list" | Disturbs (inside the window) |
+| ≤7 days until the next vaccine | One reminder | Remind about booking | Disturbs (inside the window) |
 
-## 详细规则
+## Detailed Rules
 
-### 1. 每日 0:00 对账（必跑，**静默**）
+### 1. Daily 0:00 reconciliation (must run, **silent**)
 
-**目的**：防止 AI 写完专项文件忘了同步 MEMORY.md。
+**Purpose**: stop the AI from writing specialized files and forgetting to sync MEMORY.md.
 
-**步骤**：
-1. 调用 `execute_shell_command` 执行 `bash scripts/check_memory_freshness.sh`
-2. 解析输出：
-   - 退出码 0 = 已同步，结束（不发消息）
-   - 退出码 2 = 有专项文件比 `MEMORY.md` 更新
-3. 如果退出码 2：
-   - 读取每个新文件的最新一条记录
-   - `edit_file` 把对应索引行更新到 `MEMORY.md`
-   - `append_file` 一行到 `memory/{today}.md`：
+**Steps**:
+1. Call `execute_shell_command` to run `bash scripts/check_memory_freshness.sh`
+2. Parse the output:
+   - Exit code 0 = in sync, finish (send no message)
+   - Exit code 2 = a specialized file is newer than `MEMORY.md`
+3. If exit code is 2:
+   - Read the latest record from each new file
+   - Use `edit_file` to update the matching index line in `MEMORY.md`
+   - `append_file` one line to `memory/{today}.md`:
      ```
-     [00:00] 跑对账：发现 N 个未同步项，已修复 → MEMORY.md
+     [00:00] Ran reconciliation: found N out-of-sync items, fixed → MEMORY.md
      ```
-   - **不发消息**给家长（凌晨 0 点）
+   - **Send no message** to the parent (it is midnight)
 
-### 2. 月龄汇总（每月 1 次）
+### 2. Monthly-age summary (once monthly)
 
-**条件**：今天的日期 = 孩子出生日的"日"（例如出生于 6/19 → 每月 19 日触发）。
+**Condition**: today's date = the "day" of the child's birth date (for example, born on 6/19 → triggers on the 19th of every month).
 
-**首先核对时间**：
-- 当前时间是否在 `USER.md` 联系窗口内？不在 → `[SKIP]`，第二天再尝试
-- 是否是不打扰时间段？是 → `[SKIP]`
+**Check the time first**:
+- Is the current time inside the contact window in `USER.md`? If not → `[SKIP]` and try again the next day
+- Is it a do-not-disturb period? If yes → `[SKIP]`
 
-**动作**：
-1. 调 `execute_shell_command + date` 计算当前精确月龄
-2. 读取本月 `memory/child/PROFILE.md` 中的最新身高体重
-3. 读取本月 `MILESTONES.md` 中的新里程碑
-4. 读取本月 `FEEDING.md` 中的新通过 / 新过敏食材
-5. 用 `web_search + web_fetch` 验证 WHO 生长曲线对照
-6. 生成简短月报（200 字内 + 来源 ✅已验证）
-7. 通过 `lastDispatch` 渠道发给家长
+**Actions**:
+1. Call `execute_shell_command + date` to compute the exact current age in months
+2. Read the latest height and weight from `memory/child/PROFILE.md` for this month
+3. Read the new milestones from `MILESTONES.md` for this month
+4. Read the newly passed / newly allergic foods from `FEEDING.md` for this month
+5. Use `web_search + web_fetch` to verify the WHO growth-curve comparison
+6. Generate a short monthly report (within 200 words + sources ✅ verified)
+7. Send it to the parent through the `lastDispatch` channel
 
-### 3. 疫苗反应跟踪（条件触发）
+### 3. Vaccine-reaction follow-up (conditional trigger)
 
-**条件**：
-- `HEALTH/vaccines.md` 最新一条接种时间在 24-30 小时前
-- 当日工作日志 `memory/{today}.md` 中**没有**关于该疫苗反应询问的记录
+**Conditions**:
+- The latest vaccination entry in `HEALTH/vaccines.md` is 24-30 hours old
+- The day's work log `memory/{today}.md` has **no** record of asking about that vaccine's reaction
 
-**动作**：
-- 必须核对联系窗口
-- 发一句温和的关心（≤50 字）：
+**Actions**:
+- Must check the contact window
+- Send one gentle message of concern (≤50 words):
   ```
-  {child_name} 昨天打的 {vaccine_name}，今天有什么反应吗？发烧、皮疹、嗜睡、食欲变化都可以告诉我。
+  {child_name} had {vaccine_name} yesterday — any reaction today? Fever, rash, drowsiness, or a change in appetite are all fine to tell me.
   ```
-- 写日志记录"已询问 {vaccine_name} 反应"避免重复
+- Write a log entry noting "asked about the {vaccine_name} reaction" to avoid repeating it
 
-### 4. 发烧未结案跟踪（条件触发）
+### 4. Fever case follow-up (conditional trigger)
 
-**条件**：
-- `HEALTH/records.md` 中有一条状态为「监测中」的发烧记录
-- 最后体温读数 ≥37.5°C
-- 距上次读数 ≥6 小时
+**Conditions**:
+- `HEALTH/records.md` has a fever record with the status "monitoring"
+- The last temperature reading is ≥37.5°C
+- It has been ≥6 hours since the last reading
 
-**动作**：
-- 必须核对联系窗口
-- 询问最新体温：
+**Actions**:
+- Must check the contact window
+- Ask for the latest temperature:
   ```
-  {child_name} 上次体温 {temp}°C 是 {hours} 小时前了，现在怎么样？
+  {child_name}'s last temperature was {temp}°C {hours} hours ago — how is it now?
   ```
-- 收到回复后用 5 步流程更新 `records.md`
+- After the reply, update `records.md` using the 5-step flow
 
-**自动结案**：连续 12 小时体温 <37.3 → 在 `records.md` 把状态改为「已结案」。
+**Auto-close**: temperature <37.3 for 12 consecutive hours → change the status to "closed" in `records.md`.
 
-### 5. 排敏第 3 天提示（条件触发）
+### 5. Day-3 allergen-trial prompt (conditional trigger)
 
-**条件**：
-- `FEEDING.md` 中有「待排敏」食材进入第 3 天
-- 期间无过敏标记
+**Conditions**:
+- A food in "pending allergen trial" in `FEEDING.md` reaches day 3
+- No allergy flag in the meantime
 
-**动作**：
-- 询问家长是否要纳入安全清单：
+**Actions**:
+- Ask the parent whether to add it to the safe list:
   ```
-  {child_name} 吃 {food} 已经第 3 天了，没有看到过敏反应。可以更新到"已通过"吗？
+  {child_name} has been eating {food} for 3 days now and no allergic reaction has shown up. Can I update it to "passed"?
   ```
-- 收到确认后 `edit_file` 把状态从「待排敏」改成「✅ 已通过」
+- After confirmation, use `edit_file` to change the status from "pending allergen trial" to "✅ passed"
 
-### 6. 下次疫苗预约提醒
+### 6. Next vaccination booking reminder
 
-**条件**：`HEALTH/vaccines.md`「计划中」段最早的疫苗距今 ≤7 天，且本周未提醒过。
+**Condition**: the earliest vaccine in the "planned" section of `HEALTH/vaccines.md` is ≤7 days away, and no reminder has been sent this week.
 
-**动作**：发一条提醒：
+**Action**: send one reminder:
 ```
-{child_name} 离接种 {vaccine_name} 还有 {days} 天，记得提前去社区医院预约。
+{child_name}, there are {days} days left before the {vaccine_name} shot — remember to book at the community clinic in advance.
 ```
 
 ---
 
-## 共同前置：PROACTIVE 核对
+## Common prerequisite: PROACTIVE check
 
-所有"打扰用户"的任务**必须先**完成全局 `PROACTIVE.md` 的「开口前必做的核对」清单：
+Every "disturb the user" task **must first** complete the global `PROACTIVE.md` "checks to complete before speaking" list:
 
-1. ✅ 系统提示中的 `Current time (authoritative)` 已读取
-2. ✅ `USER.md` 主动联系偏好已查
-3. ✅ 当前时间在偏好窗口内
-4. ✅ 没有撞上节假日 / 不打扰时间
-5. ✅ 没超过当日联系频率上限
+1. ✅ `Current time (authoritative)` in the system prompt has been read
+2. ✅ The proactive-contact preference in `USER.md` has been checked
+3. ✅ The current time is inside the preferred window
+4. ✅ No holiday / do-not-disturb period is hit
+5. ✅ The daily contact-frequency cap has not been exceeded
 
-任何一条不通过 → `[SKIP]`。
+Any single failure → `[SKIP]`.
 
 ---
 
-## 心跳之间的协作
+## Collaboration Between Heartbeats
 
-- HEARTBEAT 触发的所有动作都会写日志到 `memory/{today}.md`，前缀 `[HH:MM 心跳]`
-- 用户对心跳消息的回复仍然走完整 5 步流程（识别 → 写专项 → 同步索引 → 写日志 → 打卡）
-- 心跳日志不要重复用户已经看到的专项文件内容——日志只记"AI 自己做了什么"
+- Every action triggered by HEARTBEAT writes a log entry to `memory/{today}.md`, prefixed with `[HH:MM heartbeat]`
+- User replies to heartbeat messages still go through the full 5-step flow (identify → write specialized file → sync index → write log → tag)
+- The heartbeat log must not repeat specialized-file content the user has already seen — the log records only what the "AI itself did"

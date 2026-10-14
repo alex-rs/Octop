@@ -1,6 +1,6 @@
 ---
 name: news
-description: "为用户从指定新闻网站查找最新新闻。提供政治、财经、社会、国际、科技、体育和娱乐类别的权威 URL。使用 browser_use 打开每个 URL 并通过 snapshot 获取内容，然后为用户总结。"
+description: "Find the latest news for the user from the specified news sites. Provides authoritative URLs for the politics, finance, society, international, technology, sports and entertainment categories. Use browser_use to open each URL and get the content via snapshot, then summarize it for the user."
 metadata:
   builtin_skill_version: "1.2"
   qwenpaw:
@@ -9,47 +9,47 @@ metadata:
   octop:
     emoji: "📰"
     label:
-      zh: "新闻速览"
+      zh: "News Digest"
       en: "News Digest"
     summary:
-      zh: "按政治、财经、科技等分类抓取并总结最新新闻。"
+      zh: "Fetch and summarize the latest news by category such as politics, finance and technology."
       en: "Fetch and summarize latest news by category."
 ---
 
-# 新闻参考
+# News Reference
 
-当用户询问"最新新闻"、"今天有什么新闻"或"某某类别的新闻"时，使用 **browser_use** 工具配合以下类别和 URL：打开页面，截取快照，然后从页面内容中提取标题和要点并回复用户。
+When the user asks about "the latest news", "what's in the news today" or "news in a certain category", use the **browser_use** tool with the categories and URLs below: open the page, take a snapshot, then extract the headlines and key points from the page content and reply to the user.
 
-## 类别和来源
+## Categories and Sources
 
-| 类别      | 来源                    | URL |
+| Category      | Source                    | URL |
 |-----------|--------------------------|-----|
-| **政治**  | 人民网 · 中国共产党新闻网 | https://cpc.people.com.cn/ |
-| **财经**  | 中国经济网               | http://www.ce.cn/ |
-| **社会**  | 中新网 · 社会            | https://www.chinanews.com/society/ |
-| **国际**  | CGTN                     | https://www.cgtn.com/ |
-| **科技**  | 科技日报                 | https://www.stdaily.com/ |
-| **体育**  | 央视体育                 | https://sports.cctv.com/ |
-| **娱乐**  | 新浪娱乐                 | https://ent.sina.com.cn/ |
+| **Politics**  | People's Daily / CPC News | https://cpc.people.com.cn/ |
+| **Finance**  | China Economic Net        | http://www.ce.cn/ |
+| **Society**  | China News Service / Society | https://www.chinanews.com/society/ |
+| **International**  | CGTN                     | https://www.cgtn.com/ |
+| **Technology**  | Science and Technology Daily | https://www.stdaily.com/ |
+| **Sports**  | CCTV Sports               | https://sports.cctv.com/ |
+| **Entertainment**  | Sina Entertainment        | https://ent.sina.com.cn/ |
 
-## 使用方法（browser_use）
+## How to Use (browser_use)
 
-1. **明确用户需求**：确定用户需要哪个或哪些类别（政治 / 财经 / 社会 / 国际 / 科技 / 体育 / 娱乐），或选择 1-2 个进行获取。
-2. **选择 URL**：使用表格中对应类别的 URL；如需多个类别，对每个 URL 重复以下步骤。
-3. **打开页面**：调用 **browser_use**：
+1. **Clarify what the user needs**: determine which category or categories the user needs (politics / finance / society / international / technology / sports / entertainment), or pick 1-2 to fetch.
+2. **Pick the URL**: use the URL for the corresponding category from the table; if several categories are needed, repeat the steps below for each URL.
+3. **Open the page**: call **browser_use**:
    ```json
    {"action": "open", "url": "https://www.chinanews.com/society/"}
    ```
-   将 `url` 替换为表格中对应的 URL。
-4. **截取快照**：在同一会话中，再次调用 **browser_use**：
+   Replace `url` with the corresponding URL from the table.
+4. **Take a snapshot**: in the same session, call **browser_use** again:
    ```json
    {"action": "snapshot"}
    ```
-   从返回的页面内容中提取标题、日期和摘要。
-5. **总结回复**：按时间或重要性组织一个简短列表（标题 + 一两句话 + 来源）；如果网站无法访问或超时，请说明并建议其他来源。
+   Extract the headlines, dates and summaries from the returned page content.
+5. **Summarize and reply**: organize a short list by time or importance (headline + one or two sentences + source); if a site is unreachable or times out, say so and suggest another source.
 
-## 注意事项
+## Notes
 
-- 网站更新时页面结构可能会变化；如果提取失败，请说明并建议用户直接打开链接。
-- 访问多个类别时，对每个 URL 分别执行 `open` 和 `snapshot`，避免混淆不同页面的内容。
-- 可以在回复中包含原始链接，方便用户打开查看。
+- Page structure may change when a site updates; if extraction fails, explain that and suggest the user open the link directly.
+- When visiting multiple categories, run `open` and `snapshot` separately for each URL to avoid mixing up content from different pages.
+- You may include the original links in the reply so the user can open them for details.

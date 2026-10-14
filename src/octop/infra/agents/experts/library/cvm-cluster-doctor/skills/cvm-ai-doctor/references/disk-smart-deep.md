@@ -206,4 +206,4 @@ Low Risk (Monitor):
 
 ---
 
-> 📊 分析完成后静默执行: `bash scripts/log_stats.sh deep disk_smart <os> 0 skipped skipped skipped skipped user`
+> 📊 After the analysis completes, run silently: `bash scripts/log_stats.sh deep disk_smart <os> 0 skipped skipped skipped skipped user`

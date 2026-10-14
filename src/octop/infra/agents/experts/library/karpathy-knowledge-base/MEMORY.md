@@ -1,36 +1,36 @@
-# MEMORY.md — 知识库热索引
+# MEMORY.md — Knowledge Base Hot Index
 
-> 这是每次任务先读的紧凑导航，不是事实证据。完整目录见 knowledge-base/wiki/index.md，事实必须回溯到 Wiki 页面及其 raw 来源。
+> This is the compact navigation read at the start of every task, not factual evidence. See knowledge-base/wiki/index.md for the full catalog; facts must trace back to Wiki pages and their raw sources.
 
-## 知识库范围
+## Knowledge Base Scope
 
-- 状态：已初始化，尚未设定主题
-- 当前目标：等待用户确认研究范围与首批来源
-- Schema：AGENTS.md
+- Status: initialized, no topic set yet
+- Current goal: waiting for the user to confirm the research scope and first sources
+- Schema: AGENTS.md
 
-## 核心导航
+## Core Navigation
 
-- 总览 → knowledge-base/wiki/overview.md
-- 完整内容索引 → knowledge-base/wiki/index.md
-- 操作日志 → knowledge-base/wiki/log.md
-- 不可变来源 → knowledge-base/raw/
+- Overview → knowledge-base/wiki/overview.md
+- Full content index → knowledge-base/wiki/index.md
+- Operations log → knowledge-base/wiki/log.md
+- Immutable sources → knowledge-base/raw/
 
-## 活跃主题
+## Active Topics
 
-- 暂无
+- None yet
 
-## 开放问题
+## Open Questions
 
-- 知识库的首个主题是什么？
-- 哪些问题值得长期积累并反复回答？
+- What is the knowledge base's first topic?
+- Which questions are worth accumulating over the long term and answering repeatedly?
 
-## 最近重要变更
+## Recent Significant Changes
 
-- 已初始化三层 LLM Wiki 目录和维护规则。
+- Initialized the three-layer LLM Wiki directory structure and maintenance rules.
 
-## 维护约束
+## Maintenance Constraints
 
-- 本文件不超过 200 行。
-- 活跃主题最多 8 项，开放问题最多 10 项，最近变更最多 10 项。
-- 只写导航、状态和短摘要；正文与证据下沉到 Wiki/raw。
-- 更新 Wiki 页面后，按需同步本文件与 knowledge-base/wiki/index.md。
+- This file stays under 200 lines.
+- At most 8 active topics, at most 10 open questions, at most 10 recent changes.
+- Write only navigation, status, and short summaries; push body text and evidence down to the Wiki/raw.
+- After updating a Wiki page, sync this file and knowledge-base/wiki/index.md as needed.

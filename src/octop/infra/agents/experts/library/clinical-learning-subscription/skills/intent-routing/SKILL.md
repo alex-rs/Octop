@@ -1,30 +1,30 @@
 ---
 name: intent-routing
-description: 请求入口的意图识别与技能路由。按渐进式判断意图：先通用任务（直接做）、再高风险临床（拒绝）、再区分纯信源核验与医学学习、最后登记/订阅。纯信源核验先走 source-verify；原始路径受限时再进入 medical-source-failover。医学学习才调对应 skill + output-format 校验。
+description: Intent recognition and skill routing at the request entry point. Judge the intent progressively: general tasks first (do them directly), then high-risk clinical (refuse), then distinguish pure source verification from medical learning, and finally registration/subscription. Pure source verification goes through source-verify first; when the original path is restricted, it then enters medical-source-failover. Only medical learning calls the corresponding skill + output-format validation.
 metadata:
   octop:
     emoji: "🧭"
     label:
-      zh: "意图路由"
+      zh: "Intent Routing"
       en: "Intent Routing"
     summary:
-      zh: "识别通用任务、高风险临床、信源核验与医学学习并分发。"
+      zh: "Identify and dispatch general tasks, high-risk clinical, source verification, and medical learning."
       en: "Route general, clinical, source-verify, and learning requests."
 ---
 
-# 意图识别与路由
+# Intent Recognition and Routing
 
-每次请求按以下顺序渐进判断，命中即执行，不向下继续：
+Judge each request progressively in the following order; on a hit, execute immediately and do not continue downward:
 
-1. **通用任务**（写作/总结/翻译/编程/计划/数据/创意/闲聊）→ 直接完成，不调医学 skill，不要求登记，不套医学规则。
-2. **感知到高危临床诊断或处置**（个体诊断、处方剂量、急诊处置、疾病 SOP、报销结论、HIS 规则）→ 拒绝该请求；可建议转为权威指南学习，拒绝后不补充诊疗步骤或用药细节。
-3. **纯信源核验**（是否为权威原文、是否最新有效、版本对照、修订/替代/废止关系）→ 先调用 `source-verify`；遇到阻断、超时、迁移、付费墙或正文不完整时，由它继续调用 `medical-source-failover`。仍按【信源核验】模板输出，不调用 `output-format` 或 `validate_output.py`。如果还要求生成学习内容，再进入下一类。
-4. **普通教育性医学问答**（概念解释、常见误区、“这个说法准确吗”，不要求精确推荐/定位且不涉及药品高风险事实）→ `clinical-q-and-a` 快路径；默认只核验一份国内权威正文，使用内嵌短模板与轻量自检，不调用章节展开、子代理或完整格式校验。
-5. **结构化医学学习**（指南学习/章节展开/路径图/学习诊断/备考/医保/指南更新）→ 调对应 skill，从权威指南找信息并注明来源，输出前经 `output-format` 校验；需保存进度/轨道/诊断/订阅/地区定制时先确认登记。
-6. **登记/订阅**（登记/更新/停用/启用推送）→ `doctor-registration`（登记）/ `subscription-setup`（订阅，需先登记）。
+1. **General tasks** (writing/summarizing/translation/programming/planning/data/creative/chat) → complete them directly; do not call medical skills, do not require registration, and do not apply medical rules.
+2. **A high-risk clinical diagnosis or management request is detected** (individual diagnosis, prescription dosages, emergency management, disease SOPs, reimbursement conclusions, HIS rules) → refuse that request; you may suggest switching to authoritative guideline learning, and after refusing do not add diagnosis-and-treatment steps or medication details.
+3. **Pure source verification** (whether it is an authoritative original text, whether it is the latest valid version, version comparison, revision/supersession/repeal relationships) → first call `source-verify`; when it hits blocking, a timeout, a redirect, a paywall, or incomplete body text, let it continue by calling `medical-source-failover`. It still outputs per the [Source Verification] template and does not call `output-format` or `validate_output.py`. If learning content is also required, then move to the next category.
+4. **Ordinary educational medical Q&A** (concept explanations, common misconceptions, "is this statement accurate", with no request for precise recommendations/locators and no high-risk drug facts) → the `clinical-q-and-a` fast path; by default, verify only one domestic authoritative body of text, use the embedded short template and lightweight self-check, and do not call section expansion, subagents, or full format validation.
+5. **Structured medical learning** (guideline learning/section expansion/pathway maps/learning diagnosis/exam prep/medical insurance/guideline updates) → call the corresponding skill, find information from authoritative guidelines and cite the source, and pass `output-format` validation before output; when progress/tracks/diagnosis/subscription/regional customization must be saved, confirm registration first.
+6. **Registration/subscription** (register/update/disable/enable push) → `doctor-registration` (registration) / `subscription-setup` (subscription, which requires prior registration).
 
-## 判断要点
+## Judgment points
 
-- 看输出的**实质用途**，不是是否出现某个词：`delivery`/`import`/`5 g 数据`/`iv`（变量名）等普通文本不触发医学拦截。
-- 通用任务里出现医学词只是普通文本；只有确实问医学学习/医保或落到个体诊疗时才启用安全域。
-- 主题切换时自然切换，不要求"重新进入模式"；路由结果只在内部使用，用户端只看到对应 skill 的正常输出。
+- Look at the **substantive purpose** of the output, not whether a particular word appears: ordinary text such as `delivery`/`import`/`5 g of data`/`iv` (a variable name) does not trigger medical interception.
+- Medical words appearing inside a general task are only ordinary text; the safety domain is enabled only when medical learning/medical insurance is genuinely asked about or when the request lands on individual diagnosis and treatment.
+- Switch naturally when the topic changes; there is no requirement to "re-enter a mode"; the routing result is used only internally, and the user side only sees the normal output of the corresponding skill.

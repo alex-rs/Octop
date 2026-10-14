@@ -1,80 +1,80 @@
-# 场景索引 - 维护文档
+# Scenario Index - Maintenance Document
 
-> **本文档供人类维护者使用**，描述场景索引的设计思路、维护流程和统计数据。
-> AI 不需要读取此文件。AI 路由表见 `references/00-scenario-index.md`。
-
----
-
-## 设计架构
-
-### 整体定位
-
-`00-scenario-index.md` 是 SKILL.md 的 **Tier 2 路由表**：
-
-```
-SKILL.md (Tier 1: 10 核心场景, 80% 覆盖)
-  ↓ 匹配不到
-00-scenario-index.md (Tier 2: 60+ 扩展场景, 20% 长尾)
-  ↓ 匹配到
-commands/*.md 或 references/*.md (具体执行)
-```
-
-### AI 使用流程
-
-```
-用户描述问题
-  ↓
-1. 在索引中匹配场景 (关键词搜索, ~10 秒)
-  ↓
-2. 根据推荐的 Reference 运行 Quick Mode (10 秒)
-   → 使用匹配当前 OS 的命令变体
-  ↓
-3. 如果 Quick Mode 发现异常 → 运行 Deep Mode (20-60 秒)
-   → Commands 文件中有完整的平台命令表可参考
-  ↓
-4. 报告结果 + 修复建议
-```
-
-### 匹配规则
-
-- **关键词触发**: 用户说的关键词 → 查找对应场景
-- **中英文**: "慢" = "slow", "卡" = "lag"
-- **模糊匹配**: "内存不够" → "内存问题"
-- **默认回退**: 无匹配 → 场景 3.1（综合健康检查）
+> **This document is for human maintainers**, describing the design rationale, maintenance process and statistics of the scenario index.
+> AI does not need to read this file. The AI routing table is in `references/00-scenario-index.md`.
 
 ---
 
-## AI 决策算法 (伪代码)
+## Design Architecture
 
-以下是 AI 场景匹配和执行流程的概念描述，用于理解设计意图：
+### Overall Positioning
+
+`00-scenario-index.md` is the **Tier 2 routing table** of SKILL.md:
+
+```
+SKILL.md (Tier 1: 10 core scenarios, 80% coverage)
+  ↓ no match
+00-scenario-index.md (Tier 2: 60+ extended scenarios, 20% long tail)
+  ↓ match found
+commands/*.md or references/*.md (concrete execution)
+```
+
+### AI Usage Flow
+
+```
+User describes a problem
+  ↓
+1. Match a scenario in the index (keyword search, ~10 seconds)
+  ↓
+2. Run Quick Mode according to the recommended Reference (10 seconds)
+   → Use the command variant matching the current OS
+  ↓
+3. If Quick Mode finds anomalies → run Deep Mode (20-60 seconds)
+   → The Commands files contain complete platform command tables for reference
+  ↓
+4. Report results + remediation recommendations
+```
+
+### Matching Rules
+
+- **Keyword trigger**: the keyword the user says → look up the corresponding scenario
+- **Chinese and English**: the Chinese words meaning "slow" and "lag" map to "slow" and "lag"
+- **Fuzzy matching**: "not enough memory" → "memory problem"
+- **Default fallback**: no match → scenario 3.1 (comprehensive health check)
+
+---
+
+## AI Decision Algorithm (Pseudocode)
+
+The following is a conceptual description of the AI scenario matching and execution flow, used to understand the design intent:
 
 ```python
 def match_scenario(user_query):
-    """根据用户查询匹配场景"""
+    """Match a scenario based on the user query"""
     keywords = extract_keywords(user_query)
     
-    # 1. 精确匹配
+    # 1. Exact match
     for keyword in keywords:
         if scenario := exact_match(keyword):
             return scenario
     
-    # 2. 模糊匹配
+    # 2. Fuzzy match
     for keyword in keywords:
         if scenario := fuzzy_match(keyword):
             return scenario
     
-    # 3. 默认场景（综合健康检查）
+    # 3. Default scenario (comprehensive health check)
     return scenario_3_1
 
 def execute_scenario(scenario, user_query):
-    """执行场景推荐路径"""
+    """Execute the scenario's recommended path"""
     path = scenario.recommended_path
     
     # Step 1: Quick Mode
     if "reference" in path.step1:
         quick_result = run_quick_mode(path.step1)
     
-    # Step 2: 决策是否 Deep
+    # Step 2: Decide whether to run Deep
     if should_run_deep(quick_result, user_query):
         deep_result = run_deep_mode(path.step2, quick_result.focus)
         return generate_report(quick_result, deep_result)
@@ -82,127 +82,127 @@ def execute_scenario(scenario, user_query):
         return generate_report(quick_result)
 
 def should_run_deep(quick_result, user_query):
-    """决定是否运行 Deep Mode"""
+    """Decide whether to run Deep Mode"""
     if quick_result.has_critical():
-        return True  # 自动触发
+        return True  # auto-trigger
     elif quick_result.has_warning():
-        if "troubleshoot" in user_query or "慢" in user_query:
-            return True  # 自动触发
+        if "troubleshoot" in user_query or "slow" in user_query:
+            return True  # auto-trigger
         else:
-            return ask_user("发现异常，是否深度分析？")
-    return False  # 不需要 Deep
+            return ask_user("anomaly found, run an in-depth analysis?")
+    return False  # Deep not needed
 ```
 
 ---
 
-## 使用示例
+## Usage Examples
 
-### 示例 1: 用户说"服务器很慢"
+### Example 1: The user says "the server is very slow"
 
 ```
-AI 决策流程:
-1. 在索引中搜索 "慢" → 匹配到场景 1.1
-2. 查看推荐路径:
+AI decision flow:
+1. Search the index for "slow" → matches scenario 1.1
+2. Review the recommended path:
    - Step 1: resource-saturation-quick.md
-3. 运行 Quick Mode (10 秒)
-4. Quick 结果: Memory WARNING
-5. 触发 Deep Mode: resource-saturation-deep-memory.md (20 秒)
-6. Deep 结果: Java 内存泄漏
-7. 生成报告 + 修复建议
+3. Run Quick Mode (10 seconds)
+4. Quick result: Memory WARNING
+5. Trigger Deep Mode: resource-saturation-deep-memory.md (20 seconds)
+6. Deep result: Java memory leak
+7. Generate report + remediation recommendations
 ```
 
-### 示例 2: 用户说"磁盘坏了"
+### Example 2: The user says "the disk is broken"
 
 ```
-AI 决策流程:
-1. 在索引中搜索 "磁盘坏" → 匹配到场景 5.2
-2. 查看推荐路径:
+AI decision flow:
+1. Search the index for "disk broken" → matches scenario 5.2
+2. Review the recommended path:
    - Step 1: disk-smart-quick.md
-3. Quick 结果: SMART CRITICAL
-4. 触发 Deep Mode: disk-smart-deep.md
-5. Deep 结果: Reallocated sectors 100+
-6. 报告: 磁盘即将失效，建议立即备份
+3. Quick result: SMART CRITICAL
+4. Trigger Deep Mode: disk-smart-deep.md
+5. Deep result: Reallocated sectors 100+
+6. Report: the disk is about to fail, back up immediately
 ```
 
-### 示例 3: 用户说"检查系统健康"
+### Example 3: The user says "check system health"
 
 ```
-AI 决策流程:
-1. 在索引中搜索 "健康检查" → 匹配到场景 3.1
-2. 查看推荐路径:
-   - Step 1: 运行 3 个 Quick 检查
+AI decision flow:
+1. Search the index for "health check" → matches scenario 3.1
+2. Review the recommended path:
+   - Step 1: run 3 Quick checks
    - resource-saturation-quick.md
    - system-logs-quick.md
    - disk-smart-quick.md
-3. 全部 OK → 报告正常
-4. 如有异常 → 触发对应 Deep Mode
+3. All OK → report normal
+4. If there are anomalies → trigger the corresponding Deep Mode
 ```
 
 ---
 
-## 统计信息
+## Statistics
 
-### 覆盖范围
-- **总场景数**: 20 大类 + 60+ 细分场景
-- **Commands 覆盖**: 126 个文件
-- **References 覆盖**: 5 个核心诊断模块
-- **预计覆盖率**: 95%+ 常见用户问题
+### Coverage
+- **Total scenarios**: 20 major categories + 60+ detailed scenarios
+- **Commands coverage**: 126 files
+- **References coverage**: 5 core diagnostic modules
+- **Estimated coverage**: 95%+ of common user problems
 
-### 场景分布
-- **高频场景** (⭐⭐⭐⭐⭐): 6 大类，20 个场景 → 80% 用户问题
-- **中频场景** (⭐⭐⭐⭐): 4 大类，15 个场景 → 15% 用户问题
-- **低频场景** (⭐⭐⭐): 10 大类，25+ 场景 → 5% 用户问题
+### Scenario Distribution
+- **High-frequency scenarios** (⭐⭐⭐⭐⭐): 6 categories, 20 scenarios → 80% of user problems
+- **Medium-frequency scenarios** (⭐⭐⭐⭐): 4 categories, 15 scenarios → 15% of user problems
+- **Low-frequency scenarios** (⭐⭐⭐): 10 categories, 25+ scenarios → 5% of user problems
 
-### 预期效果
-- **匹配准确度**: 90%+
-- **首次响应时间**: 10 秒（Quick Mode）
-- **完整诊断时间**: 30-70 秒（Quick + Deep）
-- **Token 节省**: 70-80%
+### Expected Results
+- **Matching accuracy**: 90%+
+- **First response time**: 10 seconds (Quick Mode)
+- **Full diagnostic time**: 30-70 seconds (Quick + Deep)
+- **Token savings**: 70-80%
 
 ---
 
-## 维护指南
+## Maintenance Guide
 
-### 更新频率
-- **高频场景**: 每月检查一次
-- **中低频场景**: 每季度检查一次
-- **新增 Command/Reference**: 立即更新索引
+### Update Frequency
+- **High-frequency scenarios**: check once a month
+- **Medium- and low-frequency scenarios**: check once a quarter
+- **New Command/Reference**: update the index immediately
 
-### 更新流程
-1. 识别新场景或 Command
-2. 分析用户关键词
-3. 确定优先级（⭐⭐⭐⭐⭐ / ⭐⭐⭐⭐ / ⭐⭐⭐）
-4. 添加到对应分类
-5. 更新快速查找表
-6. 测试 AI 匹配准确度
+### Update Process
+1. Identify the new scenario or Command
+2. Analyze user keywords
+3. Determine the priority (⭐⭐⭐⭐⭐ / ⭐⭐⭐⭐ / ⭐⭐⭐)
+4. Add it to the corresponding category
+5. Update the quick lookup table
+6. Test the AI matching accuracy
 
-### 文件结构说明
+### File Structure Notes
 
 ```
 references/
-  00-scenario-index.md          ← AI 路由表（精简版,只含场景匹配信息）
-  resource-saturation-*.md      ← 资源饱和度诊断模块
-  system-logs-*.md              ← 系统日志诊断模块
-  disk-smart-*.md               ← 磁盘 SMART 诊断模块
-  hardware-other.md             ← 硬件健康诊断模块
-  time-sync.md                  ← 时间同步诊断模块
+  00-scenario-index.md          ← AI routing table (condensed, scenario matching info only)
+  resource-saturation-*.md      ← resource saturation diagnostic module
+  system-logs-*.md              ← system log diagnostic module
+  disk-smart-*.md               ← disk SMART diagnostic module
+  hardware-other.md             ← hardware health diagnostic module
+  time-sync.md                  ← time synchronization diagnostic module
 
 docs/
-  architecture.md               ← 系统架构设计文档
-  scenario-decision-guide.md    ← 扩展场景决策指南
-  scenario-index-maintenance.md ← 本文件（维护文档）
+  architecture.md               ← system architecture design document
+  scenario-decision-guide.md    ← extended scenario decision guide
+  scenario-index-maintenance.md ← this file (maintenance document)
 ```
 
 ---
 
-## 版本历史
+## Version History
 
-| 版本 | 日期 | 变更 |
+| Version | Date | Change |
 |------|------|------|
-| 1.0 | 2026-03-24 | 初始版本，完整场景索引 |
-| 2.0 | 2026-03-24 | 精简为 AI 路由表（~420 行），人类维护文档独立至 docs/ |
+| 1.0 | 2026-03-24 | Initial version, complete scenario index |
+| 2.0 | 2026-03-24 | Condensed into the AI routing table (~420 lines), human maintenance doc split out to docs/ |
 
 ---
 
-**维护者**: AI Assistant
-**状态**: 生产就绪
+**Maintainer**: AI Assistant
+**Status**: production ready

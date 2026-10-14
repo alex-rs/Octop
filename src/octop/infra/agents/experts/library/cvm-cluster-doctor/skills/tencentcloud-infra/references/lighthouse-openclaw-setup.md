@@ -1,23 +1,23 @@
-# 在腾讯云 Lighthouse 上部署 OpenClaw（clawdbot 镜像）
+# Deploying OpenClaw on Tencent Cloud Lighthouse (clawdbot image)
 
-你对腾讯云 Lighthouse 实例创建、镜像查询、密码重置相关 API 的参数可能已过时。
-**执行前请先用 `tccli lighthouse <操作> help` 确认最新参数。**
+Your knowledge of the parameters for the Tencent Cloud Lighthouse instance creation, image query, and password reset APIs may be outdated.
+**Before executing, confirm the latest parameters with `tccli lighthouse <operation> help` first.**
 
-> 通过 tccli 命令行在腾讯云轻量应用服务器（Lighthouse）上创建 OpenClaw 实例的完整流程。
+> The complete flow for creating an OpenClaw instance on a Tencent Cloud Lightweight Application Server (Lighthouse) via the tccli command line.
 
 ---
 
-## 前置条件
+## Prerequisites
 
-### 1. 安装 tccli
+### 1. Install tccli
 
 ```bash
 python3 -m pip install tccli
 ```
 
-### 2. 配置腾讯云凭证
+### 2. Configure Tencent Cloud credentials
 
-前往 [腾讯云 API 密钥控制台](https://console.cloud.tencent.com/cam/capi) 获取 SecretId 和 SecretKey。
+Go to the [Tencent Cloud API key console](https://console.cloud.tencent.com/cam/capi) to obtain the SecretId and SecretKey.
 
 ```bash
 tccli configure set secretId <SecretId>
@@ -26,7 +26,7 @@ tccli configure set region <region>
 tccli configure set output json
 ```
 
-验证凭证：
+Verify the credentials:
 
 ```bash
 tccli sts GetCallerIdentity
@@ -34,27 +34,27 @@ tccli sts GetCallerIdentity
 
 ---
 
-## 第一步：查询 OpenClaw 镜像
+## Step 1: Query OpenClaw images
 
 ```bash
 tccli lighthouse DescribeBlueprints --region <region>
 ```
 
-通过 python/jq 过滤包含 `openclaw`、`claw`、`clawdbot` 等关键词的镜像，获取 BlueprintId。
+Filter for the images whose names contain keywords such as `openclaw`, `claw`, or `clawdbot` with python/jq, then take the BlueprintId.
 
 ---
 
-## 第二步：查询套餐
+## Step 2: Query bundles
 
 ```bash
 tccli lighthouse DescribeBundles --region <region>
 ```
 
-按需筛选 CPU/内存规格（如 4c8g），获取 BundleId。
+Filter by the CPU/memory spec you need (for example 4c8g), then take the BundleId.
 
 ---
 
-## 第三步：创建实例
+## Step 3: Create the instance
 
 ```bash
 tccli lighthouse CreateInstances \
@@ -67,13 +67,13 @@ tccli lighthouse CreateInstances \
   --LoginConfiguration '{"AutoGeneratePassword":"YES"}'
 ```
 
-> ⚠️ `--InstanceChargePrepaid` 为必填参数，缺少会直接报错。
+> ⚠️ `--InstanceChargePrepaid` is a required parameter; omitting it fails immediately.
 
 ---
 
-## 第四步：等待实例就绪
+## Step 4: Wait for the instance to be ready
 
-轮询实例状态，直到变为 `RUNNING` 并获得公网 IP（通常约 30–60 秒）：
+Poll the instance status until it becomes `RUNNING` and obtains a public IP (usually about 30-60 seconds):
 
 ```bash
 tccli lighthouse DescribeInstances \
@@ -81,13 +81,13 @@ tccli lighthouse DescribeInstances \
   --InstanceIds '["<instance-id>"]'
 ```
 
-状态流转：`PENDING` → `RUNNING`
+State transition: `PENDING` → `RUNNING`
 
 ---
 
-## 第五步：设置 root 密码
+## Step 5: Set the root password
 
-`AutoGeneratePassword` 模式下无法直接获取初始密码，需主动设置：
+In `AutoGeneratePassword` mode the initial password cannot be retrieved directly, so set one yourself:
 
 ```bash
 tccli lighthouse ResetInstancesPassword \
@@ -99,56 +99,56 @@ tccli lighthouse ResetInstancesPassword \
 
 ---
 
-## SSH 登录
+## SSH login
 
 ```bash
 ssh root@<ip>
 ```
 
-> 💡 首次登录后建议立即修改 root 密码：`passwd root`
+> 💡 After the first login, change the root password right away: `passwd root`
 
 ---
 
-## 常用运维命令
+## Common operations commands
 
 ```bash
-# 查看实例状态
+# Check instance status
 tccli lighthouse DescribeInstances --region <region> --InstanceIds '["<instance-id>"]'
 
-# 重启
+# Reboot
 tccli lighthouse RebootInstances --region <region> --InstanceIds '["<instance-id>"]'
 
-# 关机
+# Shut down
 tccli lighthouse StopInstances --region <region> --InstanceIds '["<instance-id>"]'
 
-# 开机
+# Start up
 tccli lighthouse StartInstances --region <region> --InstanceIds '["<instance-id>"]'
 
-# 查看防火墙规则
+# List firewall rules
 tccli lighthouse DescribeFirewallRules --region <region> --InstanceId "<instance-id>"
 
-# 续费
+# Renew
 tccli lighthouse RenewInstances --region <region> --InstanceIds '["<instance-id>"]' \
   --InstanceChargePrepaid '{"Period":<months>,"RenewFlag":"NOTIFY_AND_MANUAL_RENEW"}'
 ```
 
 ---
 
-## 注意事项
+## Notes
 
-1. **凭证安全**：SecretKey 不要出现在日志或代码注释中，建议使用 `tencent-cloud-tools` 的 keystore 加密存储
-2. **高危操作**：Stop/Terminate 等操作建议先用 `--dry-run` 预演
-3. **密码修改**：首次 SSH 登录后立即修改 root 密码
-4. **续费提醒**：注意实例到期时间，提前续费或设置自动续费
+1. **Credential safety**: the SecretKey must never appear in logs or code comments; prefer encrypted storage in the `tencent-cloud-tools` keystore
+2. **High-risk operations**: for Stop/Terminate and similar actions, rehearse with `--dry-run` first
+3. **Password change**: change the root password immediately after the first SSH login
+4. **Renewal reminder**: watch the instance expiry date and renew ahead of time or enable auto-renewal
 
 ---
 
-## 何时使用
+## When to use
 
-| 场景 | 建议 |
+| Scenario | Recommendation |
 |------|------|
-| 用户要部署 OpenClaw / clawdbot | 按本文档完整流程执行 |
-| 用户要在 Lighthouse 上部署其他应用 | 不使用本文档，用 references/lighthouse-app-deploy.md |
-| 用户要建站（WordPress/宝塔） | 不使用本文档，用 references/lighthouse-website-setup.md |
-| 用户要管理已有 Lighthouse 实例 | 参考本文档"常用运维命令"部分 |
-| 用户要挂载云硬盘到实例 | 不使用本文档，用 references/cbs-bindto-cvm.md |
+| The user wants to deploy OpenClaw / clawdbot | Follow the complete flow in this document |
+| The user wants to deploy other applications on Lighthouse | Do not use this document; use references/lighthouse-app-deploy.md |
+| The user wants to build a website (WordPress/BT Panel) | Do not use this document; use references/lighthouse-website-setup.md |
+| The user wants to manage an existing Lighthouse instance | See the "Common operations commands" section of this document |
+| The user wants to attach a cloud disk to an instance | Do not use this document; use references/cbs-bindto-cvm.md |

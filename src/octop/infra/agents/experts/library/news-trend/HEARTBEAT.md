@@ -1,38 +1,38 @@
 ---
-summary: "热点记者心跳任务清单"
+summary: "Hotspot Reporter heartbeat task list"
 read_when:
-  - 心跳周期触发
-  - 手动引导工作区
+  - Heartbeat cycle triggers
+  - Manually bootstrap the workspace
 ---
 
-# 心跳任务清单
+# Heartbeat Task List
 
-<!-- 空文件 = 不触发心跳 API 调用。想让 agent 定期巡检，就在下面加条目。 -->
-<!-- 保持精简。每一行都在烧 token。 -->
+<!-- Empty file = no heartbeat API call is triggered. If you want the agent to patrol periodically, add entries below. -->
+<!-- Keep it lean. Every line burns tokens. -->
 
-## 定期巡检
+## Periodic Patrol
 
-| 任务 | 频率 | 说明 |
-|------|------|------|
-| 检查 USERS.md 推送设置 | 每次心跳 | 有启用推送的用户 → 按其设定的间隔和时间执行热点播报 |
-| 刷新核心话题热点 | 每 4 小时 | 读取 USERS.md 核心话题，调用 60s API 快速扫描是否有重大突发 |
-| 金融数据快照 | 交易日 09:30、15:00 | 调用 `/v2/gold-price` + `/v2/exchange-rate`，记录到 `logs/` |
-| DailyHotApi 可用性探测 | 每日 1 次 | `node scripts/fetch_dailyhot.mjs weibo` 验证模块正常，失败则记日志 |
+| Task | Frequency | Description |
+|------|-----------|-------------|
+| Check USERS.md push settings | Every heartbeat | Users with push enabled → run hotspot briefings at their configured interval and time |
+| Refresh core-topic hotspots | Every 4 hours | Read the core topics in USERS.md, call the 60s API to quickly scan for major breaking events |
+| Financial data snapshot | Trading days 09:30, 15:00 | Call `/v2/gold-price` + `/v2/exchange-rate`, record to `logs/` |
+| DailyHotApi availability probe | Once per day | `node scripts/fetch_dailyhot.mjs weibo` to verify the module works; log it if it fails |
 
-## 触发规则
+## Trigger Rules
 
 ```
-心跳触发 → 读取本文件
-  → 逐条检查任务是否到达执行时间
-    → 是 → 执行任务，结果写入 logs/
-    → 否 → 跳过
-  → 检查 USERS.md 推送设置
-    → 已启用且到达推送时间 → 执行定时播报
-    → 未启用或未到时间 → 跳过
+Heartbeat triggers → read this file
+  → check each task in turn to see whether its execution time has arrived
+    → yes → run the task, write the results to logs/
+    → no → skip
+  → check USERS.md push settings
+    → enabled and push time reached → run the scheduled briefing
+    → not enabled or time not reached → skip
 ```
 
-## 注意事项
+## Notes
 
-- 心跳任务只做轻量检查和数据采集，不主动向用户推送（除非推送设置已启用）
-- 每次心跳消耗的 token 应尽可能少，避免在巡检中触发深度分析
-- 突发事件检测：如果核心话题相关热度突增（跨 3+ 平台同时出现），记录到日志并在下次用户对话时主动提醒
+- Heartbeat tasks only do lightweight checks and data collection; they do not push to the user proactively (unless push settings are enabled)
+- Each heartbeat should consume as few tokens as possible; avoid triggering deep analysis during a patrol
+- Breaking-event detection: if heat around a core topic spikes (appearing on 3+ platforms at the same time), log it and proactively mention it in the next user conversation

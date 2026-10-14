@@ -1,29 +1,29 @@
 # Wiki Index
 
-> 完整内容目录。每次 ingest、新建页面、改名或归档后更新。
+> The complete content directory. Update after every ingest, new page, rename, or archive.
 
 ## Overview
 
-- [Knowledge Base Overview](overview.md) — 范围、目标和当前知识版图。
+- [Knowledge Base Overview](overview.md) — scope, goals, and the current knowledge landscape.
 
 ## Topics and Concepts
 
-- 暂无
+- None yet
 
 ## Entities
 
-- 暂无
+- None yet
 
 ## Comparisons and Syntheses
 
-- 暂无
+- None yet
 
 ## Source Summaries
 
-- 暂无
+- None yet
 
 ## Index Rules
 
-- 每个页面只列一次，并附一行用途说明。
-- 页面之间使用相对 Markdown 链接；页面正文引用 ../raw/ 中的具体来源。
-- 已废弃页面移动到归档区前，先修复入链并更新本索引。
+- List each page once, with a one-line note on what it is for.
+- Use relative Markdown links between pages; page bodies cite specific sources under ../raw/.
+- Before moving a deprecated page to the archive area, fix inbound links and update this index.

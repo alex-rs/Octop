@@ -1,32 +1,32 @@
-# 集群节点发现
+# Cluster Node Discovery
 
-> 本文件指导 Agent 如何发现、验证和持久化集群节点列表。
-> 所有云 API 调用均通过 **tencentcloud-infra** 技能完成。
-
----
-
-## 前置检查：OAuth 凭据有效性
-
-每次集群操作前，**必须先验证凭据**（OAuth Token 2小时过期）。
-
-执行方式见 **references/skill-collaboration-tencentcloud.md — "OAuth 凭据检查"协议**。
-
-- 凭据有效 → 继续执行
-- 凭据过期或缺失 → 引导用户刷新后再继续
+> This document guides the Agent on how to discover, validate, and persist the cluster node list.
+> All cloud API calls are made through the **tencentcloud-infra** skill.
 
 ---
 
-## 发现方法（优先级从高到低）
+## Prerequisite Check: OAuth Credential Validity
 
-### 方法 A：MEMORY.md 缓存（最快，优先使用）
+Before every cluster operation, you **must first validate the credentials** (OAuth Token expires after 2 hours).
 
-1. 读取 MEMORY.md `cluster_config.last_discovery` 时间戳
-2. 若距今 **< 1 小时**，直接使用 `cluster_config.known_nodes`，跳过 API 调用
-3. 若距今 ≥ 1 小时，执行方法 B/C/D 重新发现并更新缓存
+For how to do this, see **references/skill-collaboration-tencentcloud.md — the "OAuth Credential Check" protocol**.
 
-### 方法 B：标签过滤（推荐，适合长期稳定集群）
+- Credentials valid → continue
+- Credentials expired or missing → guide the user to refresh them, then continue
 
-调用 tencentcloud-infra 技能，执行：
+---
+
+## Discovery Methods (highest to lowest priority)
+
+### Method A: MEMORY.md Cache (fastest, use first)
+
+1. Read the MEMORY.md `cluster_config.last_discovery` timestamp
+2. If it is **< 1 hour** old, use `cluster_config.known_nodes` directly and skip the API calls
+3. If it is ≥ 1 hour old, run methods B/C/D to rediscover and update the cache
+
+### Method B: Tag Filtering (recommended, suited to long-lived stable clusters)
+
+Call the tencentcloud-infra skill and run:
 
 ```bash
 tccli cvm DescribeInstances \
@@ -35,97 +35,97 @@ tccli cvm DescribeInstances \
   --Limit 100
 ```
 
-从响应提取每个实例的：
-- `InstanceId`：实例唯一标识（如 `ins-abc123`）
-- `InstanceName`：实例名称
-- `PrivateIpAddresses[0]`：内网 IP
-- `PublicIpAddresses[0]`：外网 IP（可能为空）
-- `InstanceState`：当前状态（RUNNING/STOPPED/SHUTDOWN 等）
-- `Placement.Zone`：可用区
+Extract the following from the response for each instance:
+- `InstanceId`: unique instance identifier (e.g. `ins-abc123`)
+- `InstanceName`: instance name
+- `PrivateIpAddresses[0]`: private IP
+- `PublicIpAddresses[0]`: public IP (may be empty)
+- `InstanceState`: current state (RUNNING/STOPPED/SHUTDOWN, etc.)
+- `Placement.Zone`: availability zone
 
-**多区域处理：**
-若 MEMORY.md `cluster_config.additional_regions` 非空，对每个区域分别调用一次 DescribeInstances，合并结果。
+**Multi-region handling:**
+If MEMORY.md `cluster_config.additional_regions` is non-empty, call DescribeInstances once per region and merge the results.
 
-### 方法 C：指定实例 ID 列表（精确控制）
+### Method C: Explicit Instance ID List (precise control)
 
 ```bash
 tccli cvm DescribeInstances \
   --InstanceIds '["ins-xxx","ins-yyy","ins-zzz"]'
 ```
 
-### 方法 D：全量发现（账户级，谨慎使用）
+### Method D: Full Discovery (account-wide, use with caution)
 
 ```bash
 tccli cvm DescribeInstances --region <region> --Limit 100
 ```
 
-⚠️ 大账户可能有大量实例，请确认用户意图后再使用全量模式。
-超过 100 个实例时，需分页（递增 Offset）。
+⚠️ A large account may have many instances; confirm the user's intent before using full mode.
+When there are more than 100 instances, paginate (increment Offset).
 
 ---
 
-## TAT Agent 可用性确认
+## TAT Agent Availability Check
 
-发现节点后，验证 TAT 自动化助手是否可用（仅限 CVM 实例，Lighthouse 无 TAT）：
+After discovering nodes, verify whether the TAT automation assistant is available (CVM instances only; Lighthouse has no TAT):
 
 ```bash
 tccli tat DescribeAutomationAgentStatus \
   --InstanceIds '["ins-xxx","ins-yyy"]'
 ```
 
-- 状态 `Online` → TAT 可用，执行完整 3 层诊断
-- 状态 `Offline` 或 `Installing` → **降级模式**：仅使用云端指标（Layer 1 + Layer 2A），
-  在报告中标注 `⚠️ OS 快照不可用（TAT Agent 离线）`
+- Status `Online` → TAT available, run the full 3-layer diagnosis
+- Status `Offline` or `Installing` → **degraded mode**: use cloud metrics only (Layer 1 + Layer 2A),
+  and mark the report with `⚠️ OS snapshot unavailable (TAT Agent offline)`
 
 ---
 
-## 用户引导流程（首次配置集群）
+## User Guidance Flow (first-time cluster setup)
 
-若 MEMORY.md 无集群配置，引导用户配置：
-
-```
-我需要了解要管理哪些 CVM 实例。请选择配置方式：
-
-1. 标签过滤（推荐）：按服务标签批量选择
-   示例："Service=order-api" 的所有实例
-
-2. 指定实例 ID：直接输入 ins-xxx,ins-yyy
-
-3. 全量（当前区域所有实例）
-
-请告诉我选哪种方式，以及相关信息（标签键值 或 实例 ID 列表）？
-```
-
-收到回复后，执行对应发现方法，然后**展示发现结果让用户确认**：
+If MEMORY.md has no cluster configuration, guide the user through setup:
 
 ```
-发现以下节点（共 N 台）：
+I need to know which CVM instances to manage. Please choose a configuration method:
+
+1. Tag filtering (recommended): select in bulk by service tag
+   Example: all instances with "Service=order-api"
+
+2. Explicit instance IDs: type ins-xxx,ins-yyy directly
+
+3. Full (all instances in the current region)
+
+Please tell me which method you choose, plus the relevant information (tag key/value or instance ID list)?
+```
+
+After receiving the reply, run the corresponding discovery method, then **show the discovery result for the user to confirm**:
+
+```
+Discovered the following nodes (N in total):
 - ins-abc123 (order-api-1) | 10.0.0.1 | RUNNING
 - ins-def456 (order-api-2) | 10.0.0.2 | RUNNING
 - ins-ghi789 (order-api-3) | 10.0.0.3 | STOPPED ⚠️
 
-确认保存此集群配置？（后续检查将使用此列表，1小时内免重新发现）
+Save this cluster configuration? (Subsequent checks will use this list; no re-discovery needed within 1 hour)
 ```
 
 ---
 
-## 写入 MEMORY.md
+## Writing to MEMORY.md
 
-用户确认后，将以下内容写入 MEMORY.md：
+After the user confirms, write the following into MEMORY.md:
 
 ```markdown
-## 集群配置 (cluster_config)
+## Cluster Configuration (cluster_config)
 
 cluster:
-  name: "<用户提供的集群名称，或默认 prod-<region>>"
+  name: "<cluster name provided by the user, or the default prod-<region>>"
   region: <region>
   additional_regions: []
   instance_filter:
     method: tag                    # tag | id_list | all
-    tag_key: <标签键>
-    tag_value: <标签值>
-  instance_ids: []                 # method=id_list 时填写
-  last_discovery: "<ISO 8601 时间戳>"
+    tag_key: <tag key>
+    tag_value: <tag value>
+  instance_ids: []                 # fill in when method=id_list
+  last_discovery: "<ISO 8601 timestamp>"
   known_nodes:
     - id: ins-abc123
       name: order-api-1
@@ -146,24 +146,24 @@ cluster:
 
 ---
 
-## Lighthouse 实例特殊处理
+## Special Handling for Lighthouse Instances
 
-若发现实例是 Lighthouse（轻量应用服务器），需使用不同命令：
+If a discovered instance is a Lighthouse (lightweight application server), a different command is required:
 
 ```bash
-# Lighthouse 用 tccli lighthouse，不是 tccli cvm
+# Lighthouse uses tccli lighthouse, not tccli cvm
 tccli lighthouse DescribeInstances --region <region>
 ```
 
-Lighthouse 实例**无 TAT 支持**，只能使用云端监控指标（Layer 2A 降级模式）。
+Lighthouse instances have **no TAT support**, so only cloud monitoring metrics can be used (Layer 2A degraded mode).
 
 ---
 
-## 错误处理
+## Error Handling
 
-| 错误情况 | 处理方式 |
+| Error case | Handling |
 |---------|---------|
-| DescribeInstances 返回空列表 | 提示"该区域/标签未找到实例，请确认标签是否正确" |
-| API 调用失败（权限不足） | 提示"请确认 tccli 凭据有 QcloudCVMReadOnlyAccess 权限" |
-| OAuth 过期 | 中断当前流程，引导用户刷新 OAuth Token |
-| 实例超过 100 台 | 分页拉取，每次 Offset += 100，直到全部获取 |
+| DescribeInstances returns an empty list | Report "No instances found for this region/tag; please confirm the tag is correct" |
+| API call fails (insufficient permissions) | Report "Please confirm the tccli credentials have the QcloudCVMReadOnlyAccess permission" |
+| OAuth expired | Abort the current flow and guide the user to refresh the OAuth Token |
+| More than 100 instances | Fetch in pages, incrementing Offset by 100 each time, until all are retrieved |

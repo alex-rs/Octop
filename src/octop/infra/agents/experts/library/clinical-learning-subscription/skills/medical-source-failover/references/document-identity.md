@@ -26,7 +26,7 @@ correction_or_withdrawal_status
 last_verified_at
 ```
 
-Normalize whitespace, full-width punctuation, and harmless typography only. Do not normalize away edition numbers, population qualifiers, disease stage, part numbers, or words such as “草案”, “试行”, “解读”, “患者版”, and “更新版”.
+Normalize whitespace, full-width punctuation, and harmless typography only. Do not normalize away edition numbers, population qualifiers, disease stage, part numbers, or words such as “draft”, “trial”, “interpretation”, “patient version”, and “updated version”.
 
 ## Verification grades
 
@@ -65,9 +65,9 @@ Insufficient copies remain discovery aids only.
 
 Before relying on a clinical or regulatory document, search the exact title and identifier with:
 
-- `更新`, `新版`, `修订`;
-- `更正`, `勘误`;
-- `撤回`, `撤销`, `废止`, `替代`;
+- `update`, `new edition`, `revision`;
+- `correction`, `errata`;
+- `withdrawal`, `revocation`, `repeal`, `replacement`;
 - the issuing organization's current document list.
 
 Keep drafts, registrations, public-comment versions, final versions, interpretations, patient versions, and professional versions as distinct identities.
