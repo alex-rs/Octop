@@ -104,6 +104,57 @@ def from_expert(expert_id: str, name: str | None, as_user: str | None) -> None:
     click.echo(_json.dumps({"agent_id": row.agent_id, "name": row.name}, indent=2))
 
 
+@agent.command("reapply-expert")
+@click.argument("agent_id")
+@click.option(
+    "--mode",
+    "mode",
+    type=click.Choice(["translated", "all"]),
+    default="translated",
+    help="translated re-seeds only files whose workspace copy still holds Chinese.",
+)
+@click.option("--dry-run", "dry_run", is_flag=True, default=False)
+def reapply_expert(agent_id: str, mode: str, dry_run: bool) -> None:
+    """Re-seed an agent's workspace from its expert template (embedded server)."""
+    import asyncio
+
+    from octop.cli.repl.embedded_session import embedded_runtime
+    from octop.cli.support.ctx import json_output_enabled
+
+    async def _run() -> Any:
+        async with embedded_runtime() as server:
+            assert server.app_runtime is not None
+            return await server.app_runtime.agent_registry.reapply_expert_template(
+                agent_id, mode=mode, dry_run=dry_run
+            )
+
+    try:
+        result = asyncio.run(_run())
+    except OctopError as exc:
+        fail_octop(exc)
+    if json_output_enabled():
+        click.echo(
+            _json.dumps(
+                {
+                    "template_name": result.template_name,
+                    "expert_id": result.expert_id,
+                    "mode": result.mode,
+                    "dry_run": result.dry_run,
+                    "changed": list(result.changed),
+                    "skipped": list(result.skipped),
+                },
+                indent=2,
+            )
+        )
+        return
+    verb = "would change" if dry_run else "updated"
+    click.echo(f"expert template {result.template_name!r}: {len(result.changed)} file(s) {verb}")
+    for rel in result.changed:
+        click.echo(f"  {rel}")
+    if dry_run:
+        click.echo("dry run: nothing was written")
+
+
 @agent.command("list")
 @click.option("--user", "as_user", default=None)
 def list_agents(as_user: str | None) -> None:

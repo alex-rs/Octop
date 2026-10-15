@@ -351,6 +351,22 @@ def validate_custom_agent_id(agent_id: str) -> str:
 # well-known URL/route segments.
 _RESERVED_AGENT_IDS = frozenset({"api", "admin", "agents", "experts"})
 
+# A workspace copy still holding CJK where the library copy dropped it is treated
+# as a stale localized seed — the only signal separating it from an English user edit.
+_CJK_IDEOGRAPH_RE = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff]")
+
+
+@dataclass(frozen=True)
+class ExpertReapplyResult:
+    """Plan/outcome of :meth:`AgentManager.reapply_expert_template`."""
+
+    template_name: str
+    expert_id: str
+    mode: str
+    dry_run: bool
+    changed: tuple[str, ...]
+    skipped: tuple[str, ...]
+
 
 @dataclass
 class AgentCreateSpec:
@@ -3234,6 +3250,102 @@ class AgentManager:
             row.agent_id,
             template_name,
             count,
+        )
+
+    async def reapply_expert_template(
+        self, agent_id: str, *, mode: str = "translated", dry_run: bool = False
+    ) -> ExpertReapplyResult:
+        """Explicitly re-seed an existing agent's workspace from its expert template.
+
+        ``mode="translated"`` restores only files whose workspace copy still holds
+        CJK text the library copy dropped, so user-authored English edits survive;
+        ``mode="all"`` rewrites every template file. ``dry_run`` returns the plan
+        without touching the workspace.
+        """
+        from octop.infra.agents.experts.catalog import (  # noqa: PLC0415
+            MANIFEST_FILENAME,
+            WORKSPACE_MANIFEST_PATH,
+            discover_seed_paths,
+        )
+
+        if mode not in ("translated", "all"):
+            raise OctopError(ErrorCode.WORKSPACE_OP_UNSUPPORTED, f"unknown mode {mode!r}")
+
+        row = self._repos.agent_repo.get(agent_id)
+        if row is None:
+            raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+        if self._expert_catalog is None:
+            raise OctopError(ErrorCode.WORKSPACE_OP_UNSUPPORTED, "expert catalog unavailable")
+        template_name = row.template_name
+        if not template_name:
+            raise OctopError(ErrorCode.NOT_FOUND, f"agent {agent_id!r} has no expert template")
+        expert = self._expert_catalog.get(template_name)
+        if expert is None:
+            raise OctopError(ErrorCode.NOT_FOUND, f"expert {template_name!r} not found")
+        expert_dir = self._expert_catalog.expert_dir(template_name)
+
+        if self._spec_is_opensandbox(self._backend_spec_for_row(row)):
+            workspace = self._running_workspace_or_raise(row)
+        else:
+            workspace = self._backend_workspace_for_row(row)
+
+        entries: list[tuple[str, Path]] = [
+            (rel.lstrip("/"), expert_dir / rel) for rel in discover_seed_paths(expert_dir)
+        ]
+        manifest_path = expert_dir / MANIFEST_FILENAME
+        if manifest_path.is_file():
+            entries.append((WORKSPACE_MANIFEST_PATH, manifest_path))
+
+        if mode == "all":
+            changed_list = [rel for rel, _ in entries]
+        else:
+            changed_list = []
+            for rel, fpath in entries:
+                if await self._expert_reapply_changed(workspace, rel, fpath):
+                    changed_list.append(rel)
+        changed = tuple(changed_list)
+
+        changed_set = set(changed)
+        skipped = tuple(sorted(rel for rel, _ in entries if rel not in changed_set))
+
+        if not dry_run:
+            pairs = [(rel, fpath.read_bytes()) for rel, fpath in entries if rel in changed_set]
+            if pairs:
+                await workspace.aupload_many(pairs)
+
+        return ExpertReapplyResult(
+            template_name=template_name,
+            expert_id=expert.summary.id,
+            mode=mode,
+            dry_run=dry_run,
+            changed=changed,
+            skipped=skipped,
+        )
+
+    def _running_workspace_or_raise(self, row: AgentRow) -> Any:
+        """Workspace of a running OpenSandbox agent; raise when it is not up."""
+        if self._harness_manager is None:
+            raise OctopError(
+                ErrorCode.WORKSPACE_OP_UNSUPPORTED,
+                "a running agent is required to re-apply this expert template",
+            )
+        try:
+            return self._harness_manager.get_agent(row.agent_id).agent.workspace
+        except KeyError as exc:
+            raise OctopError(
+                ErrorCode.WORKSPACE_OP_UNSUPPORTED,
+                "a running agent is required to re-apply this expert template",
+            ) from exc
+
+    @staticmethod
+    async def _expert_reapply_changed(workspace: Any, rel: str, library_file: Path) -> bool:
+        """True when *rel* should be re-seeded under ``mode="translated"``."""
+        workspace_text = await workspace.aread_text(rel)
+        if workspace_text is None:
+            return True
+        library_text = library_file.read_text(encoding="utf-8", errors="replace")
+        return bool(_CJK_IDEOGRAPH_RE.search(workspace_text)) and not bool(
+            _CJK_IDEOGRAPH_RE.search(library_text)
         )
 
     # ------------------------------------------------------------------

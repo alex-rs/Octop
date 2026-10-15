@@ -8,6 +8,7 @@ from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, File, Query, UploadFile
 from fastapi.responses import Response
+from pydantic import BaseModel, Field
 
 from octop.api.common.agent import assert_agent_access_row, assert_agent_owner
 from octop.api.common.agent_runtime import AgentRuntimeFields, runtime_field_updates
@@ -76,6 +77,21 @@ class AgentPatchBody(AgentRuntimeFields):
     skill_package_ids: list[str] | None = None
     knowledge_base_ids: list[str] | None = None
     mcp_servers: list[str] | None = None
+
+
+class ExpertReapplyBody(BaseModel):
+    """Request body for re-applying an agent's expert template."""
+
+    mode: Literal["translated", "all"] = Field(
+        "translated",
+        description=(
+            "'translated' re-seeds only files whose workspace copy still holds Chinese; "
+            "'all' rewrites every template file."
+        ),
+    )
+    dry_run: bool = Field(
+        False, description="Report the files that would change without writing them."
+    )
 
 
 def _attach_unread_counts(
@@ -456,6 +472,41 @@ async def delete_agent(
         raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
     _assert_agent_owner(row, user)
     await server.app_runtime.agent_registry.delete(agent_id)
+
+
+@router.post(
+    "/{agent_id}/expert/reapply",
+    status_code=200,
+    summary="Re-apply the agent's expert template",
+)
+async def reapply_expert_template(
+    agent_id: str,
+    body: ExpertReapplyBody,
+    user: Any = Depends(current_user),
+    server: Any = Depends(get_server),
+) -> dict[str, Any]:
+    """Re-seed this agent's workspace from its bundled expert template files.
+
+    ``mode="translated"`` (the default) only replaces files whose workspace copy
+    still holds Chinese text, so a persona the user has rewritten in English is
+    preserved. ``dry_run`` reports the plan without writing anything. Owner or admin.
+    """
+    assert server.app_runtime is not None
+    row = server.app_runtime.agent_registry.get_row(agent_id)
+    if row is None:
+        raise OctopError(ErrorCode.AGENT_NOT_FOUND, f"agent {agent_id!r} not found")
+    _assert_agent_owner(row, user)
+    result = await server.app_runtime.agent_registry.reapply_expert_template(
+        agent_id, mode=body.mode, dry_run=body.dry_run
+    )
+    return {
+        "template_name": result.template_name,
+        "expert_id": result.expert_id,
+        "mode": result.mode,
+        "dry_run": result.dry_run,
+        "changed": list(result.changed),
+        "skipped": list(result.skipped),
+    }
 
 
 @router.post("/{agent_id}/avatar", status_code=201, summary="Upload expert avatar")

@@ -2083,6 +2083,130 @@ async def test_seed_expert_template_writes_workspace_files(
     assert manifest["welcome_message"]["zh"] == "欢迎"
 
 
+def _install_demo_expert(manager: AgentManager, expert_dir: Path, *, files: list[str]) -> None:
+    from octop.infra.agents.experts.catalog import Expert, ExpertCatalog, ExpertSummary
+
+    catalog = MagicMock(spec=ExpertCatalog)
+    catalog.get = MagicMock(
+        return_value=Expert(
+            summary=ExpertSummary(
+                id="demo",
+                label_zh="演示",
+                label_en="Demo",
+                description_zh="",
+                description_en="",
+            ),
+            files=files,
+            prompt_files=[name for name in files if name == "SOUL.md"],
+        )
+    )
+    catalog.expert_dir = MagicMock(return_value=expert_dir)
+    manager._expert_catalog = catalog
+
+
+@pytest.mark.asyncio
+async def test_reapply_expert_template_translated_replaces_stale_seed(
+    manager: AgentManager, tmp_path: Path
+) -> None:
+    expert_dir = tmp_path / "demo"
+    expert_dir.mkdir()
+    (expert_dir / "SOUL.md").write_text("# Soul\nEnglish persona", encoding="utf-8")
+    (expert_dir / "AGENTS.md").write_text("# Agents\nEnglish notes", encoding="utf-8")
+    _install_demo_expert(manager, expert_dir, files=["SOUL.md", "AGENTS.md"])
+
+    manager._repos.agent_repo.create(
+        agent_id="AGT1", user_id=None, name="demo-bot", template_name="demo"
+    )
+    ws = manager._paths.ensure_agent_workspace("AGT1")
+    (ws / "SOUL.md").write_text("# 灵魂\n旧的模板内容", encoding="utf-8")
+    (ws / "AGENTS.md").write_text("# Agents\nMy own English notes", encoding="utf-8")
+
+    result = await manager.reapply_expert_template("AGT1", mode="translated")
+
+    assert result.template_name == "demo"
+    assert result.expert_id == "demo"
+    assert result.mode == "translated"
+    assert result.dry_run is False
+    assert result.changed == ("SOUL.md",)
+    assert result.skipped == ("AGENTS.md",)
+    assert (ws / "SOUL.md").read_text(encoding="utf-8") == "# Soul\nEnglish persona"
+    assert (ws / "AGENTS.md").read_text(encoding="utf-8") == "# Agents\nMy own English notes"
+
+
+@pytest.mark.asyncio
+async def test_reapply_expert_template_all_rewrites_every_file(
+    manager: AgentManager, tmp_path: Path
+) -> None:
+    expert_dir = tmp_path / "demo"
+    expert_dir.mkdir()
+    (expert_dir / "SOUL.md").write_text("# Soul\nEnglish persona", encoding="utf-8")
+    (expert_dir / "AGENTS.md").write_text("# Agents\nEnglish notes", encoding="utf-8")
+    _install_demo_expert(manager, expert_dir, files=["SOUL.md", "AGENTS.md"])
+
+    manager._repos.agent_repo.create(
+        agent_id="AGT1", user_id=None, name="demo-bot", template_name="demo"
+    )
+    ws = manager._paths.ensure_agent_workspace("AGT1")
+    (ws / "SOUL.md").write_text("# 灵魂\n旧的模板内容", encoding="utf-8")
+    (ws / "AGENTS.md").write_text("# Agents\nMy own English notes", encoding="utf-8")
+
+    result = await manager.reapply_expert_template("AGT1", mode="all")
+
+    assert result.changed == ("AGENTS.md", "SOUL.md")
+    assert result.skipped == ()
+    assert (ws / "SOUL.md").read_text(encoding="utf-8") == "# Soul\nEnglish persona"
+    assert (ws / "AGENTS.md").read_text(encoding="utf-8") == "# Agents\nEnglish notes"
+
+
+@pytest.mark.asyncio
+async def test_reapply_expert_template_dry_run_writes_nothing(
+    manager: AgentManager, tmp_path: Path
+) -> None:
+    expert_dir = tmp_path / "demo"
+    expert_dir.mkdir()
+    (expert_dir / "SOUL.md").write_text("# Soul\nEnglish persona", encoding="utf-8")
+    _install_demo_expert(manager, expert_dir, files=["SOUL.md"])
+
+    manager._repos.agent_repo.create(
+        agent_id="AGT1", user_id=None, name="demo-bot", template_name="demo"
+    )
+    ws = manager._paths.ensure_agent_workspace("AGT1")
+    (ws / "SOUL.md").write_text("# 灵魂\n旧的模板内容", encoding="utf-8")
+
+    result = await manager.reapply_expert_template("AGT1", mode="translated", dry_run=True)
+
+    assert result.dry_run is True
+    assert result.changed == ("SOUL.md",)
+    assert (ws / "SOUL.md").read_text(encoding="utf-8") == "# 灵魂\n旧的模板内容"
+
+
+@pytest.mark.asyncio
+async def test_reapply_expert_template_errors(manager: AgentManager) -> None:
+    from dataclasses import replace as dc_replace
+
+    from octop.infra.agents.experts.catalog import ExpertCatalog
+
+    with pytest.raises(OctopError) as unknown_agent:
+        await manager.reapply_expert_template("missing-agent")
+    assert unknown_agent.value.code == ErrorCode.AGENT_NOT_FOUND
+
+    manager._expert_catalog = MagicMock(spec=ExpertCatalog)
+    manager._repos.agent_repo.get = MagicMock(  # type: ignore[method-assign]
+        return_value=_row(agent_id="no-template")
+    )
+    with pytest.raises(OctopError) as no_template:
+        await manager.reapply_expert_template("no-template")
+    assert no_template.value.code == ErrorCode.NOT_FOUND
+
+    manager._expert_catalog.get = MagicMock(return_value=None)
+    manager._repos.agent_repo.get = MagicMock(  # type: ignore[method-assign]
+        return_value=dc_replace(_row(agent_id="bad-expert"), template_name="missing")
+    )
+    with pytest.raises(OctopError) as bad_expert:
+        await manager.reapply_expert_template("bad-expert")
+    assert bad_expert.value.code == ErrorCode.NOT_FOUND
+
+
 @pytest.mark.asyncio
 async def test_persist_skills_disabled_does_not_schedule_reload(
     manager: AgentManager, monkeypatch: pytest.MonkeyPatch
