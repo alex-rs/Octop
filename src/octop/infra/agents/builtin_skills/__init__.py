@@ -12,8 +12,8 @@ RETIRED_BUILTIN_SKILLS = ("install-skill",)
 # octop-harness seeds its own ``builtin/skills/<locale>/`` tree into the same
 # ``_builtin_skills`` root and caches that behind a marker holding only the package
 # version. The filename is the harness's on-disk cache key; see
-# ``ensure_builtin_skills_language``.
-BUILTIN_SKILLS_LANGUAGE = "en"
+# ``ensure_builtin_language``.
+BUILTIN_CONTENT_LANGUAGE = "en"
 _HARNESS_VERSION_MARKER = ".version"
 _LANGUAGE_MARKER = ".language"
 _WORKSPACE_TOKEN = b"{{OCTOP_WORKSPACE}}"
@@ -95,23 +95,26 @@ async def sync_octop_builtin_skills(workspace: Any) -> list[str]:
     return sorted(skill_names)
 
 
-async def ensure_builtin_skills_language(
-    workspace: Any, *, language: str = BUILTIN_SKILLS_LANGUAGE
+async def ensure_builtin_language(
+    workspace: Any, *, language: str = BUILTIN_CONTENT_LANGUAGE
 ) -> bool:
-    """Pin the harness-seeded built-in Skills to *language*, resyncing when needed.
+    """Pin octop-harness's seeded built-in Skills and agents to *language*.
 
-    ``octop-harness`` seeds ``builtin/skills/<locale>/`` into ``_builtin_skills/`` and
-    caches the result behind a ``.version`` marker holding only the package version.
-    That marker does not record which locale was seeded, so a workspace seeded in
-    another language never converges: every later run compares the version, finds it
-    current, and skips the sync forever.
+    ``octop-harness`` seeds both trees from its own package at workspace init and
+    never revisits them: Skills behind a cache marker that records only the package
+    version, built-in agents with ``overwrite=False`` so existing files are kept.
+    Neither records the language, so a workspace seeded in another locale keeps
+    serving it - the dashboard kept showing Chinese ``SKILL.md`` files and Chinese
+    ``agents/general-purpose.md`` subagent definitions.
 
-    Record the language beside it and re-seed once when it does not match, dropping
-    the harness marker first so its own up-to-date check cannot short-circuit.
+    Record the language beside them and re-seed both once when it does not match,
+    dropping the harness skills marker first so its up-to-date check cannot
+    short-circuit. Only the markers are deleted: ``seed_builtin_agents`` rewrites
+    just its own packaged files, so no expert- or user-authored agent is touched.
 
-    Returns ``True`` when a resync was performed. Any mismatch in the harness marker
-    filename is contained here: drop this helper once octop-harness carries the
-    language in its cache key.
+    Returns ``True`` when content was re-seeded. Both harness cache markers are
+    private details contained here: drop this helper once octop-harness carries the
+    language in its own cache key.
     """
     marker = f"{OCTOP_BUILTIN_SKILLS_ROOT}/{_LANGUAGE_MARKER}"
     recorded = await workspace.aread_text(marker)
@@ -123,20 +126,25 @@ async def ensure_builtin_skills_language(
     cache = f"{OCTOP_BUILTIN_SKILLS_ROOT}/{_HARNESS_VERSION_MARKER}"
     if await workspace.aexists(cache):
         await workspace.adelete(cache)
-    # ``sync_builtin_skills`` is a blocking sync method on the workspace backend.
+    # Both are blocking sync methods on the workspace backend.
     await asyncio.to_thread(
         workspace.sync_builtin_skills,
         package_version("octop-harness"),
         language=language,
+    )
+    await asyncio.to_thread(
+        workspace.seed_builtin_agents,
+        language=language,
+        overwrite=True,
     )
     await workspace.awrite_text(marker, f"{language}\n")
     return True
 
 
 __all__ = [
-    "BUILTIN_SKILLS_LANGUAGE",
+    "BUILTIN_CONTENT_LANGUAGE",
     "OCTOP_BUILTIN_SKILLS_ROOT",
-    "ensure_builtin_skills_language",
+    "ensure_builtin_language",
     "is_octop_builtin_skills_path",
     "sync_octop_builtin_skills",
 ]

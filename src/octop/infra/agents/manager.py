@@ -3000,7 +3000,7 @@ class AgentManager:
             ws = agent.workspace
             try:
                 from octop.infra.agents.builtin_skills import (  # noqa: PLC0415
-                    ensure_builtin_skills_language,
+                    ensure_builtin_language,
                     sync_octop_builtin_skills,
                 )
 
@@ -3010,9 +3010,10 @@ class AgentManager:
                     row.agent_id,
                     synced_skills,
                 )
-                if await ensure_builtin_skills_language(ws):
+                if await ensure_builtin_language(ws):
                     logger.info(
-                        "Agent %s: re-seeded harness built-in skills (language mismatch)",
+                        "Agent %s: re-seeded harness built-in skills and agents "
+                        "(language mismatch)",
                         row.agent_id,
                     )
             except Exception:

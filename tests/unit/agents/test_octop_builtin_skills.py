@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 import sys
 import zipfile
@@ -14,7 +15,7 @@ import pytest
 from tests.support.fakes import FakeHarnessAgent
 
 from octop.infra.agents.builtin_skills import (
-    ensure_builtin_skills_language,
+    ensure_builtin_language,
     sync_octop_builtin_skills,
 )
 
@@ -108,19 +109,22 @@ async def test_sync_uses_system_files_path(tmp_path: Path) -> None:
 
 
 @pytest.mark.asyncio
-async def test_ensure_builtin_skills_language_reseeds_once_on_mismatch(tmp_path: Path) -> None:
+async def test_ensure_builtin_language_reseeds_skills_and_agents(tmp_path: Path) -> None:
     """A workspace seeded in another locale must converge instead of staying stale.
 
-    octop-harness caches its built-in Skills behind a version-only marker, so one
-    seeded in a different language never resyncs by itself (issue: a stale ``zh``
-    seeding kept serving Chinese ``SKILL.md`` files).
+    octop-harness caches its built-in Skills behind a version-only marker and seeds
+    its built-in agents with overwrite=False, so neither tree records the language.
+    A workspace seeded in zh (- the stale case) kept serving Chinese SKILL.md files
+    and a Chinese agents/general-purpose.md subagent definition.
     """
     agent = FakeHarnessAgent(workspace_dir=tmp_path, virtual_mode=False)
     workspace = agent.workspace
-    # Simulate the harness cache left behind by an earlier seeding.
+    # Simulate the harness cache left behind by an earlier seeding, plus the
+    # built-in agent file that seeding would have written.
     await workspace.awrite_text("_builtin_skills/.version", "0.0.0", force=True)
+    await workspace.awrite_text("agents/general-purpose.md", "# 中文\n", force=True)
 
-    assert await ensure_builtin_skills_language(workspace) is True
+    assert await ensure_builtin_language(workspace) is True
     assert (await workspace.aread_text("_builtin_skills/.language") or "").strip() == "en"
     # The dropped marker was rewritten by the resync, proving it actually ran.
     assert (await workspace.aread_text("_builtin_skills/.version") or "").strip() not in (
@@ -128,9 +132,12 @@ async def test_ensure_builtin_skills_language_reseeds_once_on_mismatch(tmp_path:
         "0.0.0",
     )
     assert await workspace.aexists("_builtin_skills/architecture-diagram/SKILL.md")
+    general_purpose = await workspace.aread_text("agents/general-purpose.md")
+    assert general_purpose is not None
+    assert not re.search(r"[\u3400-\u4dbf\u4e00-\u9fff]", general_purpose)
 
     # Idempotent: a matching language marker short-circuits on later starts.
-    assert await ensure_builtin_skills_language(workspace) is False
+    assert await ensure_builtin_language(workspace) is False
 
 
 def test_manager_script_compiles() -> None:
