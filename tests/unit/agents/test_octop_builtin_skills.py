@@ -13,7 +13,10 @@ from pathlib import Path
 import pytest
 from tests.support.fakes import FakeHarnessAgent
 
-from octop.infra.agents.builtin_skills import sync_octop_builtin_skills
+from octop.infra.agents.builtin_skills import (
+    ensure_builtin_skills_language,
+    sync_octop_builtin_skills,
+)
 
 _PACKAGE = "octop.infra.agents.builtin_skills"
 
@@ -48,7 +51,7 @@ async def test_sync_seeds_manager_and_retires_old_installer(tmp_path: Path) -> N
 
     synced = await sync_octop_builtin_skills(agent.workspace)
 
-    assert synced == ["skill-manager"]
+    assert synced == ["mcporter", "skill-manager"]
     assert await agent.workspace.aexists("skills")
     assert await agent.workspace.aread_text("_builtin_skills/install-skill/SKILL.md") is None
     manager = await agent.workspace.aread_text("_builtin_skills/skill-manager/SKILL.md")
@@ -82,7 +85,7 @@ async def test_sync_uses_system_files_path(tmp_path: Path) -> None:
 
     synced = await sync_octop_builtin_skills(agent.workspace)
 
-    assert synced == ["skill-manager"]
+    assert synced == ["mcporter", "skill-manager"]
     manager = await agent.workspace.aread_text("_builtin_skills/skill-manager/SKILL.md")
     assert manager is not None
     assert "{{OCTOP_SKILLS}}" not in manager
@@ -102,6 +105,32 @@ async def test_sync_uses_system_files_path(tmp_path: Path) -> None:
     )
     assert inferred.returncode == 0, inferred.stderr or inferred.stdout
     assert json.loads(inferred.stdout) == []
+
+
+@pytest.mark.asyncio
+async def test_ensure_builtin_skills_language_reseeds_once_on_mismatch(tmp_path: Path) -> None:
+    """A workspace seeded in another locale must converge instead of staying stale.
+
+    octop-harness caches its built-in Skills behind a version-only marker, so one
+    seeded in a different language never resyncs by itself (issue: a stale ``zh``
+    seeding kept serving Chinese ``SKILL.md`` files).
+    """
+    agent = FakeHarnessAgent(workspace_dir=tmp_path, virtual_mode=False)
+    workspace = agent.workspace
+    # Simulate the harness cache left behind by an earlier seeding.
+    await workspace.awrite_text("_builtin_skills/.version", "0.0.0", force=True)
+
+    assert await ensure_builtin_skills_language(workspace) is True
+    assert (await workspace.aread_text("_builtin_skills/.language") or "").strip() == "en"
+    # The dropped marker was rewritten by the resync, proving it actually ran.
+    assert (await workspace.aread_text("_builtin_skills/.version") or "").strip() not in (
+        "",
+        "0.0.0",
+    )
+    assert await workspace.aexists("_builtin_skills/architecture-diagram/SKILL.md")
+
+    # Idempotent: a matching language marker short-circuits on later starts.
+    assert await ensure_builtin_skills_language(workspace) is False
 
 
 def test_manager_script_compiles() -> None:

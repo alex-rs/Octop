@@ -2,12 +2,20 @@
 
 from __future__ import annotations
 
+import asyncio
 from importlib import resources
 from importlib.resources.abc import Traversable
 from typing import Any
 
 OCTOP_BUILTIN_SKILLS_ROOT = "_builtin_skills"
 RETIRED_BUILTIN_SKILLS = ("install-skill",)
+# octop-harness seeds its own ``builtin/skills/<locale>/`` tree into the same
+# ``_builtin_skills`` root and caches that behind a marker holding only the package
+# version. The filename is the harness's on-disk cache key; see
+# ``ensure_builtin_skills_language``.
+BUILTIN_SKILLS_LANGUAGE = "en"
+_HARNESS_VERSION_MARKER = ".version"
+_LANGUAGE_MARKER = ".language"
 _WORKSPACE_TOKEN = b"{{OCTOP_WORKSPACE}}"
 _SKILLS_TOKEN = b"{{OCTOP_SKILLS}}"
 _BUILTIN_TOKEN = b"{{OCTOP_BUILTIN_SKILLS}}"
@@ -87,8 +95,48 @@ async def sync_octop_builtin_skills(workspace: Any) -> list[str]:
     return sorted(skill_names)
 
 
+async def ensure_builtin_skills_language(
+    workspace: Any, *, language: str = BUILTIN_SKILLS_LANGUAGE
+) -> bool:
+    """Pin the harness-seeded built-in Skills to *language*, resyncing when needed.
+
+    ``octop-harness`` seeds ``builtin/skills/<locale>/`` into ``_builtin_skills/`` and
+    caches the result behind a ``.version`` marker holding only the package version.
+    That marker does not record which locale was seeded, so a workspace seeded in
+    another language never converges: every later run compares the version, finds it
+    current, and skips the sync forever.
+
+    Record the language beside it and re-seed once when it does not match, dropping
+    the harness marker first so its own up-to-date check cannot short-circuit.
+
+    Returns ``True`` when a resync was performed. Any mismatch in the harness marker
+    filename is contained here: drop this helper once octop-harness carries the
+    language in its cache key.
+    """
+    marker = f"{OCTOP_BUILTIN_SKILLS_ROOT}/{_LANGUAGE_MARKER}"
+    recorded = await workspace.aread_text(marker)
+    if recorded is not None and recorded.strip() == language:
+        return False
+
+    from importlib.metadata import version as package_version  # noqa: PLC0415
+
+    cache = f"{OCTOP_BUILTIN_SKILLS_ROOT}/{_HARNESS_VERSION_MARKER}"
+    if await workspace.aexists(cache):
+        await workspace.adelete(cache)
+    # ``sync_builtin_skills`` is a blocking sync method on the workspace backend.
+    await asyncio.to_thread(
+        workspace.sync_builtin_skills,
+        package_version("octop-harness"),
+        language=language,
+    )
+    await workspace.awrite_text(marker, f"{language}\n")
+    return True
+
+
 __all__ = [
+    "BUILTIN_SKILLS_LANGUAGE",
     "OCTOP_BUILTIN_SKILLS_ROOT",
+    "ensure_builtin_skills_language",
     "is_octop_builtin_skills_path",
     "sync_octop_builtin_skills",
 ]
